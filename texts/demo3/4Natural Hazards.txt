@@ -1,0 +1,2 @@
+Hazard 1: Flood
+Hazard 2: (Bank) Erosion
