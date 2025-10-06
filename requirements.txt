@@ -1,0 +1,12 @@
+streamlit
+pandas
+requests
+leafmap
+rasterio
+numpy
+matplotlib
+contextily
+seaborn
+adjustText
+langchain-google-genai
+langchain-core
