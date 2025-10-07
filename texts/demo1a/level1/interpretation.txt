@@ -1,0 +1,20 @@
+1. The Hazard's Critical Impact (CIH)
+Exposure to the climate hazard (CIH) causes the most significant deterioration:
+
+Safety, Reliability, and Security (SRS) drops from Good (2) to Poor (4), indicating the infrastructure would face significant reliability issues and require frequent, costly maintenance.
+
+Economy (EC) also drops to Poor (4), showing the hazard would lead to substantial financial damage and disruption.
+
+2. Standalone Solutions Are Inadequate
+Nature-Based Solutions (CIHN): When used alone, NbS fail to restore the critical SRS and EC KPIs, which both remain at Poor (4). This confirms that a purely ecological approach is insufficient to protect the core infrastructure from extreme events in this high-risk alpine torrent.
+
+Grey Protective Infrastructure (CIHG): The grey structures perform better, notably improving Health and Politics (HP) to Very Good (1)—an even better score than the original baseline. However, for the crucial SRS KPI, it only restores the condition to Fair (3), meaning occasional safety/reliability problems would persist.
+
+3. The Combined Strategy is Optimal (CIHGN) ✅
+The Combined Solution (CIHGN), utilizing both grey and nature-based measures, is the clear winner for comprehensive resilience:
+
+It is the only solution that fully restores Safety, Reliability, and Security (SRS) from Poor (4) back to Good (2).
+
+It successfully restores the Economy (EC) from Poor (4) back to the original Fair (3) condition.
+
+This combined approach produces the smallest polygon on the web plot—the highest level of performance—demonstrating that synergy between technical engineering and ecological enhancement is necessary to safeguard the community and critical transport routes in the Lattenbach Valley.
