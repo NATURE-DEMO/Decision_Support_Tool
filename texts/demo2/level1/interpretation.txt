@@ -1,0 +1,17 @@
+1. The Hazard Exposes Structural Weakness (CIH)
+The baseline CI already shows a Poor (4) rating for both Economy (EC) and Health and Politics (HP), indicating high maintenance costs and social/political issues even under normal conditions. The climate hazard (CIH) pushes these two KPIs to Very Poor (5), the absolute worst rating. This signifies a breakdown in the city's ability to finance and manage its Green Infrastructure, leading to extremely frequent failures and service interruption for the 300,000 residents who rely on these spaces for health and well-being.
+
+2. Grey Infrastructure Alone is Financially Infeasible (CIHG)
+While the Grey Protective Infrastructure (CIHG) is effective in some areas, improving Health and Politics (HP) to Good (2), it suffers from a critical flaw: it fails to improve the financial situation, leaving Economy (EC) at a Very Poor (5) post-hazard rating. This demonstrates that purely hard-engineered solutions are too costly to sustain in the face of climate hazards, undermining their long-term viability in Brașov.
+
+3. Nature-Based Solutions are Optimal (CIHN)
+The Nature-Based Solution (CIHN) is the best choice for a strategic, multi-benefit approach:
+
+Environmental Restoration: NbS achieves a Very Good (1) rating for Environment (EV), completely restoring ecological integrity.
+
+Economic Viability: Crucially, NbS improves the Economy (EC) from Very Poor (5) to Fair (3). This is significantly better than the Grey solution and suggests NbS offers the most financially sustainable pathway to resilience.
+
+Performance Cap: While NbS restores all other KPIs (SRS, AM, HP) to at least Fair (3), it cannot achieve the initial Good (2) rating for SRS. This suggests the underlying structural issues (the original poor EC/HP baseline) limit how far any intervention can push performance without a more fundamental overhaul.
+
+Conclusion
+For Brașov City's Green Infrastructure, Nature-Based Solutions (CIHN) are the optimal strategy. They effectively stabilize the system against climate hazards while providing superior environmental and economic sustainability compared to traditional grey infrastructure. The combined strategy (CIHGN) is redundant and offers no performance improvement over the NbS-only approach. Future focus should be on implementing NbS and addressing the structural financial and political challenges that predate the hazard.
