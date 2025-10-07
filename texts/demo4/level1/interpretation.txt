@@ -1,0 +1,28 @@
+1. The Catastrophic Impact of Multiple Hazards (CIH)
+The baseline condition (CI) is already concerning, with Health and Politics (HP) at a Poor (4), indicating complex governance and high social vulnerability (e.g., from inversions and floods). Exposure to the combined hazards (CIH) pushes Safety (SRS) and Availability (AM) to the worst possible score of 5 (Very Poor). This means:
+
+The road and rail networks would become extremely unreliable, experiencing frequent failures and major closures.
+
+The energy and water systems would suffer from consistent, critical outages.
+
+2. Standalone Solutions Are Insufficient for a Transport Hub
+Both the Grey-Only (CIHG) and Nature-Based-Only (CIHN) solutions perform identically and improve performance dramatically from the hazard impact. They are both highly effective at:
+
+Restoring Economy (EC) to Good (2).
+
+Achieving Very Good (1) for the Environment (EV), a better score than the initial baseline (Good (2)).
+
+However, both solutions are suboptimal for the most critical functions of Zvolen:
+
+They only restore Safety (SRS) and Availability (AM) to Fair (3). This means occasional problems and reliability issues would persist, which is unacceptable for a major railway junction and regional transport hub.
+
+3. The Combined Solution Achieves Optimal Safety (CIHGN) ✅
+The Combined Solution (CIHGN) is the clear mandate for Zvolen, producing the smallest, most effective polygon on the plot:
+
+Maximum Safety: It restores Safety (SRS) to its original Good (2) condition, ensuring high reliability.
+
+Improved Availability: It elevates Availability (AM) from the baseline Fair (3) to Good (2), a measurable improvement in system uptime and maintenance efficiency.
+
+Addressing Structural Risk: Crucially, it improves Health and Politics (HP) from the existing Poor (4) baseline to Good (2), indicating that the holistic approach successfully resolves pre-existing governance and social vulnerabilities.
+
+Conclusion: Implementing a synergistic strategy (CIHGN) is the only way to achieve the necessary performance level, ensuring the critical transport and administrative functions of Zvolen remain resilient and highly reliable, even when faced with high-intensity floods, windstorms, and freeze-thaw cycles.
