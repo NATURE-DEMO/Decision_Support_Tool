@@ -1,12 +1,9 @@
 streamlit
 pandas
+numpy
 requests
 leafmap
 rasterio
-numpy
+plotly
 matplotlib
 contextily
-seaborn
-adjustText
-langchain-google-genai
-langchain-core
