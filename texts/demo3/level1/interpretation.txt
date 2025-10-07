@@ -1,0 +1,13 @@
+1. Hazard Impact is Negligible
+The system scores Good (2) for Availability and Maintainability (AM), Economy (EC), Environment (EV), and Health and Politics (HP) in all scenarios—before the hazard, after the hazard, and with all protective measures. This indicates that the current flood protection measures are highly effective, and the existing infrastructure is already extremely robust against the expected torrential regime.
+
+2. The Focus Must be on Safety (SRS)
+The only area requiring improvement is Safety, Reliability, and Security (SRS), which starts at Fair (3)—meaning occasional problems or reliability issues persist. The goal of any intervention is to improve this baseline condition.
+
+3. Grey Infrastructure is Required for Maximum Safety
+Nature-Based Solutions (CIHN), when used alone, do not improve the SRS score, leaving it at Fair (3). This suggests that for the specific need of bolstering the reliability of the grey water channels and road infrastructure, river restoration alone is insufficient.
+
+The Grey Infrastructure (CIHG) alone, or the Combined Solution (CIHGN), are the only approaches that successfully boost SRS to Very Good (1) (highly reliable, little to no failures).
+
+Conclusion
+For the Gradaščica River Basin, the most effective strategy to maximize infrastructure safety and reliability is to implement measures that include Grey Protective Infrastructure (CIHG). Given the context of planned river restoration (NbS), the Combined Solution (CIHGN) is the most robust recommendation, as it achieves the necessary Very Good (1) performance for Safety, Reliability, and Security (SRS) while ensuring all other aspects remain at a Good (2) condition.
