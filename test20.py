@@ -481,7 +481,7 @@ with st.container():
                     xlsx_files.sort(key=lambda f: order_fn(f["name"]))
                     for f in xlsx_files:
                         name = f["name"]
-                        modified = re.sub(r'^\d+_', '', name).replace('.xlsx', '')
+                        modified = re.sub(r'^\d+_', '', name[1:]).replace('.xlsx', '')
                         st.subheader(modified)
                         try:
                             b = download_file_bytes(f["download_url"])
@@ -542,4 +542,5 @@ with st.container():
             st.markdown("Under Construction")
 
         with st.expander("Level 3"):
+
             st.markdown("Under Construction")
