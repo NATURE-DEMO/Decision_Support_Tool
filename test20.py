@@ -17,19 +17,14 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import contextily as cx
 
-# -------------------------
-# CONFIG
-# -------------------------
 st.set_page_config(page_title="My Data Dashboard", layout="centered")
 
-# Fixed GitHub base (user confirmed fixed)
-GITHUB_RAW_BASE = "https://raw.githubusercontent.com/saturngreen67/streamlit_tests/main"
-GITHUB_API_BASE = "https://api.github.com/repos/saturngreen67/streamlit_tests/contents/texts"
-# Static resources
-GITHUB_IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
-GITHUB_TIFF_URL = f"https://raw.githubusercontent.com/saturngreen67/streamlit_tests/main/Koppen/1991-2020/koppen_geiger_0p1.tif"
+GITHUB_RAW_BASE = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
+GITHUB_API_BASE = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
 
-# Sidebar items (unchanged)
+GITHUB_IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
+GITHUB_TIFF_URL = f"{GITHUB_RAW_BASE}/Koppen/1991-2020/koppen_geiger_0p1.tif"
+
 items = [
     {"name": "Demo site 1-A", "address": "Lattenbach Valley, Austria", "icon_url": f"{GITHUB_IMAGE_BASE_URL}/logo1.jpg", "github_key": "demo1a", "coordinate": [47.148472, 10.499805]},
     {"name": "Demo site 1-B", "address": "Brunntal, Austria", "icon_url": f"{GITHUB_IMAGE_BASE_URL}/logo2.jpg", "github_key": "demo1b", "coordinate": [47.625027, 15.052111]},
@@ -41,12 +36,8 @@ items = [
 ]
 BACKGROUND_IMAGE_URL = f"{GITHUB_IMAGE_BASE_URL}/main_logo.png"
 
-# -------------------------
-# CACHING HELPERS
-# -------------------------
 @st.cache_data(ttl=3600)
 def cached_get(url: str) -> bytes:
-    """Cached raw GET. Returns bytes."""
     resp = requests.get(url, timeout=20)
     resp.raise_for_status()
     return resp.content
@@ -65,7 +56,6 @@ def cached_text(url: str) -> str:
 
 @st.cache_data(ttl=3600)
 def cached_base64_image(url: str) -> str | None:
-    """Return base64 string of image or None on error."""
     try:
         b = cached_get(url)
         return base64.b64encode(b).decode("utf-8")
@@ -80,17 +70,15 @@ def cached_read_excel(url: str) -> pd.DataFrame | None:
     except Exception:
         return None
 
-# -------------------------
-# GitHub folder helpers
-# -------------------------
 @st.cache_data(ttl=600)
 def list_github_folder(github_key: str):
-    api_url = f"{GITHUB_API_BASE}/{github_key}?ref=main"
+    api_url = f"{GITHUB_API_BASE}/{github_key}/level1?ref=main"
     return cached_json(api_url)
 
 @st.cache_data(ttl=600)
 def get_sorted_txt_files(github_key: str):
-    items_json = list_github_folder(github_key)
+    api_url = f"{GITHUB_API_BASE}/{github_key}?ref=main" 
+    items_json = cached_json(api_url)
     if not isinstance(items_json, list):
         return []
     txts = [i for i in items_json if i.get("name", "").endswith(".txt")]
@@ -104,9 +92,6 @@ def get_sorted_txt_files(github_key: str):
 def download_file_bytes(download_url: str) -> bytes:
     return cached_get(download_url)
 
-# -------------------------
-# Utilities
-# -------------------------
 def format_label(label: str) -> str:
     if isinstance(label, str) and label.startswith("CI"):
         return f"CI$_{{{label[2:]}}}$"
@@ -139,7 +124,6 @@ KOPPEN_CLASSES = {
 }
 
 def quick_koppen_map(tif_path, lat, lon):
-    """Ultra-simple Köppen map with fixed settings"""
     
     zoom = 1.0
     koppen_alpha = 0.6
@@ -147,34 +131,23 @@ def quick_koppen_map(tif_path, lat, lon):
     cmap = ListedColormap(KOPPEN_COLORS)
     class_labels = [KOPPEN_CLASSES[i] for i in range(1, 31)]
     
-    # Calculate bounds
     min_lon, max_lon = lon - zoom, lon + zoom
     min_lat, max_lat = lat - zoom, lat + zoom
     
     try:
-        # Handle TIFF from URL or local
-        if tif_path.startswith('http'):
-            response = requests.get(tif_path)
-            if response.status_code == 200:
-                tif_file = io.BytesIO(response.content)
-                with rasterio.open(tif_file) as src:
-                    data = src.read(1)
-                    row_min, col_min = src.index(min_lon, max_lat)
-                    row_max, col_max = src.index(max_lon, min_lat)
-                    row_start, row_end = sorted([row_min, row_max])
-                    col_start, col_end = sorted([col_min, col_max])
-                    data_cropped = data[row_start:row_end, col_start:col_end]
-            else:
-                st.error(f"Failed to download TIFF file from {tif_path}")
-                return None
-        else:
-            with rasterio.open(tif_path) as src:
+        response = requests.get(tif_path)
+        if response.status_code == 200:
+            tif_file = io.BytesIO(response.content)
+            with rasterio.open(tif_file) as src:
                 data = src.read(1)
                 row_min, col_min = src.index(min_lon, max_lat)
                 row_max, col_max = src.index(max_lon, min_lat)
                 row_start, row_end = sorted([row_min, row_max])
                 col_start, col_end = sorted([col_min, col_max])
                 data_cropped = data[row_start:row_end, col_start:col_end]
+        else:
+            st.error(f"Failed to download TIFF file from {tif_path}")
+            return None
             
     except Exception as e:
         st.error(f"Map error: {e}")
@@ -184,7 +157,7 @@ def quick_koppen_map(tif_path, lat, lon):
     
     fig, ax = plt.subplots(figsize=(10, 8))
     im = ax.imshow(data_cropped, cmap=cmap, extent=(min_lon, max_lon, min_lat, max_lat), 
-                   origin='upper', alpha=koppen_alpha, zorder=2)
+                    origin='upper', alpha=koppen_alpha, zorder=2)
     
     cx.add_basemap(ax, crs='EPSG:4326', source=cx.providers.OpenTopoMap, alpha=0.8, zorder=1)
     
@@ -199,16 +172,13 @@ def quick_koppen_map(tif_path, lat, lon):
     
     return fig
 
-# -------------------------
-# KPI: Radar & Analysis (Plotly)
-# -------------------------
 def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, title: str):
     df = kpis_df.copy()
     categories = df.iloc[:, 0].astype(str).tolist()
     fig = go.Figure()
     for col in selected_series:
         vals = pd.to_numeric(df[col], errors="coerce").tolist()
-        if len(vals) == 0:
+        if not vals:
             continue
         vals_loop = vals + [vals[0]]
         cats_loop = categories + [categories[0]]
@@ -222,20 +192,17 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
     figs = []
     max_pairs = min(4, max(0, len(df1.columns)-1), len(df2.columns))
     
-    # --- Heatmap Setup ---
     x_grid = np.linspace(0, 6, 60)
     y_grid = np.linspace(0, 6, 60)
     X, Y = np.meshgrid(x_grid, y_grid)
     Z_heatmap = (X + Y) / 2
     
     custom_colorscale = [
-        [0.0, 'green'],   
-        [0.5, 'yellow'],  
-        [1.0, 'red']      
+        [0.0, 'green'],    
+        [0.5, 'yellow'],   
+        [1.0, 'red']       
     ]
-    # --- End Heatmap Setup ---
 
-    # Helper function to format labels with HTML subscript (same as before)
     def format_html_label(label: str) -> str:
         if isinstance(label, str) and label.startswith("CI") and len(label) > 2:
             subscript_part = label[2:]
@@ -258,7 +225,6 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
 
         fig = go.Figure()
         
-        # 1. Add Heatmap Background
         fig.add_trace(go.Heatmap(
             z=Z_heatmap,
             x=x_grid,
@@ -276,36 +242,21 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
             figs.append(fig)
             continue
         
-        # 2. Add Scatter Plot Data (with jitter)
         jitter_x = np.random.uniform(-0.15, 0.15, size=(len(df_plot),))
         jitter_y = np.random.uniform(-0.15, 0.15, size=(len(df_plot),))
         df_plot["Extent_j"] = df_plot["Extent of Loss"] + jitter_x
         df_plot["Condition_j"] = df_plot["Condition"] + jitter_y
 
-        # --- Dynamic Text Positioning for Collision Avoidance ---
-        # Strategy: Put points with high Extent of Loss (X) to the right
-        # and points with low Extent of Loss (X) to the left (or alternate top/bottom)
-        
-        # Simple Logic: Alternate text position for better spread
-        # Here we alternate between "top right" and "bottom right"
         positions = ["top right", "bottom right"]
         df_plot["Text_Position"] = [positions[i % len(positions)] for i in range(len(df_plot))]
-
-        # You can also use conditional logic:
-        # mean_y = df_plot["Condition_j"].mean()
-        # df_plot["Text_Position"] = np.where(df_plot["Condition_j"] > mean_y, "top center", "bottom center")
 
         scatter_trace = go.Scatter(
             x=df_plot["Extent_j"],
             y=df_plot["Condition_j"],
-            # REnabled 'text' mode and apply the dynamic position:
             mode='markers+text', 
             text=df_plot["Display_Label"], 
-            textposition=df_plot["Text_Position"].tolist(), # Use the calculated list of positions
-            
-            # Reduce font size slightly to help fit
+            textposition=df_plot["Text_Position"].tolist(), 
             textfont=dict(size=10), 
-            
             marker=dict(size=12, line=dict(width=1, color="black")),
             name=f"{format_html_label(col_f1)} Data",
             hovertemplate="<b>Label:</b> %{customdata[2]}<br><b>Extent of Loss:</b> %{customdata[0]:.2f}<br><b>Condition:</b> %{customdata[1]:.2f}<extra></extra>",
@@ -313,7 +264,6 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
         )
         fig.add_trace(scatter_trace)
 
-        # 3. Update Layout
         formatted_title_f1 = format_html_label(col_f1) 
         fig.update_layout(
             title=f"<b>{formatted_title_f1}</b> vs Extent of Loss",
@@ -335,9 +285,6 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
         
     return figs
 
-# -------------------------
-# Lightweight GitHub wrappers for KPIs, EL, interpretation
-# -------------------------
 @st.cache_data(ttl=600)
 def get_kpis_excel(github_key: str) -> pd.DataFrame | None:
     url = f"{GITHUB_RAW_BASE}/texts/{github_key}/level1/KPIs.xlsx"
@@ -364,9 +311,6 @@ def get_climate_report_text(github_key: str) -> str | None:
     except Exception:
         return None
 
-# -------------------------
-# UI: Sidebar & Selection
-# -------------------------
 bg_b64 = cached_base64_image(BACKGROUND_IMAGE_URL)
 if bg_b64:
     st.sidebar.markdown(f'<img src="data:image/png;base64,{bg_b64}" style="width:100%;">', unsafe_allow_html=True)
@@ -397,7 +341,6 @@ for it in items:
         '''
         st.sidebar.markdown(html, unsafe_allow_html=True)
 
-# Query params to choose item
 query_params = st.query_params
 selected_key = query_params.get("item", items[0]["github_key"])
 items_map = {it["github_key"]: it for it in items}
@@ -407,15 +350,10 @@ DEFAULT_CENTER = [41.500, 20.5308]
 map_center = selected_item.get("coordinate", DEFAULT_CENTER)
 map_zoom = 15
 
-# -------------------------
-# MAIN APP
-# -------------------------
 st.title(f"Risk assessment for {selected_item['name']}: {selected_item['address']}")
-GITHUB_API_URL = f"{GITHUB_API_BASE}/{selected_item['github_key']}?ref=main"
 
 with st.container():
     with st.expander("Site Information and Maps"):
-        # --- Site Information ---
         with st.expander("Site Information"):
             st.markdown("""
                 <style>
@@ -439,15 +377,12 @@ with st.container():
                     except Exception:
                         st.error(f"Unable to load {name}")
 
-        # --- Maps ---
         with st.expander("Maps"):
-            # Satellite map via leafmap
             m = leafmap.Map(center=map_center, zoom=map_zoom, height="700px")
             m.add_basemap("SATELLITE")
             m.add_marker(map_center, tooltip=selected_item["name"])
             m.to_streamlit()
 
-            # Köppen map: using old implementation
             st.subheader("Köppen-Geiger Climate Classification")
             fig = quick_koppen_map(GITHUB_TIFF_URL, map_center[0], map_center[1])
             if fig is not None:
@@ -455,11 +390,9 @@ with st.container():
             else:
                 st.warning("Unable to display Köppen-Geiger Climate Map.")
 
-            # Climate report (from GitHub)
             st.subheader("Climate Report")
             if selected_item["github_key"] == "testing":
                 st.info("Testing site: autogenerated climate report disabled in this build.")
-                st.markdown("No auto-generated climate report in this testing build.")
             else:
                 report = get_climate_report_text(selected_item["github_key"])
                 if report:
@@ -467,10 +400,8 @@ with st.container():
                 else:
                     st.warning("Climate report not found for this site.")
 
-    # --- Level 1,2,3 container ---
     with st.container():
         with st.expander("Level 1"):
-            # Information tables
             with st.expander("Information tables"):
                 try:
                     files_json = list_github_folder(selected_item["github_key"])
@@ -492,7 +423,6 @@ with st.container():
                 except Exception as e:
                     st.error(f"Failed to fetch directory listing: {e}")
 
-            # Perceived risk
             with st.expander("Perceived risk"):
                 st.subheader("KPI Radar Chart")
                 kpis_df = get_kpis_excel(selected_item["github_key"])
@@ -514,7 +444,6 @@ with st.container():
                     else:
                         st.warning("Please select at least one series to display.")
 
-                # KPI Analysis: Extent vs Condition
                 st.subheader("KPI Analysis: Extent of Loss vs. CI Condition")
                 el_df = get_el_excel(selected_item["github_key"])
                 if (kpis_df is None or kpis_df.empty) or (el_df is None or el_df.empty):
@@ -522,25 +451,20 @@ with st.container():
                 else:
                     st.dataframe(el_df, use_container_width=True)
                     figs = create_kpi_analysis_plots_plotly(kpis_df, el_df, selected_item["name"])
-                    # Show plots in two columns layout
                     cols = st.columns(2)
                     for i, fig in enumerate(figs):
                         with cols[i % 2]:
                             st.plotly_chart(fig, use_container_width=True)
 
-            # Interpretation
             with st.expander("Interpretation"):
                 interp = get_interpretation_text(selected_item["github_key"])
                 if interp:
                     st.markdown(interp)
                 else:
                     st.warning("No interpretation text found or error loading interpretation.")
-                    st.info("The interpretation text should be located at:")
-                    st.code(f"{GITHUB_RAW_BASE}/texts/{selected_item['github_key']}/level1/interpretation.txt")
 
         with st.expander("Level 2"):
             st.markdown("Under Construction")
 
         with st.expander("Level 3"):
-
             st.markdown("Under Construction")
