@@ -286,12 +286,12 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
 
 @st.cache_data(ttl=600)
 def get_kpis_excel(github_key: str) -> pd.DataFrame | None:
-    url = f"{GITHUB_RAW_BASE}/texts/{github_key}/level1/KPIs.xlsx"
+    url = f"{GITHUB_RAW_BASE}/texts/{github_key}/level1/1KPIs.xlsx"
     return cached_read_excel(url)
 
 @st.cache_data(ttl=600)
 def get_el_excel(github_key: str) -> pd.DataFrame | None:
-    url = f"{GITHUB_RAW_BASE}/texts/{github_key}/level1/el.xlsx"
+    url = f"{GITHUB_RAW_BASE}/texts/{github_key}/level1/2el.xlsx"
     return cached_read_excel(url)
 
 @st.cache_data(ttl=600)
