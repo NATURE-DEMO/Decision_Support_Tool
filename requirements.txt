@@ -1,9 +1,13 @@
 streamlit
-pandas
-numpy
 requests
-leafmap
+folium
+streamlit-folium
+shapely
+pandas
+google-genai
+numpy
 rasterio
-plotly
 matplotlib
 contextily
+plotly
+leafmap
