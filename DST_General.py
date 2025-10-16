@@ -19,6 +19,10 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import traceback
 import plotly.graph_objects as go
+import base64 # Added to use base64 encoding for the image
+
+# --- LOGO URL ---
+BACKGROUND_IMAGE_URL = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png"
 
 # --- KOPPEN CLASSIFICATION DATA ---
 KOPPEN_COLORS = np.array([
@@ -40,18 +44,23 @@ KOPPEN_CLASSES = {
 
 KOPPEN_TIFF_URL = "https://raw.githubusercontent.com/saturngreen67/streamlit_tests/main/Koppen/1991-2020/koppen_geiger_0p1.tif"
 
-# -------------------------------
-# FIX: GLOBAL STYLE FUNCTION FOR FOLIUM
-# -------------------------------
-def polygon_style_function(feature):
-    """Sets the style for the drawn polygon."""
-    return {'fillColor': 'blue', 'color': 'blue'}
+@st.cache_data(ttl=3600)
+def cached_get(url: str) -> bytes:
+    resp = requests.get(url, timeout=20)
+    resp.raise_for_status()
+    return resp.content
 
-# -------------------------------
-# KOPPEN MAP PLOT FUNCTION
-# -------------------------------
+@st.cache_data(ttl=3600)
+def cached_base64_image(url: str) -> str | None:
+    try:
+        b = cached_get(url)
+        return base64.b64encode(b).decode("utf-8")
+    except Exception:
+        return None
+
+def polygon_style_function(feature):
+    return {'fillColor': 'blue', 'color': 'blue'}
 def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
-    """Generates a Matplotlib plot showing the Köppen-Geiger climate classification."""
     
     cmap = ListedColormap(KOPPEN_COLORS)
     class_labels = [KOPPEN_CLASSES[i] for i in range(1, 31)]
@@ -65,11 +74,9 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
         
         with rasterio.open(io.BytesIO(response.content)) as src:
             data = src.read(1)
-            # Calculate pixel indices
             row_min, col_min = src.index(min_lon, max_lat)
             row_max, col_max = src.index(max_lon, min_lat)
             
-            # Ensure slicing is within bounds and ordered correctly
             row_start, row_end = sorted([row_min, row_max])
             col_start, col_end = sorted([col_min, col_max])
             
@@ -82,13 +89,11 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     
     data_cropped = np.where(data_cropped == 0, np.nan, data_cropped)
     
-    # Get the Köppen code for the center point (or the most frequent code)
     koppen_code = "N/A"
     if data_cropped.size > 0:
         center_row = (data_cropped.shape[0]) // 2
         center_col = (data_cropped.shape[1]) // 2
         
-        # Get the value at the center
         center_code = int(data_cropped[center_row, center_col]) if not np.isnan(data_cropped[center_row, center_col]) else None
         koppen_code = KOPPEN_CLASSES.get(center_code, "N/A") if center_code else "N/A"
             
@@ -107,7 +112,6 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     )
     
     try:
-        # Add a basemap for geographical context
         cx.add_basemap(ax, crs='EPSG:4326', source=cx.providers.OpenTopoMap, alpha=0.8, zorder=1)
     except Exception:
         pass 
@@ -123,22 +127,12 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     cbar.ax.set_yticklabels(class_labels, fontsize=8)
     
     return fig, koppen_code
-
-# -------------------------------
-# FIRST GEMINI REPORT (Infrastructure & Geography)
-# -------------------------------
 def generate_context_report(center_lat, center_lon, area_sq_km, elements):
-    """
-    Generates a report focusing on Infrastructure and Geography, 
-    using the Google Search tool for contextual data.
-    """
     if not st.session_state.get("gemini_client"):
         return "Gemini client not initialized. Cannot generate report."
 
-    # 1. Prepare data for the prompt
     center_coord_str = f"{center_lat:.4f}, {center_lon:.4f}"
     
-    # Simple summary of infrastructure types
     infra_counts = {}
     for element in elements:
         tags = element.get('tags', {})
@@ -155,7 +149,6 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
         extracted_infrastructure_list = "- No specific infrastructure elements found using the simple filters."
 
 
-    # 2. Define the exact desired prompt structure (system and user prompts)
     system_instruction = (
         "You are an expert geographical and infrastructure analyst. Your task is to generate a report "
         "by analyzing the provided OpenStreetMap data and geographical coordinate. "
@@ -181,7 +174,6 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     """
     
     try:
-        # 3. Call Gemini with the search tool enabled
         response = st.session_state["gemini_client"].models.generate_content(
             model='gemini-2.5-flash',
             contents=[user_prompt],
@@ -200,13 +192,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
         return "An unexpected error occurred during context report generation."
 
 
-# -------------------------------
-# SECOND GEMINI REPORT (Köppen Interpretation)
-# -------------------------------
 def generate_koppen_interpretation(koppen_code):
-    """
-    Generates a report interpreting the Köppen code, using the Google Search tool.
-    """
     if not st.session_state.get("gemini_client"):
         return "Gemini client not initialized. Cannot generate climate interpretation."
     
@@ -237,7 +223,7 @@ def generate_koppen_interpretation(koppen_code):
             contents=[user_prompt],
             config={
                 "system_instruction": system_instruction, 
-                "tools": [{"google_search": {}}] # Keep search enabled to find specifics about the climate code
+                "tools": [{"google_search": {}}]
             }
         )
         
@@ -249,23 +235,12 @@ def generate_koppen_interpretation(koppen_code):
         st.error(f"An unexpected error occurred during Köppen interpretation generation: {e}")
         return "An unexpected error occurred during Köppen interpretation generation."
 
-# -------------------------------
-# THIRD GEMINI REPORT (Risk Matrix Interpretation)
-# -------------------------------
 def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: dict):
-    """
-    Generates a report interpreting the risk matrix input using Gemini, with a search tool for context.
-    The ratings are from 1 (best condition/lowest risk) to 5 (worst condition/highest risk).
-    """
-    # Check for the initialized client (assumes you store it in st.session_state["gemini_client"])
     if not st.session_state.get("gemini_client"):
         return "Gemini client not initialized. Cannot generate risk interpretation."
 
-    # Convert the risk data into a clean markdown table string
-    # Renaming the index removes the default 'index' header for a cleaner prompt
     df_risks_prompt = df_risks.rename_axis('').to_markdown()
 
-    # Create detailed scenario and KPI descriptions for the prompt
     scenario_desc = "\n".join([f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
     kpi_list = "\n".join([f"- {k}" for k in kpis])
 
@@ -299,7 +274,6 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
     """
 
     try:
-        # Call Gemini with the search tool enabled
         response = st.session_state["gemini_client"].models.generate_content(
             model='gemini-2.5-flash',
             contents=[user_prompt],
@@ -317,21 +291,13 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
         return f"An unexpected error occurred during risk interpretation generation: {e}"
 
 
-# -------------------------------
-# MAP BUILDING FUNCTION (CACHED - NO WIDGET)
-# -------------------------------
 @st.cache_data(ttl=3600)
 def build_folium_map_object(center, zoom, polygon_data, drawing_key):
-    """
-    Builds the Folium map object without rendering the widget.
-    This function is cached to prevent the map from rebuilding on every rerun.
-    """
     
     m = folium.Map(location=center, 
                     zoom_start=zoom, 
                     tiles="CartoDB positron")
 
-    # Add Köppen-Geiger Classification Layer
     folium.raster_layers.TileLayer(
         tiles='https://tiles.arcgis.com/tiles/SDXw0l5jQ3C1QO7x/arcgis/rest/services/Koeppen_Geiger_Climate_Classification_2020/MapServer/tile/{z}/{y}/{x}',
         attr='Köppen-Geiger / Esri',
@@ -341,22 +307,16 @@ def build_folium_map_object(center, zoom, polygon_data, drawing_key):
         control=True,
     ).add_to(m)
 
-    # Add Drawing Controls
     draw = folium.plugins.Draw(export=False, draw_options={'polygon': True, 'rectangle': True})
     draw.add_to(m)
     folium.LayerControl().add_to(m)
 
-    # Re-draw the last polygon if it exists
     if polygon_data:
-        # Use the global polygon_style_function
         folium.GeoJson(polygon_data, name="Drawn Polygon", 
                         style_function=polygon_style_function).add_to(m)
     
     return m 
 
-# -------------------------------
-# HELPER FUNCTIONS
-# -------------------------------
 @st.cache_data(ttl=3600)
 def geocode_location(location_name):
     url = "https://nominatim.openstreetmap.org/search"
@@ -394,18 +354,12 @@ infra_options = {
 }
 
 def build_query(coords, selected_infras):
-    """
-    Constructs the Overpass QL query string.
     
-    FIX: Removed extraneous leading whitespace/tabs from the nwr line 
-    to prevent Overpass API 400 Bad Request error.
-    """
     coord_str = " ".join([f"{lat} {lon}" for lat, lon in coords])
     filters = []
     for infra_name in selected_infras:
         tag_filters = infra_options[infra_name] 
         for tag_filter in tag_filters:
-            # CLEAN FIX APPLIED HERE: No leading whitespace before 'nwr'
             filters.append(f'nwr{tag_filter.strip()}(poly:"{coord_str}");')
             
     query_body = "\n".join(filters)
@@ -431,8 +385,8 @@ def make_overpass_request(query, max_retries=2):
 
 def element_matches_infrastructure(element, infra_keys):
     if 'tags' not in element or not element['tags']: return False
-    for key in infra_keys:
-        if key in element['tags']: return True
+    for key in element['tags']:
+        if key in infra_keys: return True
     return False
 
 def create_detailed_dataframe(elements):
@@ -446,18 +400,9 @@ def create_detailed_dataframe(elements):
         data_rows.append(row_data)
     return pd.DataFrame(data_rows).fillna('')
 
-# -------------------------------
-# NEW: Plotly Radar Chart function (ported from your second code)
-# -------------------------------
 def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, title: str):
-    """
-    kpis_df: DataFrame where the first column is the KPI/Indicator labels and following columns are numeric series.
-    selected_series: list of column names (strings) to include in the radar.
-    """
     df = kpis_df.copy()
-    # Ensure the first column is the label
     if df.columns.size < 2:
-        # Not enough columns to plot
         return None
     categories = df.iloc[:, 0].astype(str).tolist()
     fig = go.Figure()
@@ -473,9 +418,6 @@ def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, titl
     fig.update_layout(polar=dict(radialaxis=dict(range=[1,5], tickvals=[1,2,3,4,5])), title=title, height=650)
     return fig
 
-# -------------------------------
-# SESSION STATE AND API SETUP 
-# -------------------------------
 if "map_center" not in st.session_state:
     st.session_state["map_center"] = [51.1657, 10.4515]
 if "map_zoom" not in st.session_state:
@@ -489,23 +431,19 @@ if "extract_clicked" not in st.session_state:
 if "extracted_data" not in st.session_state:
     st.session_state["extracted_data"] = None
 
-# Initialize the new risk matrix data structure
 if "risk_matrix_data" not in st.session_state:
     kpis = ["Safety, Reliability and Security (SRS)", "Availability and Maintainability (AM)", "Economy (EC)", "Environment (EV)", "Health and Politics (HP)"]
     scenarios = ["CI", "CI_H", "CI_HG", "CI_HN", "CI_HNG"]
     initial_data = {key: [1] * len(kpis) for key in scenarios}
     st.session_state["risk_matrix_data"] = pd.DataFrame(initial_data, index=kpis).to_dict()
 
-# Optional: session state to hold last radar fig
 if "last_radar_plot" not in st.session_state:
     st.session_state["last_radar_plot"] = None
 
-# NEW: Session state to hold the generated interpretation report
 if "interpretation_report" not in st.session_state:
     st.session_state["interpretation_report"] = ""
 
 try:
-    # Use st.secrets first, fall back to environment variable
     GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 except (KeyError, AttributeError):
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -521,16 +459,27 @@ else:
     st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key.")
     st.session_state["gemini_client"] = None
 
-# -------------------------------
-# CONFIG & PAGE SETUP
-# -------------------------------
 st.set_page_config(page_title="General Decision Support Tool", layout="centered")
+
+
+# --- START OF SIDEBAR LOGO DISPLAY ---
+bg_b64 = cached_base64_image(BACKGROUND_IMAGE_URL)
+if bg_b64:
+    # Display the logo in the sidebar
+    st.sidebar.markdown(
+        f'''
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="data:image/png;base64,{bg_b64}" style="width: 180px; height: auto;">
+        </div>
+        ''', 
+        unsafe_allow_html=True
+    )
+    # The image is now safely in the sidebar. We can also add the Streamlit CSS block here if needed, 
+    # but the previous one for the main content is now removed.
+# --- END OF SIDEBAR LOGO DISPLAY ---
+
 st.title("General Decision Support Tool")
 
-# -------------------------------
-# MAIN EXPANDERS
-# -------------------------------
-# Expander 1: Information Extraction and Mapping
 with st.expander("Information Extraction and Mapping"):
     st.markdown(
         """
@@ -538,9 +487,6 @@ with st.expander("Information Extraction and Mapping"):
         """
     )
 
-    # -------------------------------
-    # INFRASTRUCTURE SELECTION
-    # -------------------------------
     st.header("Select Infrastructure Types")
     cols = st.columns(4)
     checkbox_states = {}
@@ -564,9 +510,6 @@ with st.expander("Information Extraction and Mapping"):
         st.warning("⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
     st.markdown("---") 
 
-    # -------------------------------
-    # LOCATION SEARCH & MAP DISPLAY
-    # -------------------------------
     st.header("Search Location and Draw Polygon")
     search_col, _ = st.columns([3, 1])
 
@@ -578,13 +521,11 @@ with st.expander("Information Extraction and Mapping"):
                 if coords:
                     st.session_state["map_center"] = coords
                     st.session_state["map_zoom"] = 12
-                    # Increment drawing_key to force map rebuild/re-render with new center
                     st.session_state["drawing_key"] += 1 
                     st.success(f"Map centered on {location_name}. Now draw a polygon.")
                 else:
                     st.error(f"Could not find coordinates for '{location_name}'.")
 
-    # Build the Folium map object using the cached function
     map_object = build_folium_map_object(
         st.session_state["map_center"],
         st.session_state["map_zoom"],
@@ -592,27 +533,21 @@ with st.expander("Information Extraction and Mapping"):
         st.session_state["drawing_key"]
     )
 
-    # Render the widget OUTSIDE the cached function
     output = st_folium(
         map_object, 
         height=600, 
         width=1200, 
-        key=st.session_state["drawing_key"] # Use drawing_key here for the widget's own state
+        key=st.session_state["drawing_key"]
     )
 
-    # Update state based on map output
     if output and output.get("last_active_drawing") and output["last_active_drawing"].get("geometry"):
         if output["last_active_drawing"].get("geometry").get("type") in ["Polygon", "Rectangle"]:
-            # Only update the polygon if it's new/different
             if st.session_state["last_polygon"] != output["last_active_drawing"]:
                 st.session_state["last_polygon"] = output["last_active_drawing"]
                 st.session_state["extract_clicked"] = False 
         elif output["last_active_drawing"].get("geometry").get("coordinates") is None:
             st.session_state["last_polygon"] = None
 
-    # -------------------------------
-    # ACTION BUTTONS (Below Map)
-    # -------------------------------
     st.markdown("---")
     button_col, reset_col, _ = st.columns([2, 1, 3])
 
@@ -621,22 +556,16 @@ with st.expander("Information Extraction and Mapping"):
             if st.session_state["last_polygon"] is None:
                 st.error("Please draw a polygon on the map first.")
             else:
-                # Set the flag and clear extracted data to force a new run
                 st.session_state["extract_clicked"] = True
                 st.session_state["extracted_data"] = None 
                 st.rerun()
 
     with reset_col:
-        # This button now correctly calls the defined reset_polygon function
         if st.button("Reset Polygon", help="Clear the current drawn polygon.", key="reset_poly_btn"):
             reset_polygon()
 
-    # -------------------------------
-    # EXECUTION LOGIC AND DISPLAY
-    # -------------------------------
     if st.session_state["extract_clicked"]:
         
-        # --- Data Retrieval/Caching ---
         if st.session_state["extracted_data"] is None:
             
             geo_json = st.session_state["last_polygon"]
@@ -644,18 +573,15 @@ with st.expander("Information Extraction and Mapping"):
             try:
                 coords = get_polygon_coords(geo_json)
                 polygon = Polygon(coords)
-                # Approximation of area in sq km (1 degree ~ 111 km)
                 area_sq_km = polygon.area * (111**2) 
                 
                 center_lat = sum(c[0] for c in coords) / len(coords)
                 center_lon = sum(c[1] for c in coords) / len(coords)
                 
-                # 1. Overpass Request
                 query = build_query(coords, selected_infras)
                 with st.spinner("Retrieving data from OpenStreetMap..."):
                     response = make_overpass_request(query)
                     if response is None or response.status_code != 200:
-                        # Error message already displayed in make_overpass_request
                         st.session_state["extract_clicked"] = False
                         st.stop()
                     data = response.json()
@@ -664,23 +590,19 @@ with st.expander("Information Extraction and Mapping"):
                 if not elements:
                     st.warning("No data found in the selected area for the chosen types.")
                 
-                # 2. Köppen Map Plot to get the code FIRST
                 with st.spinner("Analyzing climate map data..."):
                     _, center_koppen_code = generate_koppen_map_plot(center_lat, center_lon)
 
-                # 3. First Gemini Report: Context/Infrastructure
                 context_report = ""
                 if st.session_state.get("gemini_client"):
                     with st.spinner(f"Generating Geographical & Infrastructure Report (Internet Search)..."):
                         context_report = generate_context_report(center_lat, center_lon, area_sq_km, elements)
 
-                # 4. Second Gemini Report: Köppen Interpretation
                 koppen_report = ""
                 if st.session_state.get("gemini_client"):
                     with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Internet Search)..."):
                         koppen_report = generate_koppen_interpretation(center_koppen_code)
                 
-                # Cache the results
                 st.session_state["extracted_data"] = {
                     "elements": elements, "coords": coords, "area_sq_km": area_sq_km,
                     "context_report": context_report,
@@ -695,7 +617,6 @@ with st.expander("Information Extraction and Mapping"):
                 st.session_state["extract_clicked"] = False
                 st.stop()
         
-        # Defensive data loading from session state
         if st.session_state["extracted_data"]:
             elements = st.session_state["extracted_data"].get("elements", [])
             area_sq_km = st.session_state["extracted_data"].get("area_sq_km", 0)
@@ -707,9 +628,6 @@ with st.expander("Information Extraction and Mapping"):
             if st.session_state["extracted_data"].get("elements"):
                 st.success(f"Successfully processed {len(elements)} OSM items ✅ (Area: {area_sq_km:.4f} km²)")
             
-            # --- DISPLAY RESULTS ---
-            
-            # 1. FIRST GEMINI REPORT (Infrastructure, Geography)
             st.markdown("---")
             st.subheader("🤖 Geographical & Infrastructure Context Report (Gemini)")
             if context_report:
@@ -717,12 +635,10 @@ with st.expander("Information Extraction and Mapping"):
             else:
                 st.warning("The Geographical & Infrastructure Report failed to generate or the AI feature is disabled.")
 
-            # 2. Köppen-Geiger Map (Visual Plot)
             st.markdown("---")
             st.subheader("🗺️ Köppen-Geiger Climate Classification Map (Visual)")
             
             if center_lat is not None and center_lon is not None:
-                # Re-generate the plot for display (data is already processed)
                 plot_result, _ = generate_koppen_map_plot(center_lat, center_lon)
                 
                 if isinstance(plot_result, str):
@@ -732,7 +648,6 @@ with st.expander("Information Extraction and Mapping"):
             else:
                 st.warning("Cannot display Köppen map: Center coordinates for the drawn polygon could not be determined.")
 
-            # 3. SECOND GEMINI REPORT (Köppen Interpretation)
             st.markdown("---")
             st.subheader("☀️ Climate Interpretation Report (Gemini)")
             if koppen_report:
@@ -740,8 +655,6 @@ with st.expander("Information Extraction and Mapping"):
             else:
                 st.warning("The Climate Interpretation Report failed to generate or the AI feature is disabled.")
 
-            # 4. Raw Extracted Data (Remains at the end)
-            
             with st.expander("🔍 View Extracted Infrastructure Data Tables (OpenStreetMap Raw Data)"):
                 st.subheader("📊 Detailed Infrastructure Data Tables")
                 has_data_for_any_infra = False
@@ -761,19 +674,16 @@ with st.expander("Information Extraction and Mapping"):
                         has_data_for_any_infra = True
                         infra_df = create_detailed_dataframe(infra_elements)
                         st.subheader(f"{infra} ({len(infra_elements)} infrastructure items)")
-                        # Limiting to 15 rows for display efficiency
                         st.dataframe(infra_df[[col for col in infra_df.columns if not col.startswith('geometry')]].head(15), width=1200) 
                         
                 if not has_data_for_any_infra:
                     st.info("No detailed data to display for the selected infrastructure types.")
 
 
-# Expander 2: Level 1 (UPDATED CONTENT)
 with st.expander("Level 1"):
     
     st.header("Perceived Risks Assessment 📊")
 
-    # Define data upfront for the risk matrix
     kpis = [
         "Safety, Reliability and Security (SRS)", 
         "Availability and Maintainability (AM)", 
@@ -789,7 +699,6 @@ with st.expander("Level 1"):
         "CI_HNG": "Condition after hazard but protected by both grey and nature-based solutions (HNG)"
     }
 
-    # Load data from session state
     df_data = st.session_state["risk_matrix_data"]
     df = pd.DataFrame(df_data, index=kpis)
     df.index.name = "KPI / Indicator"
@@ -797,7 +706,6 @@ with st.expander("Level 1"):
     st.subheader("Stakeholders' Opinion About Infrastructure Condition")
     st.info("Please provide integers between **1 (best condition)** and **5 (worst condition)** for each cell. Values outside this range are not allowed.")
 
-    # Use Tabs for input and scenario explanation
     matrix_tab, scenario_key_tab = st.tabs(["📊 Risk Matrix Input (1-5)", "📝 Scenario & KPI Definitions"])
 
     with scenario_key_tab:
@@ -813,23 +721,19 @@ with st.expander("Level 1"):
         
         st.markdown("### Scenario Definitions")
         for abbr, desc in scenarios.items():
-            # Formatting the keys for display consistency
             html_abbr = abbr.replace("CI_HNG", "CI<sub>HNG</sub>").replace("CI_HN", "CI<sub>HN</sub>").replace("CI_HG", "CI<sub>HG</sub>").replace("CI_H", "CI<sub>H</sub>").replace("CI", "CI")
             st.markdown(f"**{html_abbr}** ({desc})", unsafe_allow_html=True)
 
     with matrix_tab:
         st.markdown("### Input Risks Rating (1 to 5)")
         
-        # Configure columns for the data editor
         column_config = {
-            # KPI column (index) is non-editable
             "KPI / Indicator": st.column_config.TextColumn(
                 "KPI / Indicator",
                 disabled=True
             )
         }
         
-        # Configure editable scenario columns
         for key, desc in scenarios.items():
             column_config[key] = st.column_config.NumberColumn(
                 label=key,
@@ -841,32 +745,23 @@ with st.expander("Level 1"):
                 width="small"
             )
 
-        # Use st.data_editor for matrix input
         edited_df = st.data_editor(
             df,
             column_config=column_config,
-            num_rows="fixed", # Prevent users from adding or deleting rows
+            num_rows="fixed",
             key="risk_matrix_editor"
         )
         
-        # IMPORTANT: Update session state with the edited data for persistence across runs
         st.session_state["risk_matrix_data"] = edited_df.to_dict()
-        # Clear interpretation if data changes to signal it's out of date
         st.session_state["interpretation_report"] = "" 
 
-        # ----------------------------
-        # NEW: Radar plotting UI
-        # ----------------------------
         st.markdown("---")
         st.subheader("🔷 Radar Plot of Input Risks")
-        # Prepare DataFrame for radar function: reset index so first column is KPI names
         try:
             kpis_for_plot = edited_df.reset_index()
         except Exception:
-            # If edited_df isn't a DataFrame, try to convert
             kpis_for_plot = pd.DataFrame(edited_df).reset_index()
 
-        # Determine available series (exclude the first column which is KPI)
         available_series = kpis_for_plot.columns[1:].tolist()
 
         if not available_series:
@@ -874,7 +769,6 @@ with st.expander("Level 1"):
         else:
             st.markdown("Select scenarios to include in the radar plot:")
             selected_series = []
-            # default: all selected
             for s in available_series:
                 checked = st.checkbox(s, value=True, key=f"radar_checkbox_{s}")
                 if checked:
@@ -895,27 +789,20 @@ with st.expander("Level 1"):
                         st.error(f"Failed to create radar plot: {e}")
                         st.exception(e)
         
-        # Display the previously generated radar plot if it exists
         if st.session_state["last_radar_plot"]:
              st.plotly_chart(st.session_state["last_radar_plot"], use_container_width=True)
 
-        # ----------------------------
-        # MODIFIED: Interpretation Expander with BUTTON
-        # ----------------------------
         st.markdown("---")
         with st.expander("Interpretation"):
             
             if st.session_state.get("gemini_client"):
                 
-                # Button to trigger the AI generation
                 if st.button("Generate Interpretation Report 🤖", type="primary", help="Analyze the current risk matrix using Gemini with contextual search."):
                     
-                    # Ensure kpis and scenarios are defined and risk data exists
                     if not 'risk_matrix_data' in st.session_state:
                         st.error("Please populate the Risk Matrix table first before generating an interpretation.")
                         st.stop()
                         
-                    # Reconstruct the DataFrame from the session state dictionary
                     try:
                         current_df = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis) 
                     except (KeyError, ValueError) as e:
@@ -923,11 +810,9 @@ with st.expander("Level 1"):
                         current_df = None
                     
                     if current_df is not None:
-                        # The generate_risk_interpretation function calls Gemini and uses Google Search
                         with st.spinner("Generating Risk Matrix Interpretation (Gemini with Google Search)..."):
                             interpretation_report = generate_risk_interpretation(current_df, kpis, scenarios)
                         
-                        # Store the result in session state
                         st.session_state["interpretation_report"] = interpretation_report
                         
                         st.subheader("🤖 Risk Matrix Interpretation Report (Gemini)")
@@ -936,7 +821,6 @@ with st.expander("Level 1"):
                         else:
                             st.warning("The Risk Matrix Interpretation Report failed to generate.")
                 
-                # Display the stored report if it exists
                 if st.session_state["interpretation_report"]:
                     st.subheader("🤖 Risk Matrix Interpretation Report (Gemini)")
                     st.markdown(st.session_state["interpretation_report"])
@@ -947,11 +831,9 @@ with st.expander("Level 1"):
                 st.warning("⚠️ Gemini client not initialized. AI interpretation feature disabled. Ensure GEMINI_API_KEY is available.")
 
 
-# Expander 3: Level 2
 with st.expander("Level 2"):
     st.write("Under construction")
 
 
-# Expander 4: Level 3
 with st.expander("Level 3"):
     st.write("Under construction")
