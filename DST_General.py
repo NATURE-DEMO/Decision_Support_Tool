@@ -19,12 +19,10 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import traceback
 import plotly.graph_objects as go
-import base64 # Added to use base64 encoding for the image
+import base64 
 
-# --- LOGO URL ---
 BACKGROUND_IMAGE_URL = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png"
 
-# --- KOPPEN CLASSIFICATION DATA ---
 KOPPEN_COLORS = np.array([
     [0,0,255], [0,120,255], [70,170,250], [255,0,0], [255,150,150],
     [245,165,0], [255,220,100], [255,255,0], [200,200,0], [150,150,0],
@@ -462,10 +460,8 @@ else:
 st.set_page_config(page_title="General Decision Support Tool", layout="centered")
 
 
-# --- START OF SIDEBAR LOGO DISPLAY ---
 bg_b64 = cached_base64_image(BACKGROUND_IMAGE_URL)
 if bg_b64:
-    # Display the logo in the sidebar
     st.sidebar.markdown(
         f'''
         <div style="text-align: center; margin-bottom: 20px;">
@@ -474,9 +470,7 @@ if bg_b64:
         ''', 
         unsafe_allow_html=True
     )
-    # The image is now safely in the sidebar. We can also add the Streamlit CSS block here if needed, 
-    # but the previous one for the main content is now removed.
-# --- END OF SIDEBAR LOGO DISPLAY ---
+
 
 st.title("General Decision Support Tool")
 
