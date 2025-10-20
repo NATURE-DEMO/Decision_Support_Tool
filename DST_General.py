@@ -19,9 +19,6 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import traceback
 import plotly.graph_objects as go
-import base64 
-
-BACKGROUND_IMAGE_URL = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png"
 
 KOPPEN_COLORS = np.array([
     [0,0,255], [0,120,255], [70,170,250], [255,0,0], [255,150,150],
@@ -42,22 +39,9 @@ KOPPEN_CLASSES = {
 
 KOPPEN_TIFF_URL = "https://raw.githubusercontent.com/saturngreen67/streamlit_tests/main/Koppen/1991-2020/koppen_geiger_0p1.tif"
 
-@st.cache_data(ttl=3600)
-def cached_get(url: str) -> bytes:
-    resp = requests.get(url, timeout=20)
-    resp.raise_for_status()
-    return resp.content
-
-@st.cache_data(ttl=3600)
-def cached_base64_image(url: str) -> str | None:
-    try:
-        b = cached_get(url)
-        return base64.b64encode(b).decode("utf-8")
-    except Exception:
-        return None
-
 def polygon_style_function(feature):
     return {'fillColor': 'blue', 'color': 'blue'}
+
 def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     
     cmap = ListedColormap(KOPPEN_COLORS)
@@ -125,6 +109,7 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     cbar.ax.set_yticklabels(class_labels, fontsize=8)
     
     return fig, koppen_code
+
 def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     if not st.session_state.get("gemini_client"):
         return "Gemini client not initialized. Cannot generate report."
@@ -145,7 +130,6 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     )
     if not extracted_infrastructure_list:
         extracted_infrastructure_list = "- No specific infrastructure elements found using the simple filters."
-
 
     system_instruction = (
         "You are an expert geographical and infrastructure analyst. Your task is to generate a report "
@@ -221,7 +205,7 @@ def generate_koppen_interpretation(koppen_code):
             contents=[user_prompt],
             config={
                 "system_instruction": system_instruction, 
-                "tools": [{"google_search": {}}]
+                "tools": [{"google_search": {}}] 
             }
         )
         
@@ -383,8 +367,8 @@ def make_overpass_request(query, max_retries=2):
 
 def element_matches_infrastructure(element, infra_keys):
     if 'tags' not in element or not element['tags']: return False
-    for key in element['tags']:
-        if key in infra_keys: return True
+    for key in infra_keys:
+        if key in element['tags']: return True
     return False
 
 def create_detailed_dataframe(elements):
@@ -399,6 +383,7 @@ def create_detailed_dataframe(elements):
     return pd.DataFrame(data_rows).fillna('')
 
 def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, title: str):
+    
     df = kpis_df.copy()
     if df.columns.size < 2:
         return None
@@ -458,20 +443,6 @@ else:
     st.session_state["gemini_client"] = None
 
 st.set_page_config(page_title="General Decision Support Tool", layout="centered")
-
-
-bg_b64 = cached_base64_image(BACKGROUND_IMAGE_URL)
-if bg_b64:
-    st.sidebar.markdown(
-        f'''
-        <div style="text-align: center; margin-bottom: 20px;">
-            <img src="data:image/png;base64,{bg_b64}" style="width: 180px; height: auto;">
-        </div>
-        ''', 
-        unsafe_allow_html=True
-    )
-
-
 st.title("General Decision Support Tool")
 
 with st.expander("Information Extraction and Mapping"):
@@ -778,13 +749,13 @@ with st.expander("Level 1"):
                             st.error("Unable to generate radar figure. Check your input format.")
                         else:
                             st.session_state["last_radar_plot"] = radar_fig
-                            st.plotly_chart(radar_fig, use_container_width=True)
+                            st.plotly_chart(radar_fig, use_container_width=True, key="new_radar_plot")
                     except Exception as e:
                         st.error(f"Failed to create radar plot: {e}")
                         st.exception(e)
         
         if st.session_state["last_radar_plot"]:
-             st.plotly_chart(st.session_state["last_radar_plot"], use_container_width=True)
+             st.plotly_chart(st.session_state["last_radar_plot"], use_container_width=True, key="stored_radar_plot")
 
         st.markdown("---")
         with st.expander("Interpretation"):
