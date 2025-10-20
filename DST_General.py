@@ -98,6 +98,7 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     except Exception:
         pass 
         
+        
     ax.set_xlim(min_lon, max_lon)
     ax.set_ylim(min_lat, max_lat)
     ax.set_title(f"Köppen-Geiger Climate Classification (Center: {koppen_code})")
@@ -414,10 +415,23 @@ if "extract_clicked" not in st.session_state:
 if "extracted_data" not in st.session_state:
     st.session_state["extracted_data"] = None
 
+kpis = [
+    "Safety, Reliability and Security (SRS)", 
+    "Availability and Maintainability (AM)", 
+    "Economy (EC)", 
+    "Environment (EV)", 
+    "Health and Politics (HP)"
+]
+scenarios = {
+    "CI": "Current condition of the critical infrastructure",
+    "CI_H": "Condition after natural hazard (H)",
+    "CI_HG": "Condition after hazard but protected by grey measures (HG)",
+    "CI_HN": "Condition after hazard but protected by nature-based solutions (HN)",
+    "CI_HNG": "Condition after hazard but protected by both grey and nature-based solutions (HNG)"
+}
+
+initial_data = {k: {scenario_key: 1 for scenario_key in scenarios} for k in kpis}
 if "risk_matrix_data" not in st.session_state:
-    kpis = ["Safety, Reliability and Security (SRS)", "Availability and Maintainability (AM)", "Economy (EC)", "Environment (EV)", "Health and Politics (HP)"]
-    scenarios = ["CI", "CI_H", "CI_HG", "CI_HN", "CI_HNG"]
-    initial_data = {key: [1] * len(kpis) for key in scenarios}
     st.session_state["risk_matrix_data"] = pd.DataFrame(initial_data, index=kpis).to_dict()
 
 if "last_radar_plot" not in st.session_state:
@@ -444,6 +458,10 @@ else:
 
 st.set_page_config(page_title="General Decision Support Tool", layout="centered")
 st.title("General Decision Support Tool")
+
+
+with st.sidebar:
+    st.image('https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png', width=300)
 
 with st.expander("Information Extraction and Mapping"):
     st.markdown(
