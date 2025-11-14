@@ -209,8 +209,8 @@ st.markdown("""
 
 1. **Choose Your Application**  
    Click on the application titles above or use the sidebar to navigate:
-   - [📊 General DST](/1_General_DST) - For exploring any location
-   - [🗺️ Specific Site DST](/2_Specific_Site_DST) - For NATURE DEMO demo sites
+   - [📊 General DST](/General_DST) - For exploring any location
+   - [🗺️ Specific Site DST](/Specific_Site_DST) - For NATURE DEMO demo sites
 
 2. **General DST Workflow**
    - Search for a location or draw a polygon on the map
