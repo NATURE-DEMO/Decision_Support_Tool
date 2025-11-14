@@ -309,7 +309,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
         return f"An unexpected error occurred during risk interpretation generation: {e}"
 
 
-@st.cache_data(ttl=3600)
+@st.cache_resource(ttl=3600)
 def build_folium_map_object(center, zoom, polygon_data, drawing_key):
 
     m = folium.Map(location=center,
