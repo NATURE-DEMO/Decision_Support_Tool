@@ -1,2 +1,10 @@
 .streamlit/secrets.toml
 venv/
+dstenv/
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+.env    
+.env.*
+.streamlit/secrets.toml
