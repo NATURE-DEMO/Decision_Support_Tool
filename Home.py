@@ -55,6 +55,15 @@ st.markdown("""
         transform: translateY(-5px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
+    .feature-card h3 a {
+        color: #2e7d32;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    .feature-card h3 a:hover {
+        color: #1b5e20;
+        text-decoration: underline;
+    }
     .cta-button {
         background-color: #2e7d32;
         color: white;
@@ -79,7 +88,9 @@ logo_b64 = get_logo_base64(LOGO_URL)
 if logo_b64:
     st.markdown(f"""
         <div class="logo-container">
+        <a href="https://www.nature-demo.eu" target="_blank">
             <img src="data:image/png;base64,{logo_b64}" width="400">
+        </a>
         </div>
     """, unsafe_allow_html=True)
 
@@ -127,8 +138,8 @@ with col2:
             <ul style="list-style: none; padding: 0;">
                 <li>🌐 <a href="https://nature-demo.eu" target="_blank">Project Website</a></li>
                 <li>📚 <a href="https://github.com/NATURE-DEMO/Decision_Support_Tool" target="_blank">GitHub Repository</a></li>
-                <li>📧 <a href="mailto:info@nature-demo.eu">Contact Us</a></li>
-                <li>📄 <a href="https://nature-demo.eu/documentation" target="_blank">Documentation</a></li>
+                <li>📧 <a href="https://nature-demo.eu/contact">Contact Us</a></li>
+                <li>📄 <a href="https://nature-demo.eu/work-packages/work-package-2" target="_blank">Documentation</a></li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -143,7 +154,7 @@ col_app1, col_app2 = st.columns(2)
 with col_app1:
     st.markdown("""
         <div class="feature-card">
-            <h3>📊 General Decision Support Tool</h3>
+            <h3><a href="/General_DST" target="_self">📊 General Decision Support Tool</a></h3>
             <p><strong>Purpose:</strong> Analyze any geographical area for infrastructure risk assessment</p>
             
             <h4>Features:</h4>
@@ -167,7 +178,7 @@ with col_app1:
 with col_app2:
     st.markdown("""
         <div class="feature-card">
-            <h3>🗺️ Specific Site Decision Support Tool</h3>
+            <h3><a href="/Specific_Site_DST" target="_self">🗺️ Specific Site Decision Support Tool</a></h3>
             <p><strong>Purpose:</strong> Detailed analysis of pre-configured NATURE DEMO sites</p>
             
             <h4>Features:</h4>
@@ -197,7 +208,9 @@ st.markdown("""
 ### Getting Started
 
 1. **Choose Your Application**  
-   Use the sidebar on the left to select either the General DST or Specific Site DST
+   Click on the application titles above or use the sidebar to navigate:
+   - [📊 General DST](/1_General_DST) - For exploring any location
+   - [🗺️ Specific Site DST](/2_Specific_Site_DST) - For NATURE DEMO demo sites
 
 2. **General DST Workflow**
    - Search for a location or draw a polygon on the map
@@ -249,7 +262,7 @@ st.markdown("""
     <div style="text-align: center; color: #666; padding: 2rem 0;">
         <p>
             <strong>NATURE DEMO</strong> | 
-            Horizon 2020 Project | 
+            Horizon Europe Project | 
             Grant Agreement No. 101037525
         </p>
         <p style="font-size: 0.9rem;">
