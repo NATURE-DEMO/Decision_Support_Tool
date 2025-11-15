@@ -26,6 +26,11 @@ def get_logo_base64(url):
 # Custom CSS
 st.markdown("""
     <style>
+    /* Hide default Streamlit page navigation in sidebar */
+    [data-testid="stSidebarNav"] {
+        display: none;
+    }
+    
     .main-header {
         text-align: center;
         padding: 2rem 0;
@@ -55,14 +60,17 @@ st.markdown("""
         transform: translateY(-5px);
         box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
-    .feature-card h3 a {
+    .feature-card h4 {
         color: #2e7d32;
-        text-decoration: none;
-        transition: color 0.3s;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
     }
-    .feature-card h3 a:hover {
-        color: #1b5e20;
-        text-decoration: underline;
+    .feature-card ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .feature-card li {
+        padding: 0.25rem 0;
     }
     .cta-button {
         background-color: #2e7d32;
@@ -138,7 +146,7 @@ with col2:
             <ul style="list-style: none; padding: 0;">
                 <li>🌐 <a href="https://nature-demo.eu" target="_blank">Project Website</a></li>
                 <li>📚 <a href="https://github.com/NATURE-DEMO/Decision_Support_Tool" target="_blank">GitHub Repository</a></li>
-                <li>📧 <a href="https://nature-demo.eu/contact">Contact Us</a></li>
+                <li>📧 <a href="https://nature-demo.eu/contact" target="_blank">Contact Us</a></li>
                 <li>📄 <a href="https://nature-demo.eu/work-packages/work-package-2" target="_blank">Documentation</a></li>
             </ul>
         </div>
@@ -149,53 +157,50 @@ st.markdown("---")
 # Applications Overview
 st.markdown("## 🛠️ Available Applications")
 
-col_app1, col_app2 = st.columns(2)
+col_app1, col_app2, col_app3 = st.columns(3)
 
 with col_app1:
     st.markdown("""
         <div class="feature-card">
-            <h3><a href="/General_DST" target="_self">📊 General Decision Support Tool</a></h3>
+            <h3> <a href="/General_DST"> 📊 General Decision Support Tool </a></h3>
             <p><strong>Purpose:</strong> Analyze any geographical area for infrastructure risk assessment</p>
-            
             <h4>Features:</h4>
             <ul>
                 <li>🗺️ Interactive map selection and polygon drawing</li>
                 <li>🏗️ OpenStreetMap infrastructure extraction</li>
                 <li>🌡️ Köppen-Geiger climate classification</li>
                 <li>🤖 AI-powered contextual reports (via Google Gemini)</li>
-                <li>📈 Risk matrix assessment with radar charts</li>
-                <li>📊 Consequence assessment matrices</li>
             </ul>
-            
-            <h4>Best For:</h4>
-            <p>
-                Exploring new sites, conducting preliminary assessments, 
-                and generating comprehensive risk reports for any location worldwide.
-            </p>
         </div>
     """, unsafe_allow_html=True)
 
 with col_app2:
     st.markdown("""
         <div class="feature-card">
-            <h3><a href="/Specific_Site_DST" target="_self">🗺️ Specific Site Decision Support Tool</a></h3>
+            <h3> <a href="/Specific_Site_DST"> 🗺️ Specific Site Decision Support Tool </a></h3>
             <p><strong>Purpose:</strong> Detailed analysis of pre-configured NATURE DEMO sites</p>
-            
             <h4>Features:</h4>
             <ul>
                 <li>📍 Pre-configured demo sites across Europe</li>
                 <li>📋 Site-specific infrastructure inventories</li>
                 <li>📊 Multi-level risk assessment (Levels 1-3)</li>
-                <li>🌍 Climate classification and reporting</li>
-                <li>📈 KPI radar charts and analysis plots</li>
-                <li>💡 Expert interpretation of risk data</li>
             </ul>
-            
-            <h4>Demo Sites Include:</h4>
-            <p>
-                Austria (Lattenbach Valley, Brunntal), Romania (Brasov), 
-                Slovenia, Slovakia (Zvolen), and North Macedonia (Globocica).
-            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_app3:
+    st.markdown("""
+        <div class="feature-card">
+            <h3> <a href="https://naturedemo-clima-ind.dic-cloudmate.eu"> 🌡️ European Climate Data Visualization </a></h3>
+            <p><strong>Purpose:</strong> Interactive climate indices analysis across European cities</p>
+            <h4>Features:</h4>
+            <ul>
+                <li>📍 Search cities across Europe</li>
+                <li>📊 Climate indices visualization</li>
+                <li>📈 Future scenario projections</li>
+            </ul>
+            <h4>Best For:</h4>
+            <p>Analyzing historical and projected climate data for European locations.</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -208,9 +213,10 @@ st.markdown("""
 ### Getting Started
 
 1. **Choose Your Application**  
-   Click on the application titles above or use the sidebar to navigate:
-   - [📊 General DST](/General_DST) - For exploring any location
-   - [🗺️ Specific Site DST](/Specific_Site_DST) - For NATURE DEMO demo sites
+   Use the sidebar navigation buttons to access different tools:
+   - 📊 General DST - For exploring any location
+   - 🗺️ Specific Site DST - For NATURE DEMO demo sites
+   - 🌡️ Climate Visualization - For European climate data
 
 2. **General DST Workflow**
    - Search for a location or draw a polygon on the map
@@ -274,21 +280,42 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
+# ============= SIDEBAR =============
 with st.sidebar:
     st.markdown(f"""
         <a href="https://www.nature-demo.eu" target="_blank">
-            <img src="https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png" width="300" />
+            <img src="https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png" width="250" />
         </a>
     """, unsafe_allow_html=True)
 
-# Sidebar Instructions
-st.sidebar.success("👈 Select an application above to get started!")
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-    ### 💡 Quick Tips
-    
-    - **General DST**: Best for exploring new locations
-    - **Specific Site DST**: Best for detailed demo site analysis
-    - Both tools support risk assessment and visualization
-    - AI features require internet connection
-""")
+    st.markdown("---")
+
+    # Sidebar Instructions
+    st.success("👇 Select an application to get started!")
+
+    st.markdown("### 🚀 Quick Navigation")
+
+    # Navigation buttons
+    # if st.button("📊 General DST", use_container_width=True, type="primary"):
+    #     st.switch_page("pages/General_DST.py")
+
+    # if st.button("🗺️ Specific Site DST", use_container_width=True, type="primary"):
+    #     st.switch_page("pages/Specific_Site_DST.py")
+    st.link_button("📊 General DST",
+                   "/General_DST", use_container_width=True)
+    st.link_button("🗺️ Specific Site DST",
+                   "/Specific_Site_DST", use_container_width=True)
+    st.link_button("🌡️ Climate Visualization",
+                   "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
+
+    st.markdown("---")
+
+    st.markdown("""
+        ### 💡 Quick Tips
+        
+        - **General DST**: Best for exploring new locations
+        - **Specific Site DST**: Best for detailed demo site analysis
+        - **Climate Viz**: Analyze European climate indices
+        - Both tools support risk assessment and visualization
+        - AI features require internet connection
+    """)
