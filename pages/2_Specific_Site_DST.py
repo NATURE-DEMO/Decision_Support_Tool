@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import contextily as cx
-from streamlit_local_storage import LocalStorage
+import extra_streamlit_components as stx 
 
 # ---------------------------------------------------------------------------
 # 1. PAGE CONFIGURATION
@@ -46,8 +46,6 @@ st.markdown("""
         .custom-button-container:hover { transform: scale(1.02); box-shadow: 4px 4px 10px rgba(0,0,0,0.25);}
     </style>
 """, unsafe_allow_html=True)
-
-local_storage = LocalStorage()
 
 # ---------------------------------------------------------------------------
 # 2. DATABASE & AUTHENTICATION (SAFE MODE - NO CACHING)
@@ -340,6 +338,8 @@ if 'logged_in' not in st.session_state:
     st.session_state['username'] = None
     st.session_state['user_name_full'] = None
 
+cookie_manager = stx.CookieManager(key="cookie_mgr")
+
 query_params = st.query_params
 if "item" in query_params:
     st.session_state['selected_site_key'] = query_params["item"]
@@ -349,7 +349,7 @@ elif 'selected_site_key' not in st.session_state:
 if "logout" in query_params:
     cookie_user = None
 else:
-    cookie_user = local_storage.getItem('dst_username')
+    cookie_user = cookie_manager.get(cookie="dst_username")
 
 if not st.session_state['logged_in'] and cookie_user:
     user_data = verify_login_status_only(cookie_user)
@@ -397,31 +397,10 @@ if not st.session_state['logged_in']:
             [data-testid="stSidebarCollapsedControl"] {{
                 display: none;
             }}
-            /* Add these lines for the title */
-            .stApp h1 {{
-                color: white !important;
-            }}
-            /* Add these lines for the radio button options */
-            .stRadio > div[role="radiogroup"] > label > div > p {{
-                color: white !important;
-            }}
             </style>
             """, unsafe_allow_html=True)
     
-    st.markdown(
-    """
-    <style>
-    /* Target the radio button text */
-    div[data-testid="stRadio"] label p {
-        color: white !important;
-        font-size: 18px; /* Optional: Makes the options slightly larger/readable */
-        font-weight: bold;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-    st.markdown('<h1 style="font-size: 4rem;">Decision Support Tool</h1>', unsafe_allow_html=True)
+    st.title("Decision Support Tool")
     auth_choice = st.radio(
     "Authentication",
     ["Login", "Sign Up"], 
@@ -440,7 +419,8 @@ if not st.session_state['logged_in']:
                 elif not user_data["approved"]: 
                     st.warning("Account waiting for Admin approval.")
                 else:
-                    local_storage.setItem('dst_username', user)
+                    expires = datetime.datetime.now() + datetime.timedelta(days=7)
+                    cookie_manager.set("dst_username", user, expires_at=expires)
                     st.session_state['logged_in'] = True
                     st.session_state['user_role'] = user_data["role"]
                     st.session_state['username'] = user
@@ -583,7 +563,10 @@ with st.sidebar:
         st.markdown(f"User: **{st.session_state.get('username', 'Unknown')}** ({st.session_state.get('user_role', 'None')})")
 
     if st.button("Logout"):
-        local_storage.deleteItem('dst_username')
+        try:
+            cookie_manager.delete("dst_username")
+        except KeyError:
+            pass
         st.session_state.clear()
         st.query_params["logout"] = "true" 
         time.sleep(0.5)
@@ -765,5 +748,3 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
-
-
