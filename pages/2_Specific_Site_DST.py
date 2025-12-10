@@ -421,8 +421,7 @@ st.markdown('<h1 style="font-size: 4rem;">Decision Support Tool</h1>', unsafe_al
     "Authentication",
     ["Login", "Sign Up"], 
     horizontal=True, 
-    label_visibility="collapsed"
-)
+    label_visibility="collapsed")
 
     if auth_choice == "Login":
         with st.form("login_form"):
@@ -764,4 +763,5 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
