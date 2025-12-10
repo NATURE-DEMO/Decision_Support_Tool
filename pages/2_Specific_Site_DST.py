@@ -414,7 +414,6 @@ if not st.session_state['logged_in']:
     unsafe_allow_html=True
 )
 
-
     st.markdown('<h1 style="font-size: 4rem; color: white;">Decision Support Tool</h1>', unsafe_allow_html=True)
 
     auth_choice = st.radio(
@@ -582,9 +581,13 @@ with st.sidebar:
             cookie_manager.delete("dst_username")
         except KeyError:
             pass
-        st.session_state.clear()
+        
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+            
         st.query_params["logout"] = "true" 
-        time.sleep(0.5)
+        
+        time.sleep(1.0) 
         st.rerun()
 
 
@@ -763,7 +766,3 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
-
-
-
-
