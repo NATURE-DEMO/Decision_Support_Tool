@@ -23,34 +23,61 @@ import extra_streamlit_components as stx
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Decision Support Tool", layout="centered")
+# ---------------------------------------------------------------------------
+# FORCE DARK MODE (HEADER, BUTTONS, EXPANDERS)
+# ---------------------------------------------------------------------------
 st.markdown("""
     <style>
-        /* Force the main app background to dark */
+        /* 1. Main Backgrounds */
         .stApp {
             background-color: #0E1117;
             color: #FAFAFA;
         }
-
-        /* Fix Input boxes to look good in dark mode */
-        .stTextInput > div > div > input {
-            color: #FAFAFA;
-            background-color: #262730;
+        
+        /* 2. FIX THE WHITE RECTANGLE ON TOP (The Header) */
+        header[data-testid="stHeader"] {
+            background-color: #0E1117 !important;
         }
-
-        /* Fix Select boxes */
-        .stSelectbox > div > div > div {
-            color: #FAFAFA;
-            background-color: #262730;
+        
+        /* 3. FIX UNREADABLE BUTTONS (Logout, Download, etc.) */
+        /* Forces buttons to have dark background and white text */
+        div.stButton > button {
+            background-color: #262730 !important;
+            color: #FAFAFA !important;
+            border: 1px solid #4B4B4B !important;
         }
-
-        /* Fix Sidebar background if needed */
+        div.stButton > button:hover {
+            border-color: #2e7d32 !important;
+            color: #2e7d32 !important;
+        }
+        
+        /* 4. FIX EXPANDERS (Admin Panel, etc.) */
+        .streamlit-expanderHeader {
+            background-color: #262730 !important;
+            color: #FAFAFA !important;
+        }
+        [data-testid="stExpanderDetails"] {
+            background-color: #262730 !important;
+            color: #FAFAFA !important;
+        }
+        
+        /* 5. FIX INPUT BOXES & DROPDOWNS */
+        /* Ensures user input text is visible */
+        div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
+            background-color: #262730 !important;
+            color: #FAFAFA !important;
+        }
+        input[type="text"], input[type="password"] {
+            color: #FAFAFA !important;
+        }
+        
+        /* 6. SIDEBAR STYLING */
         [data-testid="stSidebar"] {
             background-color: #262730;
-            color: #FAFAFA;
         }
-
-        /* Ensure headings are white */
-        h1, h2, h3, h4, h5, h6, p, label {
+        
+        /* 7. GENERAL TEXT COLOR OVERRIDE */
+        h1, h2, h3, h4, h5, h6, p, li, label {
             color: #FAFAFA !important;
         }
     </style>
@@ -779,6 +806,7 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
 
 
