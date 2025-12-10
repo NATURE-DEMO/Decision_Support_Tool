@@ -17,7 +17,7 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import contextily as cx
-from streamlit_cookies_manager import EncryptedCookieManager
+from streamlit_local_storage import LocalStorage
 
 # ---------------------------------------------------------------------------
 # 1. PAGE CONFIGURATION
@@ -47,13 +47,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cookies manager
-cookies = EncryptedCookieManager(
-    prefix="dst_",
-    password=os.environ.get("COOKIES_PASSWORD", "My secret password")
-)
-if not cookies.ready():
-    st.stop()
+local_storage = LocalStorage()
 
 # ---------------------------------------------------------------------------
 # 2. DATABASE & AUTHENTICATION (SAFE MODE - NO CACHING)
@@ -355,7 +349,7 @@ elif 'selected_site_key' not in st.session_state:
 if "logout" in query_params:
     cookie_user = None
 else:
-    cookie_user = cookies.get('dst_username', None)
+    cookie_user = local_storage.getItem('dst_username')
 
 if not st.session_state['logged_in'] and cookie_user:
     user_data = verify_login_status_only(cookie_user)
@@ -433,8 +427,7 @@ if not st.session_state['logged_in']:
                 elif not user_data["approved"]: 
                     st.warning("Account waiting for Admin approval.")
                 else:
-                    cookies['dst_username'] = user
-                    cookies.save()
+                    local_storage.setItem('dst_username', user)
                     st.session_state['logged_in'] = True
                     st.session_state['user_role'] = user_data["role"]
                     st.session_state['username'] = user
@@ -577,9 +570,7 @@ with st.sidebar:
         st.markdown(f"User: **{st.session_state.get('username', 'Unknown')}** ({st.session_state.get('user_role', 'None')})")
 
     if st.button("Logout"):
-        if 'dst_username' in cookies:
-            del cookies['dst_username']
-        cookies.save()
+        local_storage.deleteItem('dst_username')
         st.session_state.clear()
         st.query_params["logout"] = "true" 
         time.sleep(0.5)
@@ -761,3 +752,4 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
