@@ -415,7 +415,7 @@ if not st.session_state['logged_in']:
 )
 
 
-st.markdown('<h1 style="font-size: 4rem;">Decision Support Tool</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="font-size: 4rem;">Decision Support Tool</h1>', unsafe_allow_html=True)
 
     auth_choice = st.radio(
     "Authentication",
@@ -763,5 +763,6 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
 
