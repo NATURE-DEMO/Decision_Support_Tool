@@ -23,83 +23,25 @@ import extra_streamlit_components as stx
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Decision Support Tool", layout="centered")
-# ---------------------------------------------------------------------------
-# FORCE DARK MODE (HEADER, BUTTONS, EXPANDERS)
-# ---------------------------------------------------------------------------
-st.markdown("""
-    <style>
-        /* 1. Main Backgrounds */
-        .stApp {
-            background-color: #0E1117;
-            color: #FAFAFA;
-        }
-        
-        /* 2. FIX THE WHITE RECTANGLE ON TOP (The Header) */
-        header[data-testid="stHeader"] {
-            background-color: #0E1117 !important;
-        }
-        
-        /* 3. FIX UNREADABLE BUTTONS (Logout, Download, etc.) */
-        /* Forces buttons to have dark background and white text */
-        div.stButton > button {
-            background-color: #262730 !important;
-            color: #FAFAFA !important;
-            border: 1px solid #4B4B4B !important;
-        }
-        div.stButton > button:hover {
-            border-color: #2e7d32 !important;
-            color: #2e7d32 !important;
-        }
-        
-        /* 4. FIX EXPANDERS (Admin Panel, etc.) */
-        .streamlit-expanderHeader {
-            background-color: #262730 !important;
-            color: #FAFAFA !important;
-        }
-        [data-testid="stExpanderDetails"] {
-            background-color: #262730 !important;
-            color: #FAFAFA !important;
-        }
-        
-        /* 5. FIX INPUT BOXES & DROPDOWNS */
-        /* Ensures user input text is visible */
-        div[data-baseweb="select"] > div, div[data-baseweb="input"] > div {
-            background-color: #262730 !important;
-            color: #FAFAFA !important;
-        }
-        input[type="text"], input[type="password"] {
-            color: #FAFAFA !important;
-        }
-        
-        /* 6. SIDEBAR STYLING */
-        [data-testid="stSidebar"] {
-            background-color: #262730;
-        }
-        
-        /* 7. GENERAL TEXT COLOR OVERRIDE */
-        h1, h2, h3, h4, h5, h6, p, li, label {
-            color: #FAFAFA !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+
 st.markdown("""
     <style>
         .justified-text { text-align: justify; display:flex; flex-direction:column; justify-content:flex-end; min-height:100px; }
         
         .custom-link { 
             text-decoration: none; 
-            color: white !important; 
+            color: #333333 !important; 
             display: block;
         }
         .custom-link:hover {
-            color: white !important; 
+            color: #333333 !important; 
             text-decoration: none;
         }
 
         .custom-button-container {
             width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.12s;
-            background-size: cover; background-position: center; color: white; text-shadow: 1px 1px 2px black;
+            background-size: cover; background-position: center; color: #333333; text-shadow: 1px 1px 2px #cccccc;
         }
         .custom-button-container:hover { transform: scale(1.02); box-shadow: 4px 4px 10px rgba(0,0,0,0.25);}
     </style>
@@ -692,7 +634,7 @@ with st.sidebar:
         b64 = cached_base64_image(it["icon_url"])
         if b64:
             u = f"?item={it['github_key']}"
-            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:white;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:white;">{it["address"]}</p></div></a>'''
+            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:#333333;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:#333333;">{it["address"]}</p></div></a>'''
             st.markdown(h, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
@@ -806,7 +748,3 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
-
-
-
-
