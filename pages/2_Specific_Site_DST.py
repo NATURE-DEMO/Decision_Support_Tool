@@ -51,7 +51,11 @@ st.markdown("""
 # 2. DATABASE & AUTHENTICATION (SAFE MODE - NO CACHING)
 # ---------------------------------------------------------------------------
 
-conn = st.connection("supabase", type="sql")
+db_url = os.getenv("SUPABASE_URL")
+if db_url:
+    conn = st.connection("supabase", type="sql", url=db_url)
+else:
+    conn = st.connection("supabase", type="sql")
 
 def init_db():
     with conn.session as s:
@@ -728,3 +732,4 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
