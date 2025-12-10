@@ -51,9 +51,25 @@ st.markdown("""
 # 2. DATABASE & AUTHENTICATION (SAFE MODE - NO CACHING)
 # ---------------------------------------------------------------------------
 
-db_url = os.getenv("SUPABASE_URL")
-if db_url:
-    conn = st.connection("supabase", type="sql", url=db_url)
+def get_db_url_from_env():
+    """
+    Scans all environment variables to find the PostgreSQL URL,
+    even if it's buried inside a TOML block.
+    """
+    for key, value in os.environ.items():
+        if "postgresql://" in value:
+            if "connections.supabase" in value or "url =" in value:
+                match = re.search(r'url\s*=\s*["\']([^"\']+)["\']', value)
+                if match:
+                    return match.group(1)
+            elif value.strip().startswith("postgresql://"):
+                return value.strip()
+    return None
+
+found_url = get_db_url_from_env()
+
+if found_url:
+    conn = st.connection("supabase", type="sql", url=found_url)
 else:
     conn = st.connection("supabase", type="sql")
 
@@ -732,4 +748,5 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
