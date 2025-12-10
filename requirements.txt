@@ -16,5 +16,4 @@ tabulate
 sqlalchemy
 psycopg2-binary
 bcrypt
-streamlit-local-storage
-
+extra_streamlit_components
