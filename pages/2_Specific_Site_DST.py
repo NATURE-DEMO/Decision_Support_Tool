@@ -408,7 +408,20 @@ if not st.session_state['logged_in']:
             </style>
             """, unsafe_allow_html=True)
     
-    st.title("Decision Support Tool")
+    st.markdown(
+    """
+    <style>
+    /* Target the radio button text */
+    div[data-testid="stRadio"] label p {
+        color: white !important;
+        font-size: 18px; /* Optional: Makes the options slightly larger/readable */
+        font-weight: bold;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+    st.markdown('<h1 style="font-size: 4rem;">Decision Support Tool</h1>', unsafe_allow_html=True)
     auth_choice = st.radio(
     "Authentication",
     ["Login", "Sign Up"], 
@@ -752,4 +765,5 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
