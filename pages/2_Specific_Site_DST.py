@@ -23,7 +23,38 @@ import extra_streamlit_components as stx
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------------------------
 st.set_page_config(page_title="Decision Support Tool", layout="centered")
+st.markdown("""
+    <style>
+        /* Force the main app background to dark */
+        .stApp {
+            background-color: #0E1117;
+            color: #FAFAFA;
+        }
 
+        /* Fix Input boxes to look good in dark mode */
+        .stTextInput > div > div > input {
+            color: #FAFAFA;
+            background-color: #262730;
+        }
+
+        /* Fix Select boxes */
+        .stSelectbox > div > div > div {
+            color: #FAFAFA;
+            background-color: #262730;
+        }
+
+        /* Fix Sidebar background if needed */
+        [data-testid="stSidebar"] {
+            background-color: #262730;
+            color: #FAFAFA;
+        }
+
+        /* Ensure headings are white */
+        h1, h2, h3, h4, h5, h6, p, label {
+            color: #FAFAFA !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 st.markdown("""
     <style>
         .justified-text { text-align: justify; display:flex; flex-direction:column; justify-content:flex-end; min-height:100px; }
@@ -748,5 +779,6 @@ with st.container():
 with st.container():
     with st.expander("Level 3"):
         st.write("Under Construction")
+
 
 
