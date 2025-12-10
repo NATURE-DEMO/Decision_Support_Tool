@@ -16,4 +16,5 @@ tabulate
 sqlalchemy
 psycopg2-binary
 bcrypt
-streamlit-cookies-manager
+streamlit-local-storage
+
