@@ -177,7 +177,7 @@ with col_app1:
 with col_app2:
     st.markdown("""
         <div class="feature-card">
-            <h3> <a href="/Specific_Site_DST_v2"> 🗺️ Specific Site Decision Support Tool </a></h3>
+            <h3> <a href="/Specific_Site_DST"> 🗺️ Specific Site Decision Support Tool </a></h3>
             <p><strong>Purpose:</strong> Detailed analysis of pre-configured NATURE DEMO sites</p>
             <h4>Features:</h4>
             <ul>
@@ -304,7 +304,7 @@ with st.sidebar:
     st.link_button("📊 General DST",
                    "/General_DST", use_container_width=True)
     st.link_button("🗺️ Specific Site DST",
-                   "/Specific_Site_DST_v2", use_container_width=True)
+                   "/Specific_Site_DST", use_container_width=True)
     st.link_button("🌡️ Climate Visualization",
                    "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
 
