@@ -19,48 +19,37 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import extra_streamlit_components as stx 
 
-
 st.set_page_config(page_title="Decision Support Tool", layout="wide")
 
 st.markdown("""
     <style>
-        button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
-            font-size: 20px !important;
-            font-weight: bold !important;
-        }
-
-        .justified-text { 
-            text-align: justify; 
-            display:flex; 
-            flex-direction:column; 
-            justify-content:flex-end; 
-            min-height:100px; 
-        }
+        .justified-text { text-align: justify; display:flex; flex-direction:column; justify-content:flex-end; min-height:100px; }
         
         .custom-link { 
             text-decoration: none; 
-            color: white !important; 
+            color: #333333 !important; 
             display: block;
         }
         .custom-link:hover {
-            color: white !important; 
+            color: #333333 !important; 
             text-decoration: none;
         }
 
         .custom-button-container {
             width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.12s;
-            background-size: cover; background-position: center; color: white; text-shadow: 1px 1px 2px black;
+            background-size: cover; background-position: center; color: #333333; text-shadow: 1px 1px 2px #cccccc;
         }
         .custom-button-container:hover { transform: scale(1.02); box-shadow: 4px 4px 10px rgba(0,0,0,0.25);}
+
+        button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
+            font-size: 20px !important;
+            font-weight: bold !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 def get_db_url_from_env():
-    """
-    Scans all environment variables to find the PostgreSQL URL,
-    even if it's buried inside a TOML block.
-    """
     for key, value in os.environ.items():
         if "postgresql://" in value:
             if "connections.supabase" in value or "url =" in value:
@@ -77,7 +66,6 @@ if found_url:
     conn = st.connection("supabase", type="sql", url=found_url)
 else:
     conn = st.connection("supabase", type="sql")
-
 
 def init_db():
     with conn.session as s:
@@ -191,7 +179,6 @@ def verify_login_status_only(username):
     except Exception:
         pass
     return None
-
 
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
@@ -340,7 +327,6 @@ def get_climate_report_text(k):
     try: return cached_text(f"{GITHUB_RAW_BASE}/texts/{k}/climate/climate_report.txt")
     except: return None
 
-
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['user_role'] = None
@@ -409,7 +395,21 @@ if not st.session_state['logged_in']:
             </style>
             """, unsafe_allow_html=True)
     
-    st.title("Decision Support Tool")
+    st.markdown(
+    """
+    <style>
+    div[data-testid="stRadio"] label p {
+        color: white !important;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+    st.markdown('<h1 style="font-size: 4rem; color: white;">Decision Support Tool</h1>', unsafe_allow_html=True)
+
     auth_choice = st.radio(
     "Authentication",
     ["Login", "Sign Up"], 
@@ -466,8 +466,6 @@ if not st.session_state['logged_in']:
                     else: st.error("Username taken.")
 
     st.stop()
-
-
 
 def get_consensus_data(site_key, table_type, original_df):
     if original_df is None or original_df.empty: return original_df
@@ -535,7 +533,6 @@ def save_user_input(site_key, table_type, edited_df, username, role):
                     )
                 except: pass
         s.commit()
-
 
 with st.sidebar:
     logo_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/main_logo.png")
@@ -635,9 +632,8 @@ with st.sidebar:
         b64 = cached_base64_image(it["icon_url"])
         if b64:
             u = f"?item={it['github_key']}"
-            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:white;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:white;">{it["address"]}</p></div></a>'''
+            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:#333333;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:#333333;">{it["address"]}</p></div></a>'''
             st.markdown(h, unsafe_allow_html=True)
-
 
 selected_key = st.session_state['selected_site_key']
 items_map = {it["github_key"]: it for it in items}
