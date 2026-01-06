@@ -19,6 +19,7 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import extra_streamlit_components as stx 
 
+
 st.set_page_config(page_title="Decision Support Tool", layout="wide")
 
 st.markdown("""
@@ -55,7 +56,28 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-conn = st.connection("supabase", type="sql")
+def get_db_url_from_env():
+    """
+    Scans all environment variables to find the PostgreSQL URL,
+    even if it's buried inside a TOML block.
+    """
+    for key, value in os.environ.items():
+        if "postgresql://" in value:
+            if "connections.supabase" in value or "url =" in value:
+                match = re.search(r'url\s*=\s*["\']([^"\']+)["\']', value)
+                if match:
+                    return match.group(1)
+            elif value.strip().startswith("postgresql://"):
+                return value.strip()
+    return None
+
+found_url = get_db_url_from_env()
+
+if found_url:
+    conn = st.connection("supabase", type="sql", url=found_url)
+else:
+    conn = st.connection("supabase", type="sql")
+
 
 def init_db():
     with conn.session as s:
@@ -169,6 +191,7 @@ def verify_login_status_only(username):
     except Exception:
         pass
     return None
+
 
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
@@ -317,6 +340,7 @@ def get_climate_report_text(k):
     try: return cached_text(f"{GITHUB_RAW_BASE}/texts/{k}/climate/climate_report.txt")
     except: return None
 
+
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['user_role'] = None
@@ -443,6 +467,8 @@ if not st.session_state['logged_in']:
 
     st.stop()
 
+
+
 def get_consensus_data(site_key, table_type, original_df):
     if original_df is None or original_df.empty: return original_df
 
@@ -509,6 +535,7 @@ def save_user_input(site_key, table_type, edited_df, username, role):
                     )
                 except: pass
         s.commit()
+
 
 with st.sidebar:
     logo_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/main_logo.png")
@@ -610,6 +637,7 @@ with st.sidebar:
             u = f"?item={it['github_key']}"
             h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:white;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:white;">{it["address"]}</p></div></a>'''
             st.markdown(h, unsafe_allow_html=True)
+
 
 selected_key = st.session_state['selected_site_key']
 items_map = {it["github_key"]: it for it in items}
