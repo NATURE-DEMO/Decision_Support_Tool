@@ -1,0 +1,41 @@
+Climate hazards and hazard indices
+
+Zvolen experiences a diverse and intensifying hazard profile. Flash floods are among the most frequent and severe hazards. Although average annual precipitation is approximately 830 mm, rainfall distribution is highly uneven, with convective storms frequently producing more than 50 mm/day. Historical flood events have caused overtopping of levees and widespread inundation with water depths of 0.4–0.7 m. Climate projections indicate a 20–30% increase in the frequency of such high-intensity rainfall events by 2050, exacerbating flood risks in urban districts and transport corridors.
+
+Landslides are a major concern on steep volcanic and sedimentary slopes, particularly in the Pol’ana and Kremnica mountains. The geological context, combined with saturation during heavy rainfall and frequent freeze–thaw cycles (over 40 frost days per year), weakens slope stability. Future projections of wetter winters and rapid snowmelt are expected to further increase landslide susceptibility.
+
+Wildfire hazard shows a clear upward trend. Hotter and drier summers, increasing fire danger indices, unmanaged grasslands, and dry forest undergrowth contribute to heightened ignition and spread risk. Projections indicate that the wildfire season will extend by 10–15 days by 2050, with cascading impacts on energy transmission, transport safety, tourism, and ecosystems.
+
+Windstorms are recurrent due to the region’s topography, with gusts exceeding 90–100 km/h recorded several times in recent decades. While future projections show only modest changes in storm frequency, maximum gust intensity is expected to increase, particularly during winter, posing risks to buildings, trees, and exposed infrastructure.
+
+Heatwaves and droughts represent rapidly escalating hazards. Zvolen’s mean annual temperature of 8.7 °C masks increasingly severe summer extremes, with temperatures frequently exceeding 35 °C and 3–5 heatwave events per year. Projections indicate that heatwave days will double by 2050, while summer soil moisture may decline by up to 30%, intensifying water stress, energy demand, agricultural losses, and wildfire risk.
+
+The hazard index assessment confirms these trends. Mean annual temperature increases range from +9.5% to +16.5% by the long term, with heatwave probability increases exceeding +300% in the mid-term under high-emission scenarios. Drought probability rises sharply, reaching up to +550% by the long term. Water stress indices increase by up to +56.5%, despite relatively stable annual rainfall totals that decline only slightly (–5 to –6%). Heavy precipitation increases modestly but remains a key driver of flooding and landslides, while wind-related hazards remain low at the regional scale.
+
+As a result, droughts and heatwaves are classified as high to extreme hazards, water stress as high to very high, wildfires as very high in exposed localities such as the Pustý hrad slopes, and floods and landslides as medium to high, particularly along the E77 corridor and in Neresnica.
+
+Exposure
+
+Economic valuation of assets indicates significant exposure across all Zvolen demonstration localities. The Neresnica locality registers a very high exposure level (EI = 5) due to the critical role and high capital costs of the I/66 transport corridor combined with substantial revenues. The Zvolen Bypass Corridor (E77) shows high exposure (EI = 4), reflecting costly embankment stabilisation and drainage infrastructure. The Pustý hrad slopes locality displays medium–high exposure (EI = 3), dominated by cultural heritage and energy assets.
+
+Aggregated across the demonstration area, the overall Exposure Index is EI = 4 (High), confirming the high economic and functional significance of infrastructure in Zvolen’s transport, energy, and cultural systems.
+
+Vulnerability
+
+Sensitivity analysis reveals strong asset-specific vulnerabilities. The Zvolen Bypass Corridor (E77) is highly sensitive to landslides and flooding, with sensitivity scores of 4 for slope and embankment damage and for revenue losses during closures. Drainage and pavement systems show medium sensitivity (3) to rainfall variability, while wildfire-related impacts are less critical (2).
+
+The Pustý hrad slopes locality exhibits very high sensitivity, particularly to wildfires and landslides. Cultural heritage structures reach the maximum sensitivity score (5) due to irreversible damage potential. Transmission lines show high sensitivity (4) to landslide-induced failures, while access roads show medium sensitivity (3). Tourism revenues are vulnerable to both wildfire events and access disruptions.
+
+The Neresnica locality is dominated by acute water-related hazards. Roads, bridges, and culverts show high sensitivity (4) to flooding and debris flows, with medium sensitivity (3) for operational and environmental impacts linked to rainfall variability and drought.
+
+Adaptive capacity varies markedly across localities. The Zvolen Bypass Corridor (E77) benefits from high maintenance levels, resulting in a modest adaptive capacity of AC = 0.1. In contrast, both the Pustý hrad slopes and Neresnica localities exhibit AC = 0, due to aging infrastructure, insufficient maintenance, and non-resilient design characteristics.
+
+Combining sensitivity and adaptive capacity, vulnerability levels range from VI = 2 to 5. The highest vulnerability (VI = 5) is observed for heritage assets exposed to wildfires at the Pustý hrad slopes. High vulnerability (VI = 4) characterises landslide and flood impacts on transport corridors and energy infrastructure, while moderate vulnerability (VI = 3) is associated with maintenance burdens and environmental degradation. Lower vulnerability (VI = 2) is linked to less critical wildfire and wind-related impacts.
+
+Potential Risk
+
+The Potential Risk Index integrates hazard, exposure, and vulnerability for representative assets under mid-century high-emission conditions. The results indicate low to low–medium risk levels (PRI = 1–2) across the Zvolen demonstration area.
+
+Hydrometeorological hazards—flooding, landslides, and debris flows—are the dominant risk drivers. In the Zvolen Bypass Corridor (E77) and Neresnica localities, high exposure (EI = 4–5) and high vulnerability (VI = 4) combine with moderate hazard levels to yield consistent PRI values of 2. At the Pustý hrad slopes, wildfires generate PRI = 2 for heritage structures and tourism assets, despite only moderate hazard scores, due to extreme vulnerability.
+
+Lower risk levels (PRI = 1) are observed for wind-related hazards and certain energy assets, though these remain relevant due to potential cascading effects. Overall, while no extreme risks are identified, the persistence of low to medium risks across critical assets highlights the need for targeted adaptation measures, particularly slope stabilisation and drainage reinforcement for transport corridors, and wildfire prevention and protection for cultural heritage and forested slopes.
