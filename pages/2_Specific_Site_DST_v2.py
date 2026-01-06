@@ -27,18 +27,20 @@ st.markdown("""
         
         .custom-link { 
             text-decoration: none; 
-            color: #333333 !important; 
+            color: white !important; 
             display: block;
         }
         .custom-link:hover {
-            color: #333333 !important; 
+            color: white !important; 
             text-decoration: none;
         }
 
         .custom-button-container {
             width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.12s;
-            background-size: cover; background-position: center; color: #333333; text-shadow: 1px 1px 2px #cccccc;
+            background-size: cover; background-position: center; 
+            color: white; 
+            text-shadow: 1px 1px 2px black;
         }
         .custom-button-container:hover { transform: scale(1.02); box-shadow: 4px 4px 10px rgba(0,0,0,0.25);}
 
@@ -632,7 +634,7 @@ with st.sidebar:
         b64 = cached_base64_image(it["icon_url"])
         if b64:
             u = f"?item={it['github_key']}"
-            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:#333333;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:#333333;">{it["address"]}</p></div></a>'''
+            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:white;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:white;">{it["address"]}</p></div></a>'''
             st.markdown(h, unsafe_allow_html=True)
 
 selected_key = st.session_state['selected_site_key']
