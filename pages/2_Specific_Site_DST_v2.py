@@ -19,59 +19,43 @@ from matplotlib.colors import ListedColormap
 import contextily as cx
 import extra_streamlit_components as stx 
 
-# ---------------------------------------------------------------------------
-# 1. PAGE CONFIGURATION
-# ---------------------------------------------------------------------------
-st.set_page_config(page_title="Decision Support Tool", layout="centered")
+st.set_page_config(page_title="Decision Support Tool", layout="wide")
 
 st.markdown("""
     <style>
-        .justified-text { text-align: justify; display:flex; flex-direction:column; justify-content:flex-end; min-height:100px; }
+        button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
+            font-size: 20px !important;
+            font-weight: bold !important;
+        }
+
+        .justified-text { 
+            text-align: justify; 
+            display:flex; 
+            flex-direction:column; 
+            justify-content:flex-end; 
+            min-height:100px; 
+        }
         
         .custom-link { 
             text-decoration: none; 
-            color: #333333 !important; 
+            color: white !important; 
             display: block;
         }
         .custom-link:hover {
-            color: #333333 !important; 
+            color: white !important; 
             text-decoration: none;
         }
 
         .custom-button-container {
             width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px;
             box-shadow: 2px 2px 5px rgba(0,0,0,0.2); transition: transform 0.12s;
-            background-size: cover; background-position: center; color: #333333; text-shadow: 1px 1px 2px #cccccc;
+            background-size: cover; background-position: center; color: white; text-shadow: 1px 1px 2px black;
         }
         .custom-button-container:hover { transform: scale(1.02); box-shadow: 4px 4px 10px rgba(0,0,0,0.25);}
     </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# 2. DATABASE & AUTHENTICATION (SAFE MODE - NO CACHING)
-# ---------------------------------------------------------------------------
-
-def get_db_url_from_env():
-    """
-    Scans all environment variables to find the PostgreSQL URL,
-    even if it's buried inside a TOML block.
-    """
-    for key, value in os.environ.items():
-        if "postgresql://" in value:
-            if "connections.supabase" in value or "url =" in value:
-                match = re.search(r'url\s*=\s*["\']([^"\']+)["\']', value)
-                if match:
-                    return match.group(1)
-            elif value.strip().startswith("postgresql://"):
-                return value.strip()
-    return None
-
-found_url = get_db_url_from_env()
-
-if found_url:
-    conn = st.connection("supabase", type="sql", url=found_url)
-else:
-    conn = st.connection("supabase", type="sql")
+conn = st.connection("supabase", type="sql")
 
 def init_db():
     with conn.session as s:
@@ -186,9 +170,6 @@ def verify_login_status_only(username):
         pass
     return None
 
-# ---------------------------------------------------------------------------
-# 3. DATA HELPERS
-# ---------------------------------------------------------------------------
 GITHUB_RAW_BASE = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
 GITHUB_IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
@@ -204,6 +185,14 @@ items = [
 ]
 BACKGROUND_IMAGE_URL = f"{GITHUB_IMAGE_BASE_URL}/main_logo.png"
 
+def clean_df_for_display(df):
+    if df is None: return None
+    df = df.copy()
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].astype(str)
+    return df
+
 @st.cache_data(ttl=3600)
 def cached_get(url: str) -> bytes: return requests.get(url, timeout=20).content
 @st.cache_data(ttl=3600)
@@ -218,8 +207,15 @@ def cached_base64_image(url: str) -> str | None:
 def cached_read_excel(url: str) -> pd.DataFrame | None:
     try: return pd.read_excel(io.BytesIO(cached_get(url)))
     except: return None
+
 @st.cache_data(ttl=600)
-def list_github_folder(github_key: str): return cached_json(f"{GITHUB_API_BASE}/{github_key}/level1?ref=main")
+def get_github_subfolder_contents(site_key: str, subfolder: str):
+    try:
+        url = f"{GITHUB_API_BASE}/{site_key}/{subfolder}?ref=main"
+        return cached_json(url)
+    except:
+        return []
+
 @st.cache_data(ttl=600)
 def get_sorted_txt_files(github_key: str):
     try:
@@ -233,17 +229,10 @@ def download_file_bytes(download_url: str) -> bytes: return cached_get(download_
 def get_series_display_names():
     return {"CI": "Condition of the infrastructure (CI)", "CIH": "Condition of CI after exposure to hazard (CIH)", "CIHG": "Condition of CI after exposure to hazard but protected by GPI (CIHG)", "CIHN": "Condition of CI after exposure to hazard but protected by NbS (CIHN)", "CIHGN": "Condition of CI after exposure to hazard but protected by both GPI and NBS (CIHGN)"}
 
-# ---------------------------------------------------------------------------
-# NEW: reliable Excel downloader using GitHub API listing (fix for Level1)
-# ---------------------------------------------------------------------------
 @st.cache_data(ttl=600)
 def get_excel_from_github(site_key: str, filename: str) -> pd.DataFrame | None:
-    """
-    List level1 folder via GitHub API and use the provided download_url to fetch the Excel.
-    Returns a DataFrame or None.
-    """
     try:
-        contents = cached_json(f"{GITHUB_API_BASE}/{site_key}/level1?ref=main")
+        contents = get_github_subfolder_contents(site_key, "level1")
         if not contents:
             return None
         match = next((f for f in contents if f.get("name", "").lower() == filename.lower()), None)
@@ -254,7 +243,6 @@ def get_excel_from_github(site_key: str, filename: str) -> pd.DataFrame | None:
         return None
     return None
 
-# Charts
 KOPPEN_COLORS = np.array([[0,0,255], [0,120,255], [70,170,250], [255,0,0], [255,150,150], [245,165,0], [255,220,100], [255,255,0], [200,200,0], [150,150,0], [150,255,150], [100,200,100], [50,150,50], [200,255,80], [100,255,80], [50,200,0], [255,0,255], [200,0,200], [150,50,150], [150,100,150], [170,175,255], [90,120,220], [75,80,180], [50,0,135], [0,255,255], [55,200,255], [0,125,125], [0,70,95], [178,178,178], [102,102,102]]) / 255.0
 KOPPEN_CLASSES = {i: c for i, c in enumerate(["Af", "Am", "Aw", "BWh", "BWk", "BSh", "BSk", "Csa", "Csb", "Csc", "Cwa", "Cwb", "Cwc", "Cfa", "Cfb", "Cfc", "Dsa", "Dsb", "Dsc", "Dsd", "Dwa", "Dwb", "Dwc", "Dwd", "Dfa", "Dfb", "Dfc", "Dfd", "ET", "EF"], 1)}
 
@@ -329,9 +317,6 @@ def get_climate_report_text(k):
     try: return cached_text(f"{GITHUB_RAW_BASE}/texts/{k}/climate/climate_report.txt")
     except: return None
 
-# ---------------------------------------------------------------------------
-# 4. COOKIE & LOGIN GATEKEEPER
-# ---------------------------------------------------------------------------
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['user_role'] = None
@@ -400,27 +385,13 @@ if not st.session_state['logged_in']:
             </style>
             """, unsafe_allow_html=True)
     
-    st.markdown(
-    """
-    <style>
-    /* Target the radio button text */
-    div[data-testid="stRadio"] label p {
-        color: white !important;
-        font-size: 18px; /* Optional: Makes the options slightly larger/readable */
-        font-weight: bold;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-    st.markdown('<h1 style="font-size: 4rem; color: white;">Decision Support Tool</h1>', unsafe_allow_html=True)
-
+    st.title("Decision Support Tool")
     auth_choice = st.radio(
     "Authentication",
     ["Login", "Sign Up"], 
     horizontal=True, 
-    label_visibility="collapsed")
+    label_visibility="collapsed"
+)
 
     if auth_choice == "Login":
         with st.form("login_form"):
@@ -472,10 +443,6 @@ if not st.session_state['logged_in']:
 
     st.stop()
 
-# ---------------------------------------------------------------------------
-# 5. DATA FETCHING LOGIC (POSTGRESQL ADAPTED)
-# ---------------------------------------------------------------------------
-
 def get_consensus_data(site_key, table_type, original_df):
     if original_df is None or original_df.empty: return original_df
 
@@ -496,7 +463,6 @@ def get_consensus_data(site_key, table_type, original_df):
             if not admin_df.empty:
                 final_df.at[i, col] = admin_df['new_value'].iloc[0]
             else:
-
                 expert_df = run_query(
                     "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND role='expert'",
                     params={"s": site_key, "t": table_type, "r": row_label, "c": col}
@@ -544,11 +510,7 @@ def save_user_input(site_key, table_type, edited_df, username, role):
                 except: pass
         s.commit()
 
-# ---------------------------------------------------------------------------
-# 6. SIDEBAR
-# ---------------------------------------------------------------------------
 with st.sidebar:
-
     logo_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/main_logo.png")
     if logo_b64:
         st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{logo_b64}" style="width: 100%;"></div>', unsafe_allow_html=True)
@@ -581,19 +543,13 @@ with st.sidebar:
             cookie_manager.delete("dst_username")
         except KeyError:
             pass
-        
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-            
+        st.session_state.clear()
         st.query_params["logout"] = "true" 
-        
-        time.sleep(1.0) 
+        time.sleep(0.5)
         st.rerun()
-
 
     if st.session_state.get('user_role') == 'admin':
         with st.expander("🛡️ Admin Panel", expanded=True):
-
             users = run_query("SELECT username, role, approved, name, lastname, email, job_title, industry FROM users")
             pending = users[users['approved'] == 0]
             active = users[users['approved'] == 1]
@@ -652,12 +608,9 @@ with st.sidebar:
         b64 = cached_base64_image(it["icon_url"])
         if b64:
             u = f"?item={it['github_key']}"
-            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:#333333;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:#333333;">{it["address"]}</p></div></a>'''
+            h = f'''<a href="{u}" target="_self" class="custom-link"><div class="custom-button-container" style="background-image: url('data:image/png;base64,{b64}');"><h4 style="margin:0; padding:0; color:white;"><b>{it["name"]}</b></h4><p style="margin:0; padding:0; font-size:14px; color:white;">{it["address"]}</p></div></a>'''
             st.markdown(h, unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# 7. MAIN CONTENT
-# ---------------------------------------------------------------------------
 selected_key = st.session_state['selected_site_key']
 items_map = {it["github_key"]: it for it in items}
 selected_item = items_map.get(selected_key, items[0])
@@ -666,103 +619,146 @@ map_center = selected_item.get("coordinate", DEFAULT_CENTER)
 
 st.title(f"Risk assessment for {selected_item['name']}: {selected_item['address']}")
 
+tab_info, tab1, tab2, tab3 = st.tabs(["Site Info & Maps", "Level 1: Perceived risk assessment", "Level 2: Screening Tool", "Level 3: High-resolution risk assessment"])
 
-with st.container():
-    with st.expander("Site Information and Maps"):
-        with st.expander("Site Information"):
-            for f in get_sorted_txt_files(selected_item["github_key"]):
-                st.markdown(f'<div class="justified-text"><h1 style="font-size:30px;">{os.path.splitext(f["name"])[0][1:]}</h1></div>', unsafe_allow_html=True)
-                try: st.markdown(f'<div class="justified-text">{download_file_bytes(f["download_url"]).decode("utf-8").replace(chr(10), "<br>")}</div>', unsafe_allow_html=True)
-                except: pass
-        
-        with st.expander("Maps"):
-            m = leafmap.Map(center=map_center, zoom=15, height="700px")
+with tab_info:
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        st.subheader("Description")
+        with st.spinner("Fetching site descriptions..."):
+            txt_files = get_sorted_txt_files(selected_item["github_key"])
+            
+            for f in txt_files:
+                display_title = os.path.splitext(f["name"])[0][1:] 
+                st.markdown(f'<div class="justified-text"><h4 style="font-size:18px;">{display_title}</h4></div>', unsafe_allow_html=True)
+                
+                try: 
+                    content = download_file_bytes(f["download_url"]).decode("utf-8").replace(chr(10), "<br>")
+                    st.markdown(f'<div class="justified-text">{content}</div>', unsafe_allow_html=True)
+                except: 
+                    pass
+    
+    with col2:
+        st.subheader("Location")
+        with st.spinner("Downloading satellite imagery..."):
+            m = leafmap.Map(center=map_center, zoom=15, height="400px")
             m.add_basemap("SATELLITE")
             m.add_marker(map_center, tooltip=selected_item["name"])
             m.to_streamlit()
-            
-            st.subheader("Climate Classification")
+        
+        st.subheader("Climate")
+        with st.spinner("Generating Climate Analysis..."):
             fig = quick_koppen_map(GITHUB_TIFF_URL, map_center[0], map_center[1])
             if fig: st.pyplot(fig)
-            report = get_climate_report_text(selected_item["github_key"])
-            if report: st.markdown(report)
-
-
-with st.container():
-    with st.expander("Level 1"):
         
+        report = get_climate_report_text(selected_item["github_key"])
+        if report: st.markdown(report)
 
+with tab1:
+    with st.spinner("Fetching Excel files and syncing with Database..."):
         kpis_original = get_excel_from_github(selected_key, "1KPIs.xlsx")
         el_original   = get_excel_from_github(selected_key, "2el.xlsx")
         
-
-        if kpis_original is None:
-            st.error(f"⚠️ Failed to download 1KPIs.xlsx from GitHub. Check your internet connection or GitHub repo structure.")
-        if el_original is None:
-            st.warning(f"⚠️ Failed to download 2el.xlsx from GitHub.")
-
+        if kpis_original is None: st.error(f"⚠️ Failed to download 1KPIs.xlsx")
+        if el_original is None: st.warning(f"⚠️ Failed to download 2el.xlsx")
 
         kpis_consensus = get_consensus_data(selected_key, "KPI", kpis_original)
         el_consensus = get_consensus_data(selected_key, "EL", el_original)
 
-        def render_table_and_editor(label, table_type, consensus_df, original_df):
-            if consensus_df is None: 
-                st.warning(f"No data available for {label}")
-                return
-            st.subheader(label)
-            st.dataframe(consensus_df, width='stretch')
+    def render_table_and_editor(label, table_type, consensus_df, original_df):
+        if consensus_df is None: 
+            st.warning(f"No data available for {label}")
+            return
+        st.subheader(label)
+        st.dataframe(clean_df_for_display(consensus_df), width='stretch')
+        
+        user_role = st.session_state.get('user_role')
+        if user_role in ['expert', 'admin']:
+            personal_df = get_user_personal_data(selected_key, table_type, original_df, st.session_state['username'])
             
-            user_role = st.session_state.get('user_role')
-            if user_role in ['expert', 'admin']:
-                personal_df = get_user_personal_data(selected_key, table_type, original_df, st.session_state['username'])
-                
-                with st.expander(f"✏️ Edit {label} ({st.session_state['username']})"):
-                    st.info("Edit your personal values below. Changes are held until you click Save.")
-                    
-
-                    with st.form(key=f"form_{table_type}_{selected_key}"):
-                        
-
-                        edited = st.data_editor(personal_df, key=f"edit_{table_type}_{selected_key}")
-                        
-
-                        submit_button = st.form_submit_button(f"Save {label}")
-                        
-                        if submit_button:
+            with st.expander(f"✏️ Edit {label} ({st.session_state['username']})"):
+                st.info("Edit your personal values below. Changes are held until you click Save.")
+                with st.form(key=f"form_{table_type}_{selected_key}"):
+                    edited = st.data_editor(personal_df, key=f"edit_{table_type}_{selected_key}")
+                    submit_button = st.form_submit_button(f"Save {label}")
+                    if submit_button:
+                        with st.spinner("Saving to Database..."):
                             save_user_input(selected_key, table_type, edited, st.session_state['username'], user_role)
-                            st.success("Values Saved! Consensus updated.")
                             time.sleep(0.5)
-                            st.rerun()
+                        st.success("Values Saved! Consensus updated.")
+                        st.rerun()
 
-        with st.expander("Information tables"):
-            render_table_and_editor("KPIs", "KPI", kpis_consensus, kpis_original)
-            render_table_and_editor("Extent of Loss", "EL", el_consensus, el_original)
+    with st.expander("Information tables", expanded=True):
+        render_table_and_editor("KPIs", "KPI", kpis_consensus, kpis_original)
+        render_table_and_editor("Extent of Loss", "EL", el_consensus, el_original)
 
-        with st.expander("Perceived risk"):
-            st.subheader("KPI Radar Chart")
-            if kpis_consensus is not None:
-                sel = [s for s in kpis_consensus.columns[1:] if st.checkbox(get_series_display_names().get(s,s), value=True, key=f"chk_{s}")]
-                if sel: st.plotly_chart(create_radar_chart_plotly(kpis_consensus, sel, f"Radar Chart of {selected_item['name']}"), width='stretch')
-            else:
-                st.warning("KPI data is missing, cannot generate Radar Chart.")
+    with st.expander("Perceived risk"):
+        st.subheader("KPI Radar Chart")
+        if kpis_consensus is not None:
+            sel = [s for s in kpis_consensus.columns[1:] if st.checkbox(get_series_display_names().get(s,s), value=True, key=f"chk_{s}")]
+            if sel: st.plotly_chart(create_radar_chart_plotly(kpis_consensus, sel, f"Radar Chart of {selected_item['name']}"), width='stretch')
+        else:
+            st.warning("KPI data is missing.")
 
-            st.subheader("KPI Analysis")
-            if kpis_consensus is not None and el_consensus is not None:
-                for f in create_kpi_analysis_plots_plotly(kpis_consensus, el_consensus, selected_item["name"]): st.plotly_chart(f, width='stretch')
-            else:
-                st.warning("Both KPI and Extent of Loss data are required for analysis plots.")
+        st.subheader("KPI Analysis")
+        if kpis_consensus is not None and el_consensus is not None:
+            for f in create_kpi_analysis_plots_plotly(kpis_consensus, el_consensus, selected_item["name"]): st.plotly_chart(f, width='stretch')
+        else:
+            st.warning("Both KPI and Extent of Loss data are required for analysis plots.")
 
-        with st.expander("Interpretation"):
-            interp = get_interpretation_text(selected_item["github_key"])
-            if interp: st.markdown(interp)
-            else: st.warning("Interpretation text not found.")
+    with st.expander("Interpretation"):
+        interp = get_interpretation_text(selected_item["github_key"])
+        if interp: st.markdown(interp)
+        else: st.warning("Interpretation text not found.")
 
+with tab2:
+    with st.spinner("Scanning Level 2 documents and datasets..."):
+        l2_files = get_github_subfolder_contents(selected_key, "level2")
+        
+        if not l2_files:
+            st.warning("No files found in Level 2 folder.")
+        else:
+            def get_text_content(filename_key):
+                found = next((f for f in l2_files if f['name'].lower() == filename_key.lower()), None)
+                if found and found.get("download_url"):
+                    try: return download_file_bytes(found["download_url"]).decode("utf-8")
+                    except: return None
+                return None
 
-with st.container():
-    with st.expander("Level 2"):
-        st.write("Under Construction")
+            intro_text = get_text_content("Introduction.txt")
+            if intro_text:
+                st.subheader("Introduction")
+                st.markdown(f'<div class="justified-text">{intro_text}</div>', unsafe_allow_html=True)
+            
+            methods_text = get_text_content("Methods.txt")
+            if methods_text:
+                st.subheader("Methods")
+                st.markdown(f'<div class="justified-text">{methods_text}</div>', unsafe_allow_html=True)
 
+            excel_files = [f for f in l2_files if f['name'].lower().endswith('.xlsx')]
+            excel_files.sort(key=lambda f: int(re.match(r"^(\d+)", f["name"]).group(1)) if re.match(r"^(\d+)", f["name"]) else float("inf"))
+            
+            for f in excel_files:
+                try:
+                    data = download_file_bytes(f["download_url"])
+                    df = pd.read_excel(io.BytesIO(data))
+                    clean_name = f["name"][1:] 
+                    display_title = os.path.splitext(clean_name)[0]
+                    st.subheader(display_title)
+                    st.dataframe(clean_df_for_display(df), width='stretch')
+                except Exception as e:
+                    st.warning(f"Could not load {f['name']}")
 
-with st.container():
-    with st.expander("Level 3"):
-        st.write("Under Construction")
+            interp_text = get_text_content("Interpretations.txt")
+            if interp_text:
+                st.subheader("Interpretations")
+                st.markdown(f'<div class="justified-text">{interp_text}</div>', unsafe_allow_html=True)
+
+            nbs_text = get_text_content("NbS.txt")
+            if nbs_text:
+                st.subheader("NbS")
+                st.markdown(f'<div class="justified-text">{nbs_text}</div>', unsafe_allow_html=True)
+
+with tab3:
+    st.write("Under Construction")
