@@ -258,37 +258,68 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
 
     df_risks_prompt = df_risks.rename_axis('').to_markdown()
 
-    scenario_desc = "\n".join(
-        [f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
+    # Define the Example Data and Interpretation for Few-Shot Prompting
+    example_table = """
+| KPI / Indicator | CI_H | CI_HG |
+| :--- | :---: | :---: |
+| Safety, Reliability and Security (SRS) | 5 | 4 |
+| Availability and Maintainability (AM) | 3 | 2 |
+| Economy (EC) | 4 | 2 |
+| Environment (EV) | 3 | 3 |
+| Health and Politics (HP) | 4 | 3 |
+"""
+    example_text = (
+        "As indicated in the assessment, the implementation of a Grey Protective Infrastructure (GPI) "
+        "from the “Water engineering” family, such as selected “Flood walls” and “Floodway”, leads to a "
+        "noticeable improvement in the condition of the CI, apart from Environment (EV) that stays the same (3 → 3). "
+        "Specifically, these GPI solutions contribute to enhancing the Structural and Resilience Stability (SRS) (5 → 4), "
+        "Availability and Maintainability (AM) (3 → 2), and Health and Politics (HP) (4 → 3) indicators, raising their "
+        "condition levels each for one grade in the scoring table. Furthermore, the Economy (EC) shows even greater "
+        "improvement – for two grades in the scoring table, reaching a “Good” (4 → 2) condition. These results were "
+        "based on expert judgement, how classical grey infrastructure being flood resilient for itself if designed "
+        "properly, improves hydraulic conveyance, decreases flooding of the neighbouring area, and stabilises channel "
+        "banks and thus protect nearby infrastructure. It is to be mentioned here, that even higher grades cannot be "
+        "reached with only grey infrastructure, even though it is flood resistant per se."
+    )
+
+    scenario_desc = "\n".join([f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
     kpi_list = "\n".join([f"- {k}" for k in kpis])
 
     system_instruction = (
         "You are an expert risk and resilience analyst. Your task is to interpret a stakeholder "
-        "risk assessment matrix. The ratings are from 1 (best condition/lowest risk) to 5 (worst condition/highest risk). "
-        "**You must use the Google Search tool** to find contextual information related to 'critical infrastructure resilience' and 'risk assessment' to enrich your analysis. "
-        "Your interpretation should compare the different scenarios and highlight the biggest perceived risks and the effectiveness of mitigation measures."
+        "risk assessment matrix. The ratings are from $1$ (best) to $5$ (worst). "
+        "You must follow the logical structure and professional tone provided in the 'EXAMPLE ANALYSIS' section. "
+        "Specifically, focus on comparing the Hazard scenario (CI_H) with the protected scenarios "
+        "and explain the numerical differences (e.g., $4 \rightarrow 3$) based on the engineering logic provided."
     )
 
     user_prompt = f"""
-    Analyze the following risk matrix provided by stakeholders. The ratings are for Key Performance Indicators (KPIs) across different scenarios, where **1 is the best condition (lowest risk) and 5 is the worst condition (highest risk)**.
+    ### EXAMPLE ANALYSIS (Learning Reference)
+    **Example Data Table:**
+    {example_table}
+
+    **Example Interpretation:**
+    {example_text}
+
+    ---
+
+    ### ACTUAL DATA TO ANALYZE
+    Analyze the following risk matrix provided by stakeholders. 
 
     **KPIs (Rows):**
     {kpi_list}
 
-    **Scenarios (Columns - representing different protection measures):**
+    **Scenarios (Columns):**
     {scenario_desc}
     
-    **Risk Assessment Matrix (Ratings 1-5):**
+    **Risk Assessment Matrix:**
     {df_risks_prompt}
 
     **REPORT INSTRUCTIONS:**
-    Provide a concise, professional interpretation covering:
-    1.  **General Observation:** What is the average perception of risk across all scenarios?
-    2.  **Worst Scenarios:** Which scenario(s) have the highest overall risk perception (highest average rating)? Why?
-    3.  **Key Vulnerabilities:** Which KPI(s) consistently show the highest risk rating (5 or 4) across multiple scenarios?
-    4.  **Mitigation Effectiveness:** Interpret the perceived effectiveness of protection measures (comparing CI_H, CI_HG, CI_HN, CI_HNG). For example, do 'Grey' or 'Nature-based' solutions appear to significantly reduce the risk compared to the 'Hazard only' scenario (CI_H)?
-    
-    Structure the answer logically using professional headings and bullet points.
+    Provide a professional interpretation following the style of the example. 
+    1. Compare CI_H to the protection scenarios (CI_HG, CI_HN, CI_HNG).
+    2. Explicitly mention the numerical grade changes (e.g., $X \rightarrow Y$).
+    3. Use professional reasoning to explain why certain measures (Grey vs. Nature-based) improve specific KPIs.
     """
 
     try:
@@ -296,17 +327,13 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
             model='gemini-2.5-flash',
             contents=[user_prompt],
             config={
-                "system_instruction": system_instruction,
-                "tools": [{"google_search": {}}]
+                "system_instruction": system_instruction, 
+                "tools": [{"google_search": {}}] 
             }
         )
-
         return response.text
-
-    except APIError as e:
-        return f"Gemini API Error (Risk Interpretation): An issue occurred connecting to the service: {e}."
     except Exception as e:
-        return f"An unexpected error occurred during risk interpretation generation: {e}"
+        return f"An error occurred: {e}"
 
 
 @st.cache_resource(ttl=3600)
@@ -1076,3 +1103,4 @@ with st.expander("Level 2"):
 
 with st.expander("Level 3"):
     st.write("Under construction")
+
