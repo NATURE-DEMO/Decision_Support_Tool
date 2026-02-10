@@ -21,6 +21,8 @@ import traceback
 import plotly.graph_objects as go
 import plotly.express as px
 
+# --- CONSTANTS AND CONFIGURATION ---
+
 KOPPEN_COLORS = np.array([
     [0, 0, 255], [0, 120, 255], [70, 170, 250], [255, 0, 0], [255, 150, 150],
     [245, 165, 0], [255, 220, 100], [255, 255, 0], [200, 200, 0], [150, 150, 0],
@@ -62,6 +64,35 @@ scenarios = {
     "CI_HN": "Condition after hazard but protected by nature-based solutions (HN)",
     "CI_HNG": "Condition after hazard but protected by both grey and nature-based solutions (HNG)"
 }
+
+
+EXAMPLE_HAZARD_TABLE = """
+| Infrastructure | Climate driver | Impact model | Hazard Index | Hazard Level |
+| :--- | :--- | :--- | :--- | :--- |
+| Railway | Heat wave | Track buckling and equipment failure due to extreme heat | 5 | Extreme |
+| Railway | Droughts | Soil desiccation affecting embankment stability | 5 | Extreme |
+| Railway | Water stress | Reduced water availability for maintenance and cleaning | 4 | Very High |
+| Railway | Changing temperature (Chronic) | Thermal expansion of rail components over time | 2 | Medium |
+| Railway | Heavy precipitation | Flash flooding affecting track drainage systems | 1 | Low |
+| Railway | Landslide | Slope instability triggered by saturation | 2 | Medium |
+| Railway | Changing wind patterns | Crosswinds affecting train stability | 0 | No variation |
+"""
+
+EXAMPLE_HAZARD_REPORT = """
+It can be concluded that droughts and heat waves constitute the most critical climate hazards for the analyzed railway line, consistently registering EXTREME hazard index scores (Hazard Index: 5). This underscores their high likelihood and severity, reflecting the growing influence of temperature-related acute events on the structural and operational integrity of the infrastructure.
+
+In addition, water stress emerges as a significant chronic hazard, with VERY HIGH hazard levels (Index: 4). This indicates potential challenges in water availability for maintenance operations, ecological balance, and indirect effects such as soil desiccation and vegetation loss on embankments.
+
+Conversely, chronic temperature changes, such as mean annual temperature rise, register MEDIUM scores (Index: 2). While their direct impacts may be moderate, they may act cumulatively or serve as enabling conditions for more severe events (e.g., prolonged high temperatures amplifying drought effects).
+
+Precipitation-related hazards, including heavy rainfall, present LOW hazard levels (Index: 1). Notably, there is no significant variation projected in mean annual rainfall, which suggests limited change in total precipitation but potential shifts in intensity. This may still pose operational risks if drainage systems are overwhelmed.
+
+Landslides, classified as acute and linked to precipitation, show MEDIUM scores (Index: 2). Despite their moderate hazard classification, their localized impact potential is high, especially in mountainous terrain with critical slope infrastructure.
+
+Finally, wind-related hazards are generally assessed as showing NO VARIATION (Index: 0). Although currently not prioritized, these hazards should be monitored as part of a comprehensive risk strategy.
+
+In summary, while droughts, heat waves, and water stress represent the most immediate and severe threats, the analysis highlights the importance of considering the full spectrum of hazards, including those with medium or low scores, as their risk contribution is ultimately shaped by the exposure and vulnerability profile of the infrastructure.
+"""
 
 road_data = [
     {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter'},
@@ -566,6 +597,60 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
     except Exception as e:
         return f"An error occurred: {e}"
 
+def generate_hazard_report_gemini(calculated_df):
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate report."
+
+    # Convert the current hazard table to markdown for the prompt
+    hazard_table_md = calculated_df.to_markdown(index=False)
+    
+    system_instruction = (
+        "You are an expert climate hazard analyst. Your task is to generate a professional report "
+        "interpreting a climate hazard table calculated for a specific infrastructure project. "
+        "The input data is a markdown table with columns: Infrastructure, Climate driver, Impact model, Hazard Index, and Hazard Level. "
+        "You must follow the style, tone, and depth of the provided EXAMPLE REPORT strictly. "
+        "Do NOT hallucinate data not present in the table. Use the provided Example Data and Example Report "
+        "as a few-shot learning reference to understand how to map the table rows to a narrative text."
+    )
+
+    user_prompt = f"""
+    ### REFERENCE EXAMPLE (LEARNING MATERIAL)
+    
+    **1. Example Data Source (Table Format):**
+    {EXAMPLE_HAZARD_TABLE}
+
+    **2. Example Report Interpretation (Based on above table):**
+    {EXAMPLE_HAZARD_REPORT}
+
+    ---
+
+    ### ACTUAL TASK
+    
+    **Actual Hazard Data Table (to be analyzed):**
+    {hazard_table_md}
+
+    **INSTRUCTIONS:**
+    1. Analyze the 'Actual Hazard Data Table' above.
+    2. Write a narrative report similar in structure and tone to the 'Example Report Interpretation'.
+    3. Group hazards logically (e.g., Temperature-related, Water-related, etc.) if applicable based on the 'Climate driver' column.
+    4. Explicitly mention the 'Hazard Level' (e.g., EXTREME, HIGH, LOW) and 'Hazard Index' where relevant.
+    5. Discuss the implications for the specific 'Infrastructure' and 'Asset' types listed in the table (Impact model column describes the asset/impact).
+    6. If a hazard shows "No variation", explain what that implies for stability vs. potential shifts in intensity not captured by the mean.
+    """
+
+    try:
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "temperature": 0.3 
+            }
+        )
+        return response.text
+    except Exception as e:
+        return f"Error generating hazard report: {e}"
+
 @st.cache_resource(ttl=3600)
 def build_folium_map_object(center, zoom, polygon_data, drawing_key):
     m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
@@ -782,6 +867,9 @@ if "loss_matrix_data" not in st.session_state:
 
 if "interpretation_report" not in st.session_state:
     st.session_state["interpretation_report"] = ""
+
+if "hazard_report" not in st.session_state:
+    st.session_state["hazard_report"] = ""
 
 try:
     all_lvl2_data = (road_data + railway_data + tunnels_data + bridges_data + 
@@ -1549,15 +1637,25 @@ with tab_lvl2:
                 st.success("Values saved successfully!")
                 st.rerun()
 
-    st.markdown(
-        """
-        <span style='font-size: 20px; font-weight: bold;'>
-            💡Tips: Values of the 'Hazard Level' and 'Hazard Index' columns are editable. 
-            Click 'Save Hazard Changes' to apply updates.
-        </span>
-        """,
-        unsafe_allow_html=True
-    )
+        st.markdown(
+            """
+            <span style='font-size: 20px; font-weight: bold;'>
+                💡Tips: Values of the 'Hazard Level' and 'Hazard Index' columns are editable. 
+                Click 'Save Hazard Changes' to apply updates.
+            </span>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # --- GEMINI REPORT BUTTON ---
+        if st.button("Generate Climate Hazard Report", type="secondary", use_container_width=True, help="Analyze the generated hazard table using Gemini."):
+            with st.spinner("Generating Report from Hazard Table (Gemini)..."):
+                report_text = generate_hazard_report_gemini(st.session_state.calculated_results)
+                st.session_state["hazard_report"] = report_text
+
+        if st.session_state["hazard_report"]:
+            with st.expander("View Climate Hazard Report", expanded=True):
+                st.markdown(st.session_state["hazard_report"])
 
     st.divider()
     st.subheader("4. Exposure Index Analysis")
