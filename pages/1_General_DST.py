@@ -1486,7 +1486,7 @@ with tab_lvl1:
 
 
 with tab_lvl2:
-    st.header('Infrastructure Impact & Hazard Analysis 🌍')
+    st.header('Infrastructure Impact & Hazard Analysis')
 
     infrastructure_col = 'Infrastructure'
     climate_driver_col = 'Climate driver'
@@ -2099,3 +2099,4 @@ if 'calculated_results' in st.session_state and 'PRI scores' in st.session_state
         )
 else:
     st.info("Please calculate the Potential Risk Index (PRI) above to enable report generation.")
+
