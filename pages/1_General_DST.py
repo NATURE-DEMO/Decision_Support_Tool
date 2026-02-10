@@ -1987,3 +1987,94 @@ with tab_lvl2:
                 st.error(f"Missing columns: {', '.join(missing)}. Please run previous steps.")
         else:
             st.warning("Please complete previous sections to generate data.")
+if 'calculated_results' in st.session_state and 'PRI scores' in st.session_state.calculated_results.columns:
+    
+    st.info("Generate a textual analysis of the results above using Google Gemini.")
+    
+    # Input for API Key (or you can set this in st.secrets for safety)
+    api_key = st.text_input("Enter Google Gemini API Key:", type="password", help="Get your key at aistudio.google.com")
+    
+    if st.button("Generate Report with Gemini", type="primary"):
+        if not api_key:
+            st.warning("Please enter a valid API Key to generate the report.")
+        else:
+            try:
+                import google.generativeai as genai
+                
+                # 1. Configure the AI
+                genai.configure(api_key=api_key)
+                model = genai.GenerativeModel('gemini-pro')
+                
+                # 2. Prepare the Data Context
+                # We filter only the columns relevant for the report to save token space
+                report_df = st.session_state.calculated_results.copy()
+                
+                # Define columns to send to the AI
+                cols_to_send = [
+                    'Infrastructure', 'Asset', 'Impact model', 'Climate driver', 
+                    'Hazard Index', 'Exposure Index', 'Vulnerability Index', 
+                    'PRI scores', 'PRI values'
+                ]
+                # Ensure we only select columns that actually exist
+                cols_to_send = [c for c in cols_to_send if c in report_df.columns]
+                
+                # Convert DataFrame to a string format the AI can read
+                data_string = report_df[cols_to_send].to_csv(index=False)
+                
+                # Get Scenario Context (from your existing variables in Section 3)
+                # These variables (selected_scenario_label, selected_term_label) 
+                # come from the "Hazard Variation Analysis" section.
+                scenario_context = f"Scenario: {selected_scenario_label}, Time Horizon: {selected_term_label}"
+
+                # 3. Construct the Prompt
+                prompt = f"""
+                You are a senior infrastructure risk analyst.
+                Your task is to write a formal "Potential Risk Index (PRI) Assessment Report" based on the provided data table.
+                
+                **Context:**
+                - {scenario_context}
+                - The data represents an analysis of infrastructure assets.
+                
+                **Abbreviations to use:**
+                - HI: Hazard Index
+                - EI: Exposure Index
+                - VI: Vulnerability Index
+                - PRI: Potential Risk Index
+                
+                **Style Guide:**
+                - Use a professional, academic, and analytical tone.
+                - Do not simply list rows. Synthesize the information.
+                - Group similar risks together (e.g., "Precipitation-related impacts...").
+                - Explain *why* a score is high (e.g., "The high PRI is driven by significant Exposure (EI=4)...").
+                
+                **Structure your response exactly like this example:**
+                1. **Introduction:** "Table [X] presents the calculation of the Potential Risk Index (PRI)... integrating HI, EI, and VI..."
+                2. **Highest Risks:** "The results show that the highest PRI values (PRI = [X]) are associated with..."
+                3. **Low/Zero Risks:** "In contrast, impacts linked to [Hazard Name] receive a PRI of 0..." (Explain if this is due to HI=0).
+                4. **Specific Observations:** Discuss temperature or wind specifically if present.
+                5. **Data Gaps:** "Entries lacking a PRI score due to missing hazard data..." (Only include this if there are blank/NaN values).
+                6. **Conclusion:** "Overall, the results suggest..."
+                
+                **The Data to Analyze:**
+                {data_string}
+                """
+                
+                # 4. Generate Content
+                with st.spinner("Analyzing data and writing report..."):
+                    response = model.generate_content(prompt)
+                    
+                    st.markdown("### Generated Assessment")
+                    st.markdown(response.text)
+                    
+                    # Optional: Download button for the text
+                    st.download_button(
+                        label="Download Report as Text",
+                        data=response.text,
+                        file_name="PRI_Risk_Assessment_Report.txt",
+                        mime="text/plain"
+                    )
+                    
+            except ImportError:
+                st.error("The `google-generativeai` library is missing. Please run `pip install google-generativeai` in your terminal.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
