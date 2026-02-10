@@ -93,7 +93,36 @@ Finally, wind-related hazards are generally assessed as showing NO VARIATION (In
 
 In summary, while droughts, heat waves, and water stress represent the most immediate and severe threats, the analysis highlights the importance of considering the full spectrum of hazards, including those with medium or low scores, as their risk contribution is ultimately shaped by the exposure and vulnerability profile of the infrastructure.
 """
+EXAMPLE_PRI_TABLE = """
+| Infrastructure | Climate driver | Impact model | Hazard Index | Exposure Index | Vulnerability Index | PRI scores |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Railway | Heavy precipitation | Reactive CAPEX due to damages associated to heavy rains | 2 | 4 | 4 | 2 |
+| Railway | Storm (winds) | Reactive CAPEX due to damages associated to strong winds | 1 | 4 | 3 | 1 |
+| Railway | Landslides | Reactive CAPEX due to damages associated to landslides | 2 | 4 | 5 | 2 |
+| Railway | Changing precipitation | Increased maintenance due to increase in precipitation | 0 | 4 | 3 | 0 |
+| Railway | Temperature variability | Increased maintenance due to temperature increase | 1 | 4 | 3 | 1 |
+| Railway | Heavy precipitation | Stop of operations due to heavy rain | 2 | 4 | 3 | 1 |
+"""
 
+EXAMPLE_PRI_REPORT = """
+**Potential Risk Index (PRI) Assessment Report**
+
+The analysis integrates the Hazard Index (HI), Exposure Index (EI), and Vulnerability Index (VI) to compute the Potential Risk Index (PRI) for the analyzed infrastructure assets.
+
+**High and Moderate Risks (PRI 2)**
+The results indicate that the highest computed risk levels (PRI = 2) are driven by **Heavy Precipitation** and **Landslides**. 
+* **Drivers:** These risks are characterized by a moderate Hazard Index (HI: 2) combined with high Exposure (EI: 4) and high Vulnerability (VI: 4-5).
+* **Consequences:** The impacts include reactive CAPEX due to structural damages and potential operational stoppages. The high vulnerability scores suggest that the asset's adaptive capacity regarding geotechnical stability and drainage is currently insufficient for these specific hazards.
+
+**Low Risks (PRI 1)**
+**Temperature variability** and **Storms (winds)** present a low risk (PRI = 1). While the Exposure is high (EI: 4), the Hazard Index is low (HI: 1), limiting the overall risk score. However, these should still be monitored as climate change may intensify these drivers over longer time horizons.
+
+**No Risk (PRI 0)**
+Impacts related to general **Changing precipitation patterns** (chronic changes) registered a PRI of 0. This is primarily due to a Hazard Index of 0, indicating no significant variation projected for the mean values in the selected scenario, despite the high exposure of the asset.
+
+**Conclusion**
+Overall, the asset shows a sensitivity to acute hydrometeorological events (landslides, heavy rain) rather than chronic climate shifts. Adaptation strategies should prioritize drainage improvements and slope stabilization to reduce the Vulnerability Index, which is the primary driver amplifying the risk in this scenario.
+"""
 road_data = [
     {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter'},
     {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter'},
@@ -650,7 +679,68 @@ def generate_hazard_report_gemini(calculated_df):
         return response.text
     except Exception as e:
         return f"Error generating hazard report: {e}"
+def generate_pri_report_gemini(calculated_df):
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate report."
 
+    # Filter and Rename columns to match the standard abbreviations (HI, EI, VI)
+    # This helps the AI map the data to the prompt logic easily
+    df_prompt = calculated_df.copy()
+    
+    # Ensure we have the necessary columns
+    required_cols = ['Infrastructure', 'Climate driver', 'Impact model', 
+                     'Hazard Index', 'Exposure Index', 'Vulnerability Index', 
+                     'PRI scores', 'PRI values']
+    
+    available_cols = [c for c in required_cols if c in df_prompt.columns]
+    df_prompt = df_prompt[available_cols]
+
+    # Convert to Markdown
+    pri_table_md = df_prompt.to_markdown(index=False)
+    
+    system_instruction = (
+        "You are a senior infrastructure risk analyst. Your task is to write a formal "
+        "'Potential Risk Index (PRI) Assessment Report' based on the provided data table. "
+        "You must follow the **Structure**, **Tone**, and **Logic** of the provided EXAMPLE REPORT. "
+        "Use the abbreviations HI (Hazard), EI (Exposure), VI (Vulnerability), and PRI (Potential Risk Index)."
+    )
+
+    user_prompt = f"""
+    ### REFERENCE EXAMPLE (LEARNING MATERIAL)
+    
+    **1. Example Data Source:**
+    {EXAMPLE_PRI_TABLE}
+
+    **2. Example Report Interpretation:**
+    {EXAMPLE_PRI_REPORT}
+
+    ---
+
+    ### ACTUAL TASK
+    
+    **Actual PRI Data Table (to be analyzed):**
+    {pri_table_md}
+
+    **INSTRUCTIONS:**
+    1. Analyze the 'Actual PRI Data Table' above.
+    2. Write a narrative report similar in structure to the Example Report.
+    3. **Categorize** the risks: Identify the Highest PRI scores first, then Moderate/Low, then Zero.
+    4. **Explain the Drivers:** For the highest risks, explicitly explain *why* the score is high (e.g., "Driven by high Exposure (EI=X) despite moderate Hazard...").
+    5. **Conclusion:** Summarize the overall risk landscape and suggest where adaptation focuses might be needed based on high VI or HI scores.
+    """
+
+    try:
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "temperature": 0.3
+            }
+        )
+        return response.text
+    except Exception as e:
+        return f"Error generating PRI report: {e}"
 @st.cache_resource(ttl=3600)
 def build_folium_map_object(center, zoom, polygon_data, drawing_key):
     m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
@@ -1989,74 +2079,23 @@ with tab_lvl2:
             st.warning("Please complete previous sections to generate data.")
 if 'calculated_results' in st.session_state and 'PRI scores' in st.session_state.calculated_results.columns:
     
-    st.info("Generate a textual analysis of the results above using Google Gemini.")
-    api_key = st.text_input("Enter Google Gemini API Key:", type="password", help="Get your key at aistudio.google.com")
-    
-    if st.button("Generate Report with Gemini", type="primary"):
-        if not api_key:
-            st.warning("Please enter a valid API Key to generate the report.")
+    if st.button("Generate PRI Assessment Report", type="primary", use_container_width=True):
+        if not st.session_state.get("gemini_client"):
+             st.error("Please provide a valid API Key to generate the report.")
         else:
-            try:
-                import google.generativeai as genai
+            with st.spinner("Analyzing Risk Indices and writing report (Gemini)..."):
+                pri_report_text = generate_pri_report_gemini(st.session_state.calculated_results)
+                st.session_state["pri_report"] = pri_report_text
 
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-pro')
-                report_df = st.session_state.calculated_results.copy()
-                cols_to_send = [
-                    'Infrastructure', 'Asset', 'Impact model', 'Climate driver', 
-                    'Hazard Index', 'Exposure Index', 'Vulnerability Index', 
-                    'PRI scores', 'PRI values'
-                ]
-                cols_to_send = [c for c in cols_to_send if c in report_df.columns]
-                data_string = report_df[cols_to_send].to_csv(index=False)
-                scenario_context = f"Scenario: {selected_scenario_label}, Time Horizon: {selected_term_label}"
-                prompt = f"""
-                You are a senior infrastructure risk analyst.
-                Your task is to write a formal "Potential Risk Index (PRI) Assessment Report" based on the provided data table.
-                
-                **Context:**
-                - {scenario_context}
-                - The data represents an analysis of infrastructure assets.
-                
-                **Abbreviations to use:**
-                - HI: Hazard Index
-                - EI: Exposure Index
-                - VI: Vulnerability Index
-                - PRI: Potential Risk Index
-                
-                **Style Guide:**
-                - Use a professional, academic, and analytical tone.
-                - Do not simply list rows. Synthesize the information.
-                - Group similar risks together (e.g., "Precipitation-related impacts...").
-                - Explain *why* a score is high (e.g., "The high PRI is driven by significant Exposure (EI=4)...").
-                
-                **Structure your response exactly like this example:**
-                1. **Introduction:** "Table [X] presents the calculation of the Potential Risk Index (PRI)... integrating HI, EI, and VI..."
-                2. **Highest Risks:** "The results show that the highest PRI values (PRI = [X]) are associated with..."
-                3. **Low/Zero Risks:** "In contrast, impacts linked to [Hazard Name] receive a PRI of 0..." (Explain if this is due to HI=0).
-                4. **Specific Observations:** Discuss temperature or wind specifically if present.
-                5. **Data Gaps:** "Entries lacking a PRI score due to missing hazard data..." (Only include this if there are blank/NaN values).
-                6. **Conclusion:** "Overall, the results suggest..."
-                
-                **The Data to Analyze:**
-                {data_string}
-                """
-                
-                with st.spinner("Analyzing data and writing report..."):
-                    response = model.generate_content(prompt)
-                    
-                    st.markdown("### Generated Assessment")
-                    st.markdown(response.text)
-                    
-                    st.download_button(
-                        label="Download Report as Text",
-                        data=response.text,
-                        file_name="PRI_Risk_Assessment_Report.txt",
-                        mime="text/plain"
-                    )
-                    
-            except ImportError:
-                st.error("The `google-generativeai` library is missing. Please run `pip install google-generativeai` in your terminal.")
-            except Exception as e:
-                st.error(f"An error occurred: {e}")
-
+    if "pri_report" in st.session_state and st.session_state["pri_report"]:
+        with st.expander("View PRI Assessment Report", expanded=True):
+            st.markdown(st.session_state["pri_report"])
+        
+        st.download_button(
+            label="Download Report as Text",
+            data=st.session_state["pri_report"],
+            file_name="PRI_Assessment_Report.txt",
+            mime="text/plain"
+        )
+else:
+    st.info("Please calculate the Potential Risk Index (PRI) above to enable report generation.")
