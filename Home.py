@@ -169,7 +169,7 @@ with col_app1:
                 <li>🗺️ Interactive map selection and polygon drawing</li>
                 <li>🏗️ OpenStreetMap infrastructure extraction</li>
                 <li>🌡️ Köppen-Geiger climate classification</li>
-                <li>🤖 AI-powered contextual reports (via Google Gemini)</li>
+                <li>🤖 AI-powered contextual reports (via Mistral)</li>
             </ul>
         </div>
     """, unsafe_allow_html=True)
@@ -245,21 +245,21 @@ with st.expander("⚙️ Technical Information"):
     
     - **Browser**: Modern web browser (Chrome, Firefox, Safari, Edge)
     - **Internet Connection**: Required for map tiles and AI features
-    - **API Keys**: Gemini API key required for AI report generation (configured on deployment)
+    - **API Keys**: Mistral API key required for AI report generation (configured on deployment)
     
     ### Data Sources
     
     - **Infrastructure Data**: OpenStreetMap (via Overpass API)
     - **Climate Data**: Köppen-Geiger Climate Classification (1991-2020)
     - **Basemaps**: CartoDB, OpenTopoMap, Esri
-    - **AI Analysis**: Google Gemini 2.5 Flash with Google Search integration
+    - **AI Analysis**: Mistral chat models with Google Search integration
     
     ### Privacy & Data
     
     - No personal data is collected or stored
     - All analysis is performed in real-time
     - Geographic queries are sent to public APIs (OSM, Nominatim)
-    - AI features use Google Gemini API (subject to Google's privacy policy)
+    - AI features use the Mistral API (subject to Mistral's privacy policy)
     """)
 
 # Footer
