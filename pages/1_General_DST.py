@@ -27,14 +27,14 @@ import streamlit_antd_components as sac
 
 def mistral_request(user_prompt: str,
                     system_instruction: str | None = None,
-                    model: str = "mistral-small-latest",
-                    tools: list | None = None,
+                    model: str = "mistral-large-latest",
                     temperature: float | None = None) -> str:
     """Send a prompt to Mistral and return the generated text.
 
     The function builds a list of messages including an optional system
     instruction and the user prompt, then POSTs to the chat completions
-    endpoint.  The first choice's message content is returned.
+    endpoint.  Only supported parameters are included in the JSON.
+    The first choice's message content is returned.
     """
     api_key = st.session_state.get("mistral_api_key")
     if not api_key:
@@ -50,8 +50,6 @@ def mistral_request(user_prompt: str,
     messages.append({"role": "user", "content": user_prompt})
 
     payload: dict = {"model": model, "messages": messages}
-    if tools is not None:
-        payload["tools"] = tools
     if temperature is not None:
         payload["temperature"] = temperature
 
@@ -857,7 +855,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     system_instruction = (
         "You are an expert geographical and infrastructure analyst. Your task is to generate a report "
         "by analyzing the provided OpenStreetMap data and geographical coordinate. "
-        "**You must use the Google Search tool** to find contextual data, elevation, and topography for the given coordinate. "
+        "Feel free to leverage your extensive world knowledge to supply contextual data, elevation, and topography for the given coordinate. "
         "Follow the specified structured output format strictly. DO NOT include any climate or weather information."
         " Analyze all provided tags in the detailed infrastructure data for deeper insights, such as materials or surfaces."
     )
@@ -876,7 +874,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     {detailed_str}
 
     **REPORT INSTRUCTIONS:**
-    Please use the coordinate and the extracted infrastructure details to search the internet for more contextual information about this geographical area.
+    Use the given coordinate and infrastructure details to provide contextual information about this geographical area, drawing on general knowledge.
     
     **Provide the report in the following structured format:**...
     """
@@ -884,8 +882,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     try:
         response_text = mistral_request(
             user_prompt,
-            system_instruction=system_instruction,
-            tools=[{"google_search": {}}]
+            system_instruction=system_instruction
         )
         return response_text
     except Exception as e:
@@ -903,9 +900,8 @@ def generate_koppen_interpretation(koppen_code):
 
     system_instruction = (
         "You are an expert climatologist. Your task is to provide a detailed, easy-to-understand interpretation "
-        "of the given Köppen Climate Classification code. **You must use the Google Search tool** "
-        "to find detailed climate conditions. Ensure all temperatures are provided in Celcius. "
-        "The response must focus purely on climate conditions and meaning."
+        "of the given Köppen Climate Classification code. To enhance answers you may assume access to general web knowledge. "
+        "Ensure all temperatures are provided in Celsius. The response must focus purely on climate conditions and meaning."
     )
 
     user_prompt = f"""
@@ -922,8 +918,7 @@ def generate_koppen_interpretation(koppen_code):
     try:
         response_text = mistral_request(
             user_prompt,
-            system_instruction=system_instruction,
-            tools=[{"google_search": {}}]
+            system_instruction=system_instruction
         )
         return response_text
     except Exception as e:
@@ -1005,8 +1000,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
     try:
         response_text = mistral_request(
             user_prompt,
-            system_instruction=system_instruction,
-            tools=[{"google_search": {}}]
+            system_instruction=system_instruction
         )
         return response_text
     except Exception as e:
@@ -1566,13 +1560,13 @@ with tab_extraction:
 
                 context_report = ""
                 if st.session_state.get("mistral_api_key"):
-                    with st.spinner(f"Generating Geographical & Infrastructure Report (Internet Search via Mistral)..."):
+                    with st.spinner(f"Generating Geographical & Infrastructure Report (Mistral)..."):
                         context_report = generate_context_report(
                             center_lat, center_lon, area_sq_km, elements)
 
                 koppen_report = ""
                 if st.session_state.get("mistral_api_key"):
-                    with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Internet Search via Mistral)..."):
+                    with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Mistral)..."):
                         koppen_report = generate_koppen_interpretation(
                             center_koppen_code)
 
@@ -1874,7 +1868,7 @@ with tab_lvl1:
                         current_df = None
 
                     if current_df is not None:
-                        with st.spinner("Generating Risk Matrix Interpretation (Mistral with Google Search)..."):
+                        with st.spinner("Generating Risk Matrix Interpretation (Mistral)..."):
                             interpretation_report = generate_risk_interpretation(
                                 current_df, kpis, scenarios)
 

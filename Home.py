@@ -252,7 +252,7 @@ with st.expander("⚙️ Technical Information"):
     - **Infrastructure Data**: OpenStreetMap (via Overpass API)
     - **Climate Data**: Köppen-Geiger Climate Classification (1991-2020)
     - **Basemaps**: CartoDB, OpenTopoMap, Esri
-    - **AI Analysis**: Mistral chat models with Google Search integration
+    - **AI Analysis**: Mistral chat models with broad web knowledge
     
     ### Privacy & Data
     
