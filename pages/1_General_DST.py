@@ -1222,8 +1222,6 @@ selected_step = sac.steps(
 if selected_step == 0:
 
     st.header("Select Infrastructure Types")
-    cols = st.columns(4)
-    checkbox_states = {}
     all_infra_keys = list(infra_options.keys())
 
     infra_icon_map = {
@@ -1234,6 +1232,7 @@ if selected_step == 0:
         'dams & waterworks': 'bricks'
     }
 
+    # This component now correctly stores the user's selection directly in selected_infras
     selected_infras = sac.chip(
         items=[sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(), 'gear')) for k in all_infra_keys],
         label='Choose Infrastructure for Analysis:',
@@ -1243,11 +1242,10 @@ if selected_step == 0:
         key="infra_chip_selector"
     )
 
-    selected_infras = [
-        k for k, is_selected in checkbox_states.items() if is_selected]
     if len(selected_infras) > 5:
         st.warning(
             "⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
+            
     st.markdown("---")
 
     st.header("Search Location and Draw Polygon")
