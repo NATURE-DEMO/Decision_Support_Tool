@@ -20,7 +20,8 @@ import contextily as cx
 import traceback
 import plotly.graph_objects as go
 import plotly.express as px
-import streamlit_antd_components as sac
+
+# --- CONSTANTS AND CONFIGURATION ---
 
 
 # helper to call the Mistral chat completion endpoint
@@ -1365,23 +1366,15 @@ try:
     all_lvl2_data = (road_data + railway_data + tunnels_data + bridges_data +
                      green_spaces_data + dams_data + river_data + torrent_data)
     df_lvl2_base = pd.DataFrame(all_lvl2_data)
-
-    for col in df_lvl2_base.columns:
-        if df_lvl2_base[col].apply(lambda x: isinstance(x, list)).any():
-            df_lvl2_base[col] = df_lvl2_base[col].apply(
-                lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
-
     if 'Infrastructure' in df_lvl2_base.columns:
         df_lvl2_base['Infrastructure'] = df_lvl2_base['Infrastructure'].str.strip()
-
     df_lvl2_base = df_lvl2_base.rename(columns={
         'Infraestructure': 'Infrastructure',
         'Effect on the insfrastructure': 'Effect on the infrastructure',
         'Proposed climate indicators': 'Proposed climate Indicator'
     })
 except Exception as e:
-    st.error(f"Error initializing data: {e}")
-    df_lvl2_base = pd.DataFrame()
+    df_lvl2_base = pd.DataFrame() 
 
 if 'saved_data' not in st.session_state:
     st.session_state.saved_data = pd.DataFrame(columns=df_lvl2_base.columns)
@@ -1894,7 +1887,7 @@ with tab_lvl1:
 
 
 with tab_lvl2:
-    st.header('Infrastructure Impact & Hazard Analysis 🌍')
+    st.header('Infrastructure Impact & Hazard Analysis')
 
     infrastructure_col = 'Infrastructure'
     climate_driver_col = 'Climate driver'
@@ -1943,22 +1936,10 @@ with tab_lvl2:
 
     st.divider()
     st.subheader("2. Selected Impact Models Table")
+
     if not st.session_state.saved_data.empty:
-        # Action buttons for the table
-        btn_col1, btn_col2, _ = st.columns([1, 1, 4])
-
-        with btn_col1:
-            if st.button("Reset Table", help="Clear all selected impact models and results", type="secondary"):
-                st.session_state.saved_data = pd.DataFrame(
-                    columns=df_lvl2_base.columns)
-                st.session_state.calculated_results = pd.DataFrame()
-                st.session_state.capex_df = pd.DataFrame()
-                st.rerun()
-
-        cols_to_display = [impact_model_col,
-                           infrastructure_col, dictionary_key_col]
-        st.session_state.saved_data = st.session_state.saved_data.reset_index(
-            drop=True)
+        cols_to_display = [impact_model_col, infrastructure_col, dictionary_key_col]
+        st.session_state.saved_data = st.session_state.saved_data.reset_index(drop=True)
 
         selection_event = st.dataframe(
             st.session_state.saved_data[cols_to_display],
@@ -1968,15 +1949,13 @@ with tab_lvl2:
             key="impact_table_selection"
         )
 
-        with btn_col2:
-            if st.button("Remove Selected Rows"):
-                selected_indices = selection_event.selection.rows
-                if selected_indices:
-                    st.session_state.saved_data = st.session_state.saved_data.drop(
-                        selected_indices).reset_index(drop=True)
-                    st.rerun()
-                else:
-                    st.warning("Select rows to remove.")
+        if st.button("Remove Selected Rows"):
+            selected_indices = selection_event.selection.rows
+            if selected_indices:
+                st.session_state.saved_data = st.session_state.saved_data.drop(selected_indices).reset_index(drop=True)
+                st.rerun()
+            else:
+                st.warning("Select rows to remove.")
     else:
         st.info("Table is empty. Use filters above to add items.")
 
@@ -1999,7 +1978,7 @@ with tab_lvl2:
         "Use Polygon Center Coordinates",
         value=has_extracted_coords,
         disabled=not has_extracted_coords,
-        help="If checked, uses the center of the polygon drawn in the Information Extraction and Mapping tab."
+        help="If checked, uses the center of the polygon drawn in the first tab."
     )
 
     if use_poly_center and has_extracted_coords:
@@ -2114,18 +2093,17 @@ with tab_lvl2:
 
     if not st.session_state.calculated_results.empty:
         st.subheader("Natural Hazards Table")
-        if st.button("Delete rows without climate information", type="primary", help="Permanently remove rows where Hazard Index is 0 or N/A from the dataset."):
-            before_count = len(st.session_state.calculated_results)
-            st.session_state.calculated_results = st.session_state.calculated_results[
-                (st.session_state.calculated_results["Hazard Index"] != 0) &
-                (st.session_state.calculated_results["Hazard Index"].notna())
-            ].reset_index(drop=True)
 
-            after_count = len(st.session_state.calculated_results)
-            st.toast(f"Deleted {before_count - after_count} rows.", icon="🗑️")
-            st.rerun()
+        hide_empty = st.checkbox("Hide impact models without climate information")
 
         display_df = st.session_state.calculated_results.copy()
+        
+        if hide_empty:
+            display_df = display_df[
+                (display_df["Hazard Index"] != 0) & 
+                (display_df["Hazard Index"].notna())
+            ]
+        
         column_config = {
             "Hazard Index": st.column_config.NumberColumn(
                 "Hazard Index", min_value=1, max_value=5, step=1, required=True
@@ -2205,8 +2183,7 @@ with tab_lvl2:
 
     col_exp1, col_exp2 = st.columns(2)
     with col_exp1:
-        economic_available = st.checkbox(
-            "Economic data for infrastructure assets are available", value=False)
+        economic_available = st.checkbox("Economic data for infrastructure assets are available")
     with col_exp2:
         use_default_thresholds = st.checkbox(
             "Use default threshold values for OPEX and Revenue", value=True)
@@ -2252,60 +2229,26 @@ with tab_lvl2:
         if not use_default_thresholds:
             st.info("Define your custom threshold boundaries:")
             ct1, ct2, ct3, ct4 = st.columns(4)
-            with ct1:
-                rev_low = st.number_input("Revenue Low Threshold", value=1.0)
-            with ct2:
-                rev_high = st.number_input("Revenue High Threshold", value=2.5)
-            with ct3:
-                cap_low = st.number_input("CAPEX Low Threshold", value=5.0)
-            with ct4:
-                cap_high = st.number_input("CAPEX High Threshold", value=10.0)
-
-            # --- DYNAMIC EXPOSURE MATRIX TABLE ---
-            colors = {1: "#6dbf7a", 2: "#a6d17b",
-                      3: "#ffeb84", 4: "#f9a674", 5: "#f76d6d"}
-            html_table = f"""
-            <style>
-                .exp-table {{ width: 100%; border-collapse: collapse; font-family: sans-serif; text-align: center; border: 1px solid #000; }}
-                .exp-table th, .exp-table td {{ border: 1px solid #444; padding: 12px; font-weight: bold; }}
-                .header-dark {{ background-color: #2e4d23; color: white; }}
-                .header-light {{ background-color: #ffffff; color: black; }}
-            </style>
-            <table class="exp-table">
-                <tr>
-                    <th rowspan="2" colspan="2" class="header-dark">Exposure Index thresholds</th>
-                    <th colspan="3" class="header-dark">Assets CAPEX (M€/year)</th>
-                </tr>
-                <tr>
-                    <th class="header-light">< {cap_low}</th>
-                    <th class="header-light">{cap_low} - {cap_high}</th>
-                    <th class="header-light">> {cap_high}</th>
-                </tr>
-                <tr>
-                    <td rowspan="3" class="header-dark" style="width: 20%;">Annual revenues (M€/year)</td>
-                    <td class="header-light">< {rev_low}</td>
-                    <td style="background-color: {colors[1]};">1</td>
-                    <td style="background-color: {colors[2]};">2</td>
-                    <td style="background-color: {colors[3]};">3</td>
-                </tr>
-                <tr>
-                    <td class="header-light">{rev_low} - {rev_high}</td>
-                    <td style="background-color: {colors[2]};">2</td>
-                    <td style="background-color: {colors[3]};">3</td>
-                    <td style="background-color: {colors[4]};">4</td>
-                </tr>
-                <tr>
-                    <td class="header-light">> {rev_high}</td>
-                    <td style="background-color: {colors[3]};">3</td>
-                    <td style="background-color: {colors[4]};">4</td>
-                    <td style="background-color: {colors[5]};">5</td>
-                </tr>
-            </table>
-            """
-            st.markdown(html_table, unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+            with ct1: rev_low = st.number_input("Revenue Low Threshold", value=1.0)
+            with ct2: rev_high = st.number_input("Revenue High Threshold", value=2.5)
+            with ct3: cap_low = st.number_input("CAPEX Low Threshold", value=1.5)
+            with ct4: cap_high = st.number_input("CAPEX High Threshold", value=10.0)
         else:
-            rev_low, rev_high, cap_low, cap_high = 1.0, 2.5, 5.0, 10.0
+            rev_low, rev_high, cap_low, cap_high = 1.0, 2.5, 1.5, 10.0
+
+        def calculate_exposure(rev, cap, r_l, r_h, c_l, c_h):
+            if rev < r_l:
+                if cap < c_l: return 1
+                elif c_l <= cap <= c_h: return 2
+                else: return 3
+            elif r_l <= rev <= r_h:
+                if cap < c_l: return 2
+                elif c_l <= cap <= c_h: return 3
+                else: return 4
+            else: 
+                if cap < c_l: return 3
+                elif c_l <= cap <= c_h: return 4
+                else: return 5
 
     if st.button("Calculate Exposure Indexes"):
         if economic_available and not edited_capex.empty:
@@ -2326,13 +2269,14 @@ with tab_lvl2:
         st.write("### Exposure Results")
 
         exp_col_config = {
-            "Sensitivity Index": None,
-            "Vulnerability Index": None,
-            "Asset": None,
-            "PRI scores": None,
-            "PRI values": None,
-            "Hazard Index": None,
-            "Hazard Level": None
+             "Sensitivity Index": None,
+             "Vulnerability Index": None,
+             "Asset": None,
+             "PRI scores": None,
+             "PRI values": None,
+             
+             "Hazard Index": None,
+             "Hazard Level": None
         }
         st.dataframe(
             st.session_state.calculated_results,
@@ -2510,7 +2454,7 @@ with tab_lvl2:
             "Please complete the previous sections (Filters -> Hazards -> Exposure) to generate the data for analysis.")
 
     st.divider()
-    st.subheader("6. Potential Risk Index")
+    st.header("Potential Risk Index")
 
     if st.button("Calculate the Potential Risk Index (PRI)"):
         if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
@@ -2566,8 +2510,26 @@ with tab_lvl2:
                 final_pri_cols = ['PRI scores', 'PRI values']
 
                 new_order = core_cols + index_cols + final_pri_cols
+                
                 df_pri = df_pri[new_order]
 
+                final_config = {
+                    "Sensitivity Index": None,
+                    "PRI scores": st.column_config.NumberColumn("PRI Score", format="%d"),
+                    "PRI values": st.column_config.TextColumn("PRI Value"),
+                    hazard_col: st.column_config.NumberColumn("Hazard Index"),
+                    exposure_col: st.column_config.NumberColumn("Exposure Index"),
+                    vulnerability_col: st.column_config.NumberColumn("Vuln. Index"),
+                    "Hazard Level": st.column_config.TextColumn("Hazard Level"),
+                }
+                
+                st.subheader("Potential Risk Index Results")
+                st.dataframe(
+                    df_pri,
+                    column_config=final_config,
+                    use_container_width=True
+                )
+                
                 st.session_state.calculated_results = df_pri
                 st.success(
                     "Potential Risk Index (PRI) calculated successfully!")
@@ -2840,6 +2802,8 @@ with tab_lvl2:
             reload=True,
             key="sac_primary_filtered"
         )
+    else:
+        st.info("Please calculate the Potential Risk Index (PRI) above to enable report generation.")
 
         if include_supportive_chk and st.session_state.nbs_supportive_options:
             st.markdown("##### Select Supportive Solutions to Evaluate")
