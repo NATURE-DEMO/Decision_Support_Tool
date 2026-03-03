@@ -9,8 +9,8 @@ import json
 import re
 import time
 import os
-# Using Mistral for AI completions instead of Gemini
-# the Mistral API is accessed via HTTP requests, so no additional SDK import is required
+from google import genai
+from google.genai.errors import APIError
 import numpy as np
 import io
 import rasterio
@@ -20,48 +20,50 @@ import contextily as cx
 import traceback
 import plotly.graph_objects as go
 import plotly.express as px
+import streamlit_antd_components as sac
 
-# --- CONSTANTS AND CONFIGURATION ---
 
+GEMINI_MODEL_VERSION = "gemini-2.5-flash"
 
-# helper to call the Mistral chat completion endpoint
+AI_DISCLAIMER_TEXT = (
+    "**Disclaimer:** The AI-generated summaries and interpretations provided by this tool are "
+    "intended to support understanding and exploration of geospatial and infrastructure data. "
+    "These outputs are automatically generated and should **not** be used as the sole basis for "
+    "any decisions. Users are advised to consult the detailed, tabular data provided within the "
+    "tool and seek expert advice before making any decisions. "
+    "The project does not bear responsibility for actions taken solely on the basis of AI-generated content."
+)
 
-def mistral_request(user_prompt: str,
-                    system_instruction: str | None = None,
-                    model: str = "mistral-large-latest",
-                    temperature: float | None = None) -> str:
-    """Send a prompt to Mistral and return the generated text.
+AI_LIMITATIONS_TEXT = (
+    "- AI-generated content may occasionally contain inaccuracies or omissions.\n"
+    "- The AI does not possess domain expertise and may misinterpret ambiguous or incomplete data.\n"
+    "- This system is not designed for real-time operational decision-making or emergency response "
+    "without expert validation."
+)
 
-    The function builds a list of messages including an optional system
-    instruction and the user prompt, then POSTs to the chat completions
-    endpoint.  Only supported parameters are included in the JSON.
-    The first choice's message content is returned.
-    """
-    api_key = st.session_state.get("mistral_api_key")
-    if not api_key:
-        raise ValueError("Mistral API key not set")
+def render_ai_header(report_title: str):
+    """Renders the standardised AI transparency header above every AI-generated report."""
+    st.markdown(
+        f"""
+        <div style="background-color:#fff8e1; border-left:5px solid #f9a825;
+                    padding:12px 16px; border-radius:6px; margin-bottom:8px;">
+            <span style="font-size:1.05em;">🤖 <strong>AI-Generated Content</strong>
+            &nbsp;|&nbsp; Model: <code>{GEMINI_MODEL_VERSION}</code>
+            &nbsp;|&nbsp; {report_title}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.warning(AI_DISCLAIMER_TEXT)
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    messages: list[dict] = []
-    if system_instruction:
-        messages.append({"role": "system", "content": system_instruction})
-    messages.append({"role": "user", "content": user_prompt})
-
-    payload: dict = {"model": model, "messages": messages}
-    if temperature is not None:
-        payload["temperature"] = temperature
-
-    resp = requests.post("https://api.mistral.ai/v1/chat/completions",
-                         headers=headers,
-                         json=payload)
-    resp.raise_for_status()
-    data = resp.json()
-    # navigate to the text of the first choice
-    return data["choices"][0]["message"].get("content", "")
-
+def render_ai_footer():
+    """Renders the standardised limitations notice and feedback prompt below every AI-generated report."""
+    with st.expander("⚠️ AI Limitations & Responsible Use", expanded=False):
+        st.markdown(AI_LIMITATIONS_TEXT)
+    st.info(
+        "📣 **Feedback:** Found an inaccuracy or misleading interpretation? "
+        "Please report it to the project team via the dedicated feedback channel so we can improve the AI component."
+    )
 
 KOPPEN_COLORS = np.array([
     [0, 0, 255], [0, 120, 255], [70, 170, 250], [255, 0, 0], [255, 150, 150],
@@ -164,589 +166,369 @@ Impacts related to general **Changing precipitation patterns** (chronic changes)
 Overall, the asset shows a sensitivity to acute hydrometeorological events (landslides, heavy rain) rather than chronic climate shifts. Adaptation strategies should prioritize drainage improvements and slope stabilization to reduce the Vulnerability Index, which is the primary driver amplifying the risk in this scenario.
 """
 road_data = [
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation', 'Preliminary climate Indicator':
-        'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation', 'Preliminary climate Indicator':
-        'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation', 'Preliminary climate Indicator':
-        'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator':
-        '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
-    {'Infrastructure': 'Road', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the drainage system due to increase in heavy precipitation',
-        'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Road', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Upgrading of the drainage system due to increase in heavy rain', 'Preliminary climate Indicator':
-        '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator':
-        '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Road', 'Asset': 'Road Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the road infrastructure caused by flash floods.', 'Preliminary climate Indicator':
-        '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased pavement maintenance due to increase in precipitation',
-        'Preliminary climate Indicator': 'Monthly mean precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Road', 'Asset': 'Slopes and Embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of slopes due to increase in precipitation', 'Preliminary climate Indicator':
-        'Substantial relative increase in annual precipitation\nRelative change in annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Sheet erosion & rill erosion']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to increase in precipitation', 'Preliminary climate Indicator': 'Substantial relative increase in annual precipitation\nRelative change in annual precipitation',
-        'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation\n', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
-    {'Infrastructure': 'Road', 'Asset': 'Road Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the road caused by increased precipitations', 'Preliminary climate Indicator': 'Substantial relative increase in annual precipitation\nRelative change in annual precipitation',
-        'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation\n', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'Road', 'Asset': 'Road', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds ', 'Preliminary climate Indicator':
-        'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Road', 'Asset': 'Roadside Equipment', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to strong winds', 'Preliminary climate Indicator':
-        'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Road', 'Asset': 'Road', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds ', 'Preliminary climate Indicator':
-        'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Air surface temperature increase (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased pavement maintenance due to temperature increase',
-     'Preliminary climate Indicator': 'Monthly mean temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']}
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
+    {'Infrastructure': 'Road', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the drainage system due to increase in heavy precipitation', 'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Road', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Upgrading of the drainage system due to increase in heavy rain', 'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Road', 'Asset': 'Road Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the road infrastructure caused by flash floods.', 'Preliminary climate Indicator': '25-year return period for maximum 1-day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased pavement maintenance due to increase in precipitation', 'Preliminary climate Indicator': 'Monthly mean precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Road', 'Asset': 'Slopes and Embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of slopes due to increase in precipitation', 'Preliminary climate Indicator': 'Substantial relative increase in annual precipitation\nRelative change in annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Sheet erosion & rill erosion']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to increase in precipitation', 'Preliminary climate Indicator': 'Substantial relative increase in annual precipitation\nRelative change in annual precipitation', 'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation\n', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
+    {'Infrastructure': 'Road', 'Asset': 'Road Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the road caused by increased precipitations', 'Preliminary climate Indicator': 'Substantial relative increase in annual precipitation\nRelative change in annual precipitation', 'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation\n', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'Road', 'Asset': 'Road', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds ', 'Preliminary climate Indicator': 'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Road', 'Asset': 'Roadside Equipment', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to strong winds', 'Preliminary climate Indicator': 'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Road', 'Asset': 'Road', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds ', 'Preliminary climate Indicator': 'Number of windy days\nNumber of very windy days\nNumber of high wind days\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Air surface temperature increase (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased pavement maintenance due to temperature increase', 'Preliminary climate Indicator': 'Monthly mean temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Road', 'Asset': 'Pavement', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']}
 ]
 
 railway_data = [
-    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation on superstructure elements.',
-     'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation on superstructure elements.',
-     'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation on trains and increased energy consumption. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation on the catenary elements.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the catenary caused by snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for ensuring system reliability due to snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to embankment failure due to changes in precipitation.', 'Preliminary climate Indicator': 'Relative change in annual mean precipitation\\nSubstantial relative increase in mean annual precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by embankment failure due to changes in precipitation.', 'Preliminary climate Indicator':
-        '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of slopes due to changes in precipitation.', 'Preliminary climate Indicator':
-        'Relative change in annual mean precipitation\\nSubstantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Sheet erosion & rill erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator': 'Substantial relative increase in mean annual precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
-    {'Infrastructure': 'Railway', 'Asset': 'Drainage systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the drainage system due to increased precipitation',
-        'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Railway', 'Asset': 'Drainage systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the drainage system due to increased precipitation', 'Preliminary climate Indicator':
-        '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to damage to the track bed', 'Preliminary climate Indicator':
-        '25‐year return period for maximum 1‐day precipitation (P25)\\nSubstantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion', 'Fluvial flood']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damage in the track bed due to acumulated sedimentation or flooding.', 'Preliminary climate Indicator': '?',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport', 'Fluvial flood']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX',
-        'Impact model': 'Increased maintenance for damage to the track bed (ballast) due to changes in precipitation', 'Preliminary climate Indicator': 'Frequency of precipitation\\nReturn period of 10, 20, 25, 50 and 100 years of maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenange of the steel elements due to changes in precipitation.',
-     'Preliminary climate Indicator': 'Substantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the ballast caused by changes in precipitation.', 'Preliminary climate Indicator':
-        '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to signal and electrical systems malfunction due to heavy rains.',
-        'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
-    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the signal and electrical systems caused by heavy rains.',
-        'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to strong winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by strong winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to damages on the rail track and platform associated to strong winds.',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to damages on the catenary elements due to strong winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the catenary elements due to high winds.',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to power outages caused by high winds.', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Snow drift']},
-    {'Infrastructure': 'Railway', 'Asset': 'Buildings', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption due to temperature increase (stations)',
-     'Preliminary climate Indicator': 'Cooling degree days', 'Proposed climate Indicator': 'Cooling degree days?', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance on track rails due to buckling caused by high temperatures', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to thermal expansion of the catenary', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high temperatures affecting the power lines.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high temperatures affecting the signaling and control systems.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to lack of electrical contact between pantograph and catenary', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to lack of electrical contact between pantograph and catenary',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C\\nMean annual temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to lack of electrical contact between pantograph and catenary',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']}
+    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation on superstructure elements.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation on superstructure elements.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation on trains and increased energy consumption. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation on the catenary elements.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the catenary caused by snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for ensuring system reliability due to snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to embankment failure due to changes in precipitation.', 'Preliminary climate Indicator': 'Relative change in annual mean precipitation\\nSubstantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by embankment failure due to changes in precipitation.', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Landslides < 2 m depth', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Railway', 'Asset': 'Slopes and embankments', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of slopes due to changes in precipitation.', 'Preliminary climate Indicator': 'Relative change in annual mean precipitation\\nSubstantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Soil slope deformation & Soil creep', 'Sheet erosion & rill erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rain', 'Preliminary climate Indicator': 'Substantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
+    {'Infrastructure': 'Railway', 'Asset': 'Drainage systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the drainage system due to increased precipitation', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Railway', 'Asset': 'Drainage systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the drainage system due to increased precipitation', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to damage to the track bed', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)\\nSubstantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion', 'Fluvial flood']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damage in the track bed due to acumulated sedimentation or flooding.', 'Preliminary climate Indicator': '?', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport', 'Fluvial flood']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for damage to the track bed (ballast) due to changes in precipitation', 'Preliminary climate Indicator': 'Frequency of precipitation\\nReturn period of 10, 20, 25, 50 and 100 years of maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'Railway', 'Asset': 'Structures (excluding tunnels and bridges)', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenange of the steel elements due to changes in precipitation.', 'Preliminary climate Indicator': 'Substantial relative increase in mean annual precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the ballast caused by changes in precipitation.', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to signal and electrical systems malfunction due to heavy rains.', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
+    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the signal and electrical systems caused by heavy rains.', 'Preliminary climate Indicator': '25‐year return period for maximum 1‐day precipitation (P25)', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to strong winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to strong winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by strong winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to damages on the rail track and platform associated to strong winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to damages on the catenary elements due to strong winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the catenary elements due to high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to power outages caused by high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Snow drift']},
+    {'Infrastructure': 'Railway', 'Asset': 'Buildings', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption due to temperature increase (stations)', 'Preliminary climate Indicator': 'Cooling degree days', 'Proposed climate Indicator': 'Cooling degree days?', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance on track rails due to buckling caused by high temperatures', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Railway', 'Asset': 'Rail Track and Platform', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to thermal expansion of the catenary', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high temperatures affecting the power lines.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Facilities, equipment and safety', 'Climate driver': 'Changes in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high temperatures affecting the signaling and control systems.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nAverage number of days per year with daily maximum temperature >=45°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive Capex due to lack of electrical contact between pantograph and catenary', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to lack of electrical contact between pantograph and catenary', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C\\nMean annual temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Railway', 'Asset': 'Electrical facilities', 'Climate driver': 'Changes in Temperature (Low temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to lack of electrical contact between pantograph and catenary', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']}
 ]
 
 tunnels_data = [
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation causing blockage of entrances and exits',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid blockage of entrances and exits',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation causing the overloading of the ventilation systems. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid the malfunction of the ventilation systems.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to snow collapse in the entrances or structures of the tunnel. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow avalanches', 'Snow drift', 'Snow creep & slide']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to damages on the infrastructure equipments or assets due to snow collapse in the entrances/exits. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow avalanches', 'Snow drift']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to drainage systems saturation. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid the saturation of drainage systems. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to structural damages caused by structural damages caused by additional snow loads on the infrastructure. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to the closure of the tunnel caused by structural damages. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Snow avalanches']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': "Increased maintenance due to snow accumulation to avoid additional snow loads to the tunnel's structure. ",
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Snow drift']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation on electrical and mechanical systems. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Tunnels ', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to heavy rains. ', 'Preliminary climate Indicator':
-        '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Landslides < 2 m depth']},
-    {'Infrastructure': 'Tunnels ', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to the affection of tunnel equipments by heavy rains. ',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to drainage systems saturation.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains to avoid the saturation of drainage systems. ',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains.',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to heavy rains. ', 'Preliminary climate Indicator':
-        '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to landslides/debris affecting the tunnel entrances/exits.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation',
-        'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Landslides < 2 m depth', 'Debris flow (Volumetric Sediment Concentration >40%)', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain airflow balance. ',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high winds. ', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the external structure or equipments of the tunnel due to high winds.',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Power & Communication Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the power and communication systems connected to the tunnel. ',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Power & Communication Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': "Stop of operations due to power and communication systems' disruption due to high winds. ",
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the tunnel structure due to high temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Pavements & Rail Tracks', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the pavements or rail tracks infrastructure inside the tunnel due to high temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nNumber of consecutive days with daily maximum temperature >40°C??', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain safe temperatures. ',
-     'Preliminary climate Indicator': 'Cooling degree days', 'Proposed climate Indicator': 'Monthly mean temperature\\nCooling degree days', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages and deterioration of tunnel's equipment.",
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to cold temperatures. ',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages and deterioration of tunnel's equipment.", 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain safe temperatures. ',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation causing blockage of entrances and exits', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid blockage of entrances and exits', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation causing the overloading of the ventilation systems. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid the malfunction of the ventilation systems.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to snow collapse in the entrances or structures of the tunnel. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow avalanches', 'Snow drift', 'Snow creep & slide']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to damages on the infrastructure equipments or assets due to snow collapse in the entrances/exits. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow avalanches', 'Snow drift']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to drainage systems saturation. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation  to avoid the saturation of drainage systems. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to structural damages caused by structural damages caused by additional snow loads on the infrastructure. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to the closure of the tunnel caused by structural damages. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Snow avalanches']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': "Increased maintenance due to snow accumulation to avoid additional snow loads to the tunnel's structure. ", 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow creep & slide', 'Snow drift']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to snow accumulation. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation on electrical and mechanical systems. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Tunnels ', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Landslides < 2 m depth']},
+    {'Infrastructure': 'Tunnels ', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to the affection of tunnel equipments by heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to drainage systems saturation.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains to avoid the saturation of drainage systems. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages associated to heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to landslides/debris affecting the tunnel entrances/exits.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Landslides < 2 m depth', 'Debris flow (Volumetric Sediment Concentration >40%)', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain airflow balance. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the external structure or equipments of the tunnel due to high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Power & Communication Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the power and communication systems connected to the tunnel. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Power & Communication Systems', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': "Stop of operations due to power and communication systems' disruption due to high winds. ", 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Tunnel Structure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the tunnel structure due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Pavements & Rail Tracks', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the pavements or rail tracks infrastructure inside the tunnel due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\\nNumber of consecutive days with daily maximum temperature >40°C??', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain safe temperatures. ', 'Preliminary climate Indicator': 'Cooling degree days', 'Proposed climate Indicator': 'Monthly mean temperature\\nCooling degree days', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages and deterioration of tunnel's equipment.", 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintentance due to cold temperatures. ', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Electrical & Mechanical Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages and deterioration of tunnel's equipment.", 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Tunnels', 'Asset': 'Ventilation Systems', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased energy consumption to maintain safe temperatures. ', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
 ]
 
 bridges_data = [
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow avalanches']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the bridge structure caused by snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow creep & slide', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation in the drainage systems. ',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation.',
-        'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to flooding caused by heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the bridge structure caused by extreme precipitations. ',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains.', 'Preliminary climate Indicator':
-        '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rains. ', 'Preliminary climate Indicator':
-        '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance to clear and upgrade the drainage systems due to heavy rains.',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance related to erosion control due to heavy rains. ',
-        'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial sediment transport', 'Fluvial flood']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages in the bridge's foundations due to heavy rains.", 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation',
-        'Proposed climate Indicator': 'Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages in the bridge's structure due to high winds.", 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance to prevent long-term damage and need for enhanced monitoring due to high winds. ',
-        'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Ancillary Assets (Signage, Gantries, Barriers)', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the auxiliary structures caused by high winds.',
-     'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Ancillary Assets (Signage, Gantries, Barriers)', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the protective and auxiliary structures due to high winds.',
-     'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator':
-        'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by high temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by high temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow drift']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator':
-     'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.',
-     'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)', 'Snow avalanches']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the bridge structure caused by snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow creep & slide', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to snow accumulation in the drainage systems. ', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to snow accumulation.', 'Preliminary climate Indicator': 'Winter months accumulated snow', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to flooding caused by heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \\nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages on the bridge structure caused by extreme precipitations. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to heavy rains.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Storms & strong winds']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Drainage Systems', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance to clear and upgrade the drainage systems due to heavy rains.', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance related to erosion control due to heavy rains. ', 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial sediment transport', 'Fluvial flood']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Substructure & Foundations', 'Climate driver': 'Changes in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages in the bridge's foundations due to heavy rains.", 'Preliminary climate Indicator': '25-year return period of maximun 1-day precipitation', 'Proposed climate Indicator': 'Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': "Reactive CAPEX due to damages in the bridge's structure due to high winds.", 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance to prevent long-term damage and need for enhanced monitoring due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Ancillary Assets (Signage, Gantries, Barriers)', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages in the auxiliary structures caused by high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Hail']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Ancillary Assets (Signage, Gantries, Barriers)', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of the protective and auxiliary structures due to high winds.', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Annual mean windspeed at 10 m', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in wind intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to high winds. ', 'Preliminary climate Indicator': 'Number of windy days\\nNumber of very windy days\\nNumber of high wind days\\nNumber of extreme wind days', 'Proposed climate Indicator': 'Average number of days per year with daily mean wind speed  >=20 km/h', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Storms & strong winds', 'Desertification', 'Snow drift']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to high temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow creep & slide']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow drift']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Superstructure', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to damages caused by low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Bridges', 'Asset': 'Bridge Deck & Pavement', 'Climate driver': 'Changes in temperature (Low temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to low temperatures.', 'Preliminary climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
 ]
 
 green_spaces_data = [
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of green space utilization, due to decreasing aesthetic value and reduced user benefits...',
-     'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low level of use of green space due to unsuitable conditions for citizens...', 'Preliminary climate Indicator': 'Ground-level heat wave frequency',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\nMean temperature at ground level over threshold?', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance with plants and materials.',
-     'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration servicies', 'Preliminary climate Indicator': 'Annual average temperature',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Increase in required time to generate specific benefits',
-     'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tratements due to the decrease in the natural immunity of plants.',
-     'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits', 'Preliminary climate Indicator': 'Annual average temperature',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of use of green spaces due to their low attractiveness...',
-     'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to ecolgical disruption.',
-     'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with water supplies.',
-     'Preliminary climate Indicator': 'Soil humidity', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemical tretements due to ecolgical disruption.',
-     'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with irrigation costs due to depletion in soil water resources.',
-     'Preliminary climate Indicator': 'Soil humidity', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits',
-        'Preliminary climate Indicator': 'Air humidity', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased irrigation costs to compensate for reduced soil water resources due to lack of water condensation.',
-        'Preliminary climate Indicator': 'Air humidity', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chelicals tretements due to ecolgical disruption.',
-     'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Low precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of green space utilization and consequently a reduced level of ecosystem services provided by it',
-        'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with water supplies.',
-        'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...',
-     'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX',
-        'Impact model': 'The increasing maintenance costs of irrigation systems due to deposits (limestone, iron, algae) from the water used for irrigation', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to green space restoration services by replacing dead plants ',
-     'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chelicals tretements due to ecolgical disruption.',
-     'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low level of use of green space due to unsuitable conditions for citizens...',
-        'Preliminary climate Indicator': 'Solar intensity', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits',
-        'Preliminary climate Indicator': 'Solar intensity', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...',
-     'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']}
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of green space utilization, due to decreasing aesthetic value and reduced user benefits...', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low level of use of green space due to unsuitable conditions for citizens...', 'Preliminary climate Indicator': 'Ground-level heat wave frequency', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C\nMean temperature at ground level over threshold?', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance with plants and materials.', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration servicies', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Increase in required time to generate specific benefits', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tratements due to the decrease in the natural immunity of plants.', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of use of green spaces due to their low attractiveness...', 'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to ecolgical disruption.', 'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with water supplies.', 'Preliminary climate Indicator': 'Soil humidity', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemical tretements due to ecolgical disruption.', 'Preliminary climate Indicator': 'Annual average temperature', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Extreme heat (including heatwaves)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with irrigation costs due to depletion in soil water resources.', 'Preliminary climate Indicator': 'Soil humidity', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits', 'Preliminary climate Indicator': 'Air humidity', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased irrigation costs to compensate for reduced soil water resources due to lack of water condensation.', 'Preliminary climate Indicator': 'Air humidity', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chelicals tretements due to ecolgical disruption.', 'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Number of days with relative humidity under 40%', 'Dictionary Key': 'hurs40_days', 'Possible Hazards': ['Drought', 'Extreme high temperatures (Heatwave)', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Low precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low degree of green space utilization and consequently a reduced level of ecosystem services provided by it', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with water supplies.', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Irrigation & Water Systems', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'The increasing maintenance costs of irrigation systems due to deposits (limestone, iron, algae) from the water used for irrigation', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to green space restoration services by replacing dead plants ', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Low precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chelicals tretements due to ecolgical disruption.', 'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'low level of use of green space due to unsuitable conditions for citizens...', 'Preliminary climate Indicator': 'Solar intensity', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Green Space Areas', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits', 'Preliminary climate Indicator': 'Solar intensity', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'green spaces', 'Asset': 'Vegetation (Plants & Trees)', 'Climate driver': 'Increased solar intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...', 'Preliminary climate Indicator': 'Biodiversity level', 'Proposed climate Indicator': 'Solar radiation intensity at plant level', 'Dictionary Key': 'par_plant_level', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']}
 ]
 
 dams_data = [
-    {'Infrastructure': 'Dams', 'Asset': 'Spillways & Intakes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to spillway blockage causing damage to the dam structure.', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator':
-        'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to extreme water conditions.', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
-    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to erosion', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator':
-        'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Sheet erosion & rill erosion', 'Gully erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to sedimentation and reservoir capacity reduction', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial sediment transport', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Dams', 'Asset': 'Dam Structure', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Increased water levels in the reservoir may cause damage to the dam', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Increased maintenance due to landslide', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator':
-        'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Landslides 2-10 m depth', 'Mud or Earth flow', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Increased mainenance cost due to rockflow', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Small Rockfall (Diameter <25cm)', 'Large Rockfall (Diameter >25-100 cm)', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to debris accumulation', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to landslide and rockfall ', 'Preliminary climate Indicator': 'Annual average precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Landslides 2-10 m depth', 'Small Rockfall (Diameter <25cm)']},
-    {'Infrastructure': 'Dams', 'Asset': 'Access Roads', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations of the road',
-        'Preliminary climate Indicator': 'Winter months', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Dams', 'Asset': 'Operational Buildings', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to the blockage of the operational building',
-        'Preliminary climate Indicator': 'Winter months', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Dams', 'Asset': 'Access Roads', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Delay in maintaning operations due to blockage of the road', 'Preliminary climate Indicator': 'Low tempearature',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow drift']},
-    {'Infrastructure': 'Dams', 'Asset': 'Operational Buildings', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Delay in maintaning operations due to operational building',
-     'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to landslide and rockfall ', 'Preliminary climate Indicator': 'Low tempearature',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Small Rockfall (Diameter <25cm)', 'Snow creep & slide']},
-    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to ice formation ', 'Preliminary climate Indicator': 'Low temperature',
-     'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced protection for landslide and erosion',
-        'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': '?', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Soil slope deformation & Soil creep', 'Aeolian erosion']},
-    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Low precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Greater potential for erosion', 'Preliminary climate Indicator':
-        'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Aeolian erosion', 'Desertification']}
+    {'Infrastructure': 'Dams', 'Asset': 'Spillways & Intakes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to spillway blockage causing damage to the dam structure.', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Pluvial flood, heavy rainfall and surface runoff', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to extreme water conditions.', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood']},
+    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to erosion', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Sheet erosion & rill erosion', 'Gully erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to sedimentation and reservoir capacity reduction', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial sediment transport', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Dams', 'Asset': 'Dam Structure', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Increased water levels in the reservoir may cause damage to the dam', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Increased maintenance due to landslide', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Landslides 2-10 m depth', 'Mud or Earth flow', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Increased mainenance cost due to rockflow', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Small Rockfall (Diameter <25cm)', 'Large Rockfall (Diameter >25-100 cm)', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to debris accumulation', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to landslide and rockfall ', 'Preliminary climate Indicator': 'Annual average precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Landslides 2-10 m depth', 'Small Rockfall (Diameter <25cm)']},
+    {'Infrastructure': 'Dams', 'Asset': 'Access Roads', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations of the road', 'Preliminary climate Indicator': 'Winter months', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Snow avalanches', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Dams', 'Asset': 'Operational Buildings', 'Climate driver': 'Changes in snow intensity', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to the blockage of the operational building', 'Preliminary climate Indicator': 'Winter months', 'Proposed climate Indicator': 'Winter months accumulated snow', 'Dictionary Key': 'solidprcptot_winter', 'Possible Hazards': ['Snow drift', 'Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Dams', 'Asset': 'Access Roads', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Delay in maintaning operations due to blockage of the road', 'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Snow drift']},
+    {'Infrastructure': 'Dams', 'Asset': 'Operational Buildings', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Delay in maintaning operations due to operational building', 'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Dams', 'Asset': 'Power Generation Equipment', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced Power Generation due to landslide and rockfall ', 'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)', 'Small Rockfall (Diameter <25cm)', 'Snow creep & slide']},
+    {'Infrastructure': 'Dams', 'Asset': 'Reservoir Basin', 'Climate driver': 'Extreme temperature (low)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Stop of operations due to ice formation ', 'Preliminary climate Indicator': 'Low temperature', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Reduced atmosferic humidity', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced protection for landslide and erosion', 'Preliminary climate Indicator': 'Low tempearature', 'Proposed climate Indicator': '?', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Soil slope deformation & Soil creep', 'Aeolian erosion']},
+    {'Infrastructure': 'Dams', 'Asset': 'Catchment Area & Slopes', 'Climate driver': 'Low precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Greater potential for erosion', 'Preliminary climate Indicator': 'Level of precipitations', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought...', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Aeolian erosion', 'Desertification']}
 ]
 
 river_data = [
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excess bank collapses potentially leading to channel migration/shifting.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Landslides < 2 m depth', 'Fluvial flood']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in case of large structural damages to embankments and leeves.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean temperature', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Channel & Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive scour.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to hydraulic overloading and structural damage.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Channel & Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive deposition lowering hydrualic conveyance.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Fluvial flood']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Concrete Revetments & Walls', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for protecting concrete surfaces in contact with river flow.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX if channel shifts to the edge of the river corridor causing levees undermining.', 'Preliminary climate Indicator':
-        'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator':
-        'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX',
-        'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in the first few years after execution of soil bioengineering works when vegetation is not fully rooted yet.', 'Preliminary climate Indicator':
-        'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Sheet erosion & rill erosion']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced levels of ecosystem services.', 'Preliminary climate Indicator':
-        'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator':
-        'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Low degree of river space utilization, due to decreasing aesthetic value and reduced user benefits, and consequently a reduced level of ecosystem services\xa0provided\xa0by\xa0it',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration works (planting new vegetation).',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services of living plants.',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20 (Proxy)', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX after frosty periods/years to replace frost-bitten vegetation.',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20 (Proxy)', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excess bank collapses potentially leading to channel migration/shifting.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Landslides < 2 m depth', 'Fluvial flood']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in case of large structural damages to embankments and leeves.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean temperature', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Channel & Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive scour.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to hydraulic overloading and structural damage.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial flood', 'Stream bank & bed erosion']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Fluvial flood', 'Pluvial flood, heavy rainfall and surface runoff']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Channel & Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive deposition lowering hydrualic conveyance.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Fluvial flood']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Concrete Revetments & Walls', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for protecting concrete surfaces in contact with river flow.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX if channel shifts to the edge of the river corridor causing levees undermining.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial flood']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in the first few years after execution of soil bioengineering works when vegetation is not fully rooted yet.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Sheet erosion & rill erosion']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Low degree of river space utilization, due to decreasing aesthetic value and reduced user benefits, and consequently a reduced level of ecosystem services\xa0provided\xa0by\xa0it', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration works (planting new vegetation).', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'River Ecosystem & Amenity', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services of living plants.', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20 (Proxy)', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'River training infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX after frosty periods/years to replace frost-bitten vegetation.', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20 (Proxy)', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
 ]
 
 torrent_data = [
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation',
-        'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excess bank collapses potentially leading to channel migration/shifting.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Landslides < 2 m depth']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in case of large structural damages to embankments and leeves.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Stream bank & bed erosion', 'Fluvial flood']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Channel Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive scour.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to hydraulic overloading and structural damage.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial sediment transport']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Channel Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive deposition lowering hydrualic conveyance.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Concrete Surfaces', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for protecting concrete surfaces in contact with torrential flow.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX if channel shifts to the edge of the river corridor causing levees undermining.',
-        'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain',
-     'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).',
-     'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in the first few years after execution of soil bioengineering works when vegetation is not fully rooted yet.', 'Preliminary climate Indicator':
-     'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification', 'Sheet erosion & rill erosion']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm',
-     'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Low degree of river space utilization, due to decreasing aesthetic value and reduced user benefits, and consequently a reduced level of ecosystem services\xa0provided\xa0by\xa0it',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration works (planting new vegetation).', 'Preliminary climate Indicator':
-     'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.',
-     'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services of living plants.',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
-    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX after frosty periods/years to replace frost-bitten vegetation.',
-     'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excess bank collapses potentially leading to channel migration/shifting.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Landslides < 2 m depth']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in case of large structural damages to embankments and leeves.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Stream bank & bed erosion', 'Fluvial flood']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Channel Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive scour.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Stream bank & bed erosion', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance due to hydraulic overloading and structural damage.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial sediment transport']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Check Dams & Weirs', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to hydraulic overloading and needed reconstruction works.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Debris flow (Volumetric Sediment Concentration >40%)', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Channel Bed', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance in case of excessive deposition lowering hydrualic conveyance.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Concrete Surfaces', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance for protecting concrete surfaces in contact with torrential flow.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Fluvial sediment transport', 'Debris flood (Volumetric Sediment Concentration 20-40%)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Embankments & Levees', 'Climate driver': 'Change in precipitation', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX if channel shifts to the edge of the river corridor causing levees undermining.', 'Preliminary climate Indicator': 'Maximum daily precipitation', 'Proposed climate Indicator': 'Return period of 100 years of maximum daily precipitation ', 'Dictionary Key': 'rx1day_rp100', 'Possible Hazards': ['Stream bank & bed erosion', 'Debris flood (Volumetric Sediment Concentration 20-40%)', 'Fluvial flood']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'Monthly mean precipitation', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX in the first few years after execution of soil bioengineering works when vegetation is not fully rooted yet.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm & Maximum consecutive days without rain', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification', 'Sheet erosion & rill erosion']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in precipitation (Low)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Number of days with precipitation below 1mm', 'Proposed climate Indicator': 'SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)', 'Dictionary Key': 'spei3_severe_prob', 'Possible Hazards': ['Drought', 'Desertification']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Low degree of river space utilization, due to decreasing aesthetic value and reduced user benefits, and consequently a reduced level of ecosystem services\xa0provided\xa0by\xa0it', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX due to restoration works (planting new vegetation).', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought', 'Wildfire (Forest fire or Bush fire)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Ecosystem Services', 'Climate driver': 'Change in Temperature (High temperatures)', 'Type of impact': 'Operations', 'Consequences': 'Revenues loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services.', 'Preliminary climate Indicator': 'Annual average temperature - Number of days with temperatures over 35 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature >=40°C', 'Dictionary Key': 'tx40', 'Possible Hazards': ['Extreme high temperatures (Heatwave)', 'Drought']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Operations', 'Consequences': 'Revenue loss', 'Impact model': 'Reduced benefits and reduced levels of ecosystem services of living plants.', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Maintenance', 'Consequences': 'Increase OPEX', 'Impact model': 'Increased maintenance of soil bioengineering works (living plants).', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Monthly mean temperature', 'Dictionary Key': 'Not found', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']},
+    {'Infrastructure': 'Torrent control infrastructure', 'Asset': 'Bioengineering & Vegetation', 'Climate driver': 'Change in temperature (Low temperature)', 'Type of impact': 'Damages', 'Consequences': 'Increase CAPEX', 'Impact model': 'Reactive CAPEX after frosty periods/years to replace frost-bitten vegetation.', 'Preliminary climate Indicator': 'Number of days with temperatures below -20 degrees C', 'Proposed climate Indicator': 'Average number of days per year with daily maximum temperature < - 31°C', 'Dictionary Key': 'tn20', 'Possible Hazards': ['Extreme cold temperatures (Coldwave, cold snap)']}
 ]
 
 NbS_list = [{
-    "Extreme high temperatures (Heatwave)": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Bioswales"]
-    },
-    "Extreme cold temperatures (Coldwave, cold snap)": {
-        "Yes": [],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Living shorelines", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Green roofs", "Vertical greenery", "Urban forests"]
-    },
-    "Drought": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Wetland conservation and restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Constructed wetlands", "Salt marsh restoration", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches", "Bioswales"]
-    },
-    "Wildfire (Forest fire or Bush fire)": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Firebreaks and firestrips", "Fire-resistant tree species & plants", "Prescribed burning", "Channel widening", "Controlled grazing", "Fire-smart agriculture"],
-        "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Salt marsh restoration", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)"]
-    },
-    "Desertification": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)"],
-        "Supportive": ["Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Sod (turves)", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
-    },
-    "Storms & strong winds": {
-        "Yes": ["Agroforestry", "Live fencing (for slope engineering)"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Living shorelines", "Mangroves", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Live palisades and live weirs", "Wooden log fences"]
-    },
-    "Hail": {
-        "Yes": ["Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "Agroforestry", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Green roofs"]
-    },
-    "Aeolian erosion": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Fire-smart agriculture", "Contour trenching", "Conservation tillage", "Mulching", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "Floodplain restoration", "Cover cropping", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"]
-    },
-    "Pluvial flood, heavy rainfall and surface runoff": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Green pavers", "Green roofs", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Vertical greenery", "Bioswales"]
-    },
-    "Fluvial flood": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Urban forests", "Bioswales"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Green pavers", "Green roofs", "Vertical greenery", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
-    },
-    "Coastal flood (e.g. storm surge)": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "Vegetated flood protection dams, dikes & levees", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Live staking", "Wattle fence (for water enginering)"],
-        "Supportive": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Wetland conservation and restoration", "Constructed wetlands", "Coral reef conservation and restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques"]
-    },
-    "Impact floods and Tsunami": {
-        "Yes": ["Can be supportive to conventional structural measures"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves"]
-    },
-    "Fluvial sediment transport": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Green corridors & tree rows", "Vegetated buffer zones", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
-        "Supportive": ["Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Biodiverse hedgerows", "Meadow & grassland restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Urban forests", "Infiltration trenches", "Bioswales"]
-    },
-    "Stream bank & bed erosion": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
-        "Supportive": ["Avalanche mounds", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Wattle fence (for water enginering)", "Urban forests", "Infiltration trenches", "Bioswales"]
-    },
-    "Sheet erosion & rill erosion": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"],
-        "Supportive": ["Avalanche mounds", "Controlled grazing", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Infiltration trenches"]
-    },
-    "Gully erosion": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
-        "Supportive": ["Avalanche mounds", "Agroforestry", "Vegetated buffer zones", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)"]
-    },
-    "Coastal and shoreline erosion (includes freshwater environments)": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
-        "Supportive": ["Avalanche mounds", "Vegetated flood protection dams, dikes & levees", "Seagrass bed restoration", "Coral reef conservation and restoration", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones"]
-    },
-    "Debris flood (Volumetric Sediment Concentration 20-40%)": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Channel widening", "Vegetated flood protection dams, dikes & levees"],
-        "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Riparian buffer zones", "Sills", "Groynes (vegetated)", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Open green spaces", "Urban forests", "Rain gardens", "Infiltration trenches"]
-    },
-    "Debris flow (Volumetric Sediment Concentration >40%)": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Urban forests"],
-        "Supportive": ["3-D steel grids (vegetated)", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"]
-    },
-    "Small Rockfall (Diameter <25cm)": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated riprap", "Wooden log fences", "Urban forests"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "3-D steel grids (vegetated)", "Vegetated cribwall (layer-based design)"]
-    },
-    "Large Rockfall (Diameter >25-100 cm)": {
-        "Yes": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "Afforestation and reforestation", "Protection forest management", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated riprap", "Wooden log fences", "Urban forests"]
-    },
-    "Landslides < 2 m depth": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Urban forests"],
-        "Supportive": ["Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones"]
-    },
-    "Landslides 2-10 m depth": {
-        "Yes": ["Vegetated drainage systems"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Urban forests"]
-    },
-    "Landslides > 10 m depths": {
-        "Yes": ["Can be supportive to conventional structural measures", "Vegetated drainage systems"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Afforestation and reforestation", "Protection forest management"]
-    },
-    "Mud or Earth flow": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
-        "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
-    },
-    "Soil slope deformation & Soil creep": {
-        "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
-        "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
-    },
-    "Snow avalanches": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management"],
-        "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams"]
-    },
-    "Snow drift": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
-        "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Meadow & grassland restoration", "Live staking", "Live fencing (for slope engineering)"]
-    },
-    "Snow creep & slide": {
-        "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Vegetated buffer zones", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
-        "Supportive": ["Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Meadow & grassland restoration"]
-    }
+  "Extreme high temperatures (Heatwave)": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Bioswales"]
+  },
+  "Extreme cold temperatures (Coldwave, cold snap)": {
+    "Yes": [],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Living shorelines", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Green roofs", "Vertical greenery", "Urban forests"]
+  },
+  "Drought": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Wetland conservation and restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Constructed wetlands", "Salt marsh restoration", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches", "Bioswales"]
+  },
+  "Wildfire (Forest fire or Bush fire)": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Firebreaks and firestrips", "Fire-resistant tree species & plants", "Prescribed burning", "Channel widening", "Controlled grazing", "Fire-smart agriculture"],
+    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Salt marsh restoration", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)"]
+  },
+  "Desertification": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)"],
+    "Supportive": ["Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Sod (turves)", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
+  },
+  "Storms & strong winds": {
+    "Yes": ["Agroforestry", "Live fencing (for slope engineering)"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Living shorelines", "Mangroves", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Live palisades and live weirs", "Wooden log fences"]
+  },
+  "Hail": {
+    "Yes": ["Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "Agroforestry", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Green roofs"]
+  },
+  "Aeolian erosion": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Fire-smart agriculture", "Contour trenching", "Conservation tillage", "Mulching", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "Floodplain restoration", "Cover cropping", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"]
+  },
+  "Pluvial flood, heavy rainfall and surface runoff": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Green pavers", "Green roofs", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Vertical greenery", "Bioswales"]
+  },
+  "Fluvial flood": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Urban forests", "Bioswales"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Green pavers", "Green roofs", "Vertical greenery", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
+  },
+  "Coastal flood (e.g. storm surge)": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "Vegetated flood protection dams, dikes & levees", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Live staking", "Wattle fence (for water enginering)"],
+    "Supportive": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Wetland conservation and restoration", "Constructed wetlands", "Coral reef conservation and restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques"]
+  },
+  "Impact floods and Tsunami": {
+    "Yes": ["Can be supportive to conventional structural measures"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves"]
+  },
+  "Fluvial sediment transport": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Green corridors & tree rows", "Vegetated buffer zones", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Supportive": ["Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Biodiverse hedgerows", "Meadow & grassland restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Urban forests", "Infiltration trenches", "Bioswales"]
+  },
+  "Stream bank & bed erosion": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Supportive": ["Avalanche mounds", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Wattle fence (for water enginering)", "Urban forests", "Infiltration trenches", "Bioswales"]
+  },
+  "Sheet erosion & rill erosion": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"],
+    "Supportive": ["Avalanche mounds", "Controlled grazing", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Infiltration trenches"]
+  },
+  "Gully erosion": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Supportive": ["Avalanche mounds", "Agroforestry", "Vegetated buffer zones", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)"]
+  },
+  "Coastal and shoreline erosion (includes freshwater environments)": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
+    "Supportive": ["Avalanche mounds", "Vegetated flood protection dams, dikes & levees", "Seagrass bed restoration", "Coral reef conservation and restoration", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones"]
+  },
+  "Debris flood (Volumetric Sediment Concentration 20-40%)": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Channel widening", "Vegetated flood protection dams, dikes & levees"],
+    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Riparian buffer zones", "Sills", "Groynes (vegetated)", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Open green spaces", "Urban forests", "Rain gardens", "Infiltration trenches"]
+  },
+  "Debris flow (Volumetric Sediment Concentration >40%)": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Urban forests"],
+    "Supportive": ["3-D steel grids (vegetated)", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"]
+  },
+  "Small Rockfall (Diameter <25cm)": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated riprap", "Wooden log fences", "Urban forests"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "3-D steel grids (vegetated)", "Vegetated cribwall (layer-based design)"]
+  },
+  "Large Rockfall (Diameter >25-100 cm)": {
+    "Yes": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "Afforestation and reforestation", "Protection forest management", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated riprap", "Wooden log fences", "Urban forests"]
+  },
+  "Landslides < 2 m depth": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Urban forests"],
+    "Supportive": ["Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones"]
+  },
+  "Landslides 2-10 m depth": {
+    "Yes": ["Vegetated drainage systems"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Urban forests"]
+  },
+  "Landslides > 10 m depths": {
+    "Yes": ["Can be supportive to conventional structural measures", "Vegetated drainage systems"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Afforestation and reforestation", "Protection forest management"]
+  },
+  "Mud or Earth flow": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
+    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
+  },
+  "Soil slope deformation & Soil creep": {
+    "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
+    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
+  },
+  "Snow avalanches": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management"],
+    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams"]
+  },
+  "Snow drift": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
+    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Meadow & grassland restoration", "Live staking", "Live fencing (for slope engineering)"]
+  },
+  "Snow creep & slide": {
+    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Vegetated buffer zones", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
+    "Supportive": ["Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Meadow & grassland restoration"]
+  }
 }]
-
-
 def calculate_exposure(rev, cap, r_l, r_h, c_l, c_h):
     """Calculates Exposure Index based on user-defined thresholds."""
     if rev < r_l:
-        if cap < c_l:
-            return 1
-        elif c_l <= cap <= c_h:
-            return 2
-        else:
-            return 3
+        if cap < c_l: return 1
+        elif c_l <= cap <= c_h: return 2
+        else: return 3
     elif r_l <= rev <= r_h:
-        if cap < c_l:
-            return 2
-        elif c_l <= cap <= c_h:
-            return 3
-        else:
-            return 4
-    else:
-        if cap < c_l:
-            return 3
-        elif c_l <= cap <= c_h:
-            return 4
-        else:
-            return 5
-
-
+        if cap < c_l: return 2
+        elif c_l <= cap <= c_h: return 3
+        else: return 4
+    else: 
+        if cap < c_l: return 3
+        elif c_l <= cap <= c_h: return 4
+        else: return 5
 def polygon_style_function(feature):
     return {'fillColor': 'blue', 'color': 'blue'}
-
 
 def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     cmap = ListedColormap(KOPPEN_COLORS)
@@ -819,10 +601,9 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
 
     return fig, koppen_code
 
-
 def generate_context_report(center_lat, center_lon, area_sq_km, elements):
-    if not st.session_state.get("mistral_api_key"):
-        return "Mistral API key not initialized. Cannot generate report."
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate report."
 
     center_coord_str = f"{center_lat:.4f}, {center_lon:.4f}"
 
@@ -856,7 +637,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     system_instruction = (
         "You are an expert geographical and infrastructure analyst. Your task is to generate a report "
         "by analyzing the provided OpenStreetMap data and geographical coordinate. "
-        "Feel free to leverage your extensive world knowledge to supply contextual data, elevation, and topography for the given coordinate. "
+        "**You must use the Google Search tool** to find contextual data, elevation, and topography for the given coordinate. "
         "Follow the specified structured output format strictly. DO NOT include any climate or weather information."
         " Analyze all provided tags in the detailed infrastructure data for deeper insights, such as materials or surfaces."
     )
@@ -875,34 +656,39 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     {detailed_str}
 
     **REPORT INSTRUCTIONS:**
-    Use the given coordinate and infrastructure details to provide contextual information about this geographical area, drawing on general knowledge.
+    Please use the coordinate and the extracted infrastructure details to search the internet for more contextual information about this geographical area.
     
     **Provide the report in the following structured format:**...
     """
 
     try:
-        response_text = mistral_request(
-            user_prompt,
-            system_instruction=system_instruction
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "tools": [{"google_search": {}}]
+            }
         )
-        return response_text
+        return response.text
+    except APIError as e:
+        return f"Gemini API Error (Context Report): {e}."
     except Exception as e:
-        st.error(
-            f"An unexpected error occurred during context report generation: {e}")
+        st.error(f"An unexpected error occurred during context report generation: {e}")
         return "An unexpected error occurred during context report generation."
 
-
 def generate_koppen_interpretation(koppen_code):
-    if not st.session_state.get("mistral_api_key"):
-        return "Mistral API key not initialized. Cannot generate climate interpretation."
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate climate interpretation."
 
     if koppen_code in ["N/A", "Unknown"]:
         return "Cannot generate interpretation. The Köppen climate code could not be determined from the map."
 
     system_instruction = (
         "You are an expert climatologist. Your task is to provide a detailed, easy-to-understand interpretation "
-        "of the given Köppen Climate Classification code. To enhance answers you may assume access to general web knowledge. "
-        "Ensure all temperatures are provided in Celsius. The response must focus purely on climate conditions and meaning."
+        "of the given Köppen Climate Classification code. **You must use the Google Search tool** "
+        "to find detailed climate conditions. Ensure all temperatures are provided in Celcius. "
+        "The response must focus purely on climate conditions and meaning."
     )
 
     user_prompt = f"""
@@ -917,20 +703,24 @@ def generate_koppen_interpretation(koppen_code):
     """
 
     try:
-        response_text = mistral_request(
-            user_prompt,
-            system_instruction=system_instruction
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "tools": [{"google_search": {}}]
+            }
         )
-        return response_text
+        return response.text
+    except APIError as e:
+        return f"Gemini API Error (Köppen Interpretation): {e}."
     except Exception as e:
-        st.error(
-            f"An unexpected error occurred during Köppen interpretation generation: {e}")
+        st.error(f"An unexpected error occurred during Köppen interpretation generation: {e}")
         return "An unexpected error occurred during Köppen interpretation generation."
 
-
 def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: dict):
-    if not st.session_state.get("mistral_api_key"):
-        return "Mistral API key not initialized. Cannot generate risk interpretation."
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate risk interpretation."
 
     df_risks_prompt = df_risks.rename_axis('').to_markdown()
 
@@ -957,8 +747,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
         "reached with only grey infrastructure, even though it is flood resistant per se."
     )
 
-    scenario_desc = "\n".join(
-        [f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
+    scenario_desc = "\n".join([f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
     kpi_list = "\n".join([f"- {k}" for k in kpis])
 
     system_instruction = (
@@ -999,22 +788,23 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
     """
 
     try:
-        response_text = mistral_request(
-            user_prompt,
-            system_instruction=system_instruction
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction, 
+                "tools": [{"google_search": {}}] 
+            }
         )
-        return response_text
+        return response.text
     except Exception as e:
         return f"An error occurred: {e}"
 
-
-def generate_hazard_report_mistral(calculated_df):
-    if not st.session_state.get("mistral_api_key"):
-        return "Mistral API key not initialized. Cannot generate report."
-
-    # Convert the current hazard table to markdown for the prompt
+def generate_hazard_report_gemini(calculated_df):
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate report."
     hazard_table_md = calculated_df.to_markdown(index=False)
-
+    
     system_instruction = (
         "You are an expert climate hazard analyst. Your task is to generate a professional report "
         "interpreting a climate hazard table calculated for a specific infrastructure project. "
@@ -1050,35 +840,29 @@ def generate_hazard_report_mistral(calculated_df):
     """
 
     try:
-        response_text = mistral_request(
-            user_prompt,
-            system_instruction=system_instruction,
-            temperature=0.3
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "temperature": 0.3 
+            }
         )
-        return response_text
+        return response.text
     except Exception as e:
         return f"Error generating hazard report: {e}"
-
-
-def generate_pri_report_mistral(calculated_df):
-    if not st.session_state.get("mistral_api_key"):
-        return "Mistral API key not initialized. Cannot generate report."
-
-    # Filter and Rename columns to match the standard abbreviations (HI, EI, VI)
-    # This helps the AI map the data to the prompt logic easily
+def generate_pri_report_gemini(calculated_df):
+    if not st.session_state.get("gemini_client"):
+        return "Gemini client not initialized. Cannot generate report."
     df_prompt = calculated_df.copy()
-
-    # Ensure we have the necessary columns
-    required_cols = ['Infrastructure', 'Climate driver', 'Impact model',
-                     'Hazard Index', 'Exposure Index', 'Vulnerability Index',
+    required_cols = ['Infrastructure', 'Climate driver', 'Impact model', 
+                     'Hazard Index', 'Exposure Index', 'Vulnerability Index', 
                      'PRI scores', 'PRI values']
-
+    
     available_cols = [c for c in required_cols if c in df_prompt.columns]
     df_prompt = df_prompt[available_cols]
-
-    # Convert to Markdown
     pri_table_md = df_prompt.to_markdown(index=False)
-
+    
     system_instruction = (
         "You are a senior infrastructure risk analyst. Your task is to write a formal "
         "'Potential Risk Index (PRI) Assessment Report' based on the provided data table. "
@@ -1111,16 +895,17 @@ def generate_pri_report_mistral(calculated_df):
     """
 
     try:
-        response_text = mistral_request(
-            user_prompt,
-            system_instruction=system_instruction,
-            temperature=0.3
+        response = st.session_state["gemini_client"].models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[user_prompt],
+            config={
+                "system_instruction": system_instruction,
+                "temperature": 0.3
+            }
         )
-        return response_text
+        return response.text
     except Exception as e:
         return f"Error generating PRI report: {e}"
-
-
 @st.cache_resource(ttl=3600)
 def build_folium_map_object(center, zoom, polygon_data, drawing_key):
     m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB positron")
@@ -1134,8 +919,7 @@ def build_folium_map_object(center, zoom, polygon_data, drawing_key):
         control=True,
     ).add_to(m)
 
-    draw = folium.plugins.Draw(export=False, draw_options={
-                               'polygon': True, 'rectangle': True})
+    draw = folium.plugins.Draw(export=False, draw_options={'polygon': True, 'rectangle': True})
     draw.add_to(m)
     folium.LayerControl().add_to(m)
 
@@ -1143,7 +927,6 @@ def build_folium_map_object(center, zoom, polygon_data, drawing_key):
         folium.GeoJson(polygon_data, name="Drawn Polygon",
                        style_function=polygon_style_function).add_to(m)
     return m
-
 
 @st.cache_data(ttl=3600)
 def geocode_location(location_name):
@@ -1163,7 +946,6 @@ def geocode_location(location_name):
         st.error(f"Geocoding error: {e}")
         return None
 
-
 def reset_polygon():
     st.session_state["last_polygon"] = None
     st.session_state["drawing_key"] += 1
@@ -1171,11 +953,9 @@ def reset_polygon():
     st.session_state["extracted_data"] = None
     st.rerun()
 
-
 def get_polygon_coords(geo_json):
     coords = geo_json["geometry"]["coordinates"][0]
     return [(lat, lon) for lon, lat in coords]
-
 
 def build_query(coords, selected_infras):
     coord_str = " ".join([f"{lat} {lon}" for lat, lon in coords])
@@ -1188,18 +968,15 @@ def build_query(coords, selected_infras):
     query_body = "\n".join(filters)
     return f"[out:json][timeout:90];\n(\n{query_body}\n);\nout body geom;"
 
-
 def make_overpass_request(query, max_retries=2):
     overpass_url = "https://overpass-api.de/api/interpreter"
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(overpass_url, params={
-                                    'data': query}, timeout=180)
+            response = requests.get(overpass_url, params={'data': query}, timeout=180)
             if response.status_code == 200:
                 return response
             elif response.status_code == 400:
-                st.error(
-                    "Overpass API Error: Bad Request (400). Check query syntax.")
+                st.error("Overpass API Error: Bad Request (400). Check query syntax.")
                 return response
             elif response.status_code == 429:
                 st.error("**Overpass API Error: Too Many Requests (429).**")
@@ -1212,8 +989,7 @@ def make_overpass_request(query, max_retries=2):
                     st.error("⚠️ Overpass API Error: Server timeout (504).")
                     return response
             else:
-                st.error(
-                    f"⚠️ Overpass API Error: HTTP Status Code {response.status_code}")
+                st.error(f"⚠️ Overpass API Error: HTTP Status Code {response.status_code}")
                 return response
         except requests.exceptions.Timeout:
             if attempt < max_retries:
@@ -1227,7 +1003,6 @@ def make_overpass_request(query, max_retries=2):
             return None
     return None
 
-
 def element_matches_infrastructure(element, infra_keys):
     if 'tags' not in element or not element['tags']:
         return False
@@ -1236,20 +1011,17 @@ def element_matches_infrastructure(element, infra_keys):
             return True
     return False
 
-
 def create_detailed_dataframe(elements):
     if not elements:
         return pd.DataFrame()
     data_rows = []
     for element in elements:
-        row_data = {'type': element.get(
-            'type', ''), 'id': element.get('id', '')}
+        row_data = {'type': element.get('type', ''), 'id': element.get('id', '')}
         if 'tags' in element and element['tags']:
             for tag_key, tag_value in element['tags'].items():
                 row_data[f'tag.{tag_key}'] = tag_value
         data_rows.append(row_data)
     return pd.DataFrame(data_rows).fillna('')
-
 
 def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, title: str):
     df = kpis_df.copy()
@@ -1271,7 +1043,6 @@ def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, titl
         range=[1, 5], tickvals=[1, 2, 3, 4, 5])), title=title, height=650)
     return fig
 
-
 def create_risk_heatmap_plotly(df_risk: pd.DataFrame, df_loss: pd.DataFrame, scenario_key: str, kpis: list):
     risk_values = pd.to_numeric(df_risk[scenario_key], errors='coerce')
     loss_values = pd.to_numeric(df_loss[scenario_key], errors='coerce')
@@ -1282,8 +1053,7 @@ def create_risk_heatmap_plotly(df_risk: pd.DataFrame, df_loss: pd.DataFrame, sce
         "KPI": kpis
     }).dropna()
 
-    plot_df["Severity"] = plot_df["Risk Rating (X)"] * \
-        plot_df["Loss Rating (CI)"]
+    plot_df["Severity"] = plot_df["Risk Rating (X)"] * plot_df["Loss Rating (CI)"]
 
     fig = px.scatter(
         plot_df,
@@ -1305,10 +1075,8 @@ def create_risk_heatmap_plotly(df_risk: pd.DataFrame, df_loss: pd.DataFrame, sce
     )
 
     fig.update_layout(
-        xaxis=dict(tickvals=list(range(1, 6)), tickmode='array',
-                   showgrid=True, zeroline=False),
-        yaxis=dict(tickvals=list(range(1, 6)), tickmode='array',
-                   showgrid=True, zeroline=False),
+        xaxis=dict(tickvals=list(range(1, 6)), tickmode='array', showgrid=True, zeroline=False),
+        yaxis=dict(tickvals=list(range(1, 6)), tickmode='array', showgrid=True, zeroline=False),
         height=480,
         coloraxis_showscale=False
     )
@@ -1344,17 +1112,13 @@ if "extract_clicked" not in st.session_state:
 if "extracted_data" not in st.session_state:
     st.session_state["extracted_data"] = None
 
-initial_data = {scenario_key: {k: 3 for k in kpis}
-                for scenario_key in scenarios}
+initial_data = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
 if "risk_matrix_data" not in st.session_state:
-    st.session_state["risk_matrix_data"] = pd.DataFrame(
-        initial_data, index=kpis).to_dict()
+    st.session_state["risk_matrix_data"] = pd.DataFrame(initial_data, index=kpis).to_dict()
 
-initial_loss_data = {scenario_key: {k: 3 for k in kpis}
-                     for scenario_key in scenarios}
+initial_loss_data = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
 if "loss_matrix_data" not in st.session_state:
-    st.session_state["loss_matrix_data"] = pd.DataFrame(
-        initial_loss_data, index=kpis).to_dict()
+    st.session_state["loss_matrix_data"] = pd.DataFrame(initial_loss_data, index=kpis).to_dict()
 
 if "interpretation_report" not in st.session_state:
     st.session_state["interpretation_report"] = ""
@@ -1363,18 +1127,25 @@ if "hazard_report" not in st.session_state:
     st.session_state["hazard_report"] = ""
 
 try:
-    all_lvl2_data = (road_data + railway_data + tunnels_data + bridges_data +
-                     green_spaces_data + dams_data + river_data + torrent_data)
+    all_lvl2_data = (road_data + railway_data + tunnels_data + bridges_data + 
+                green_spaces_data + dams_data + river_data + torrent_data)
     df_lvl2_base = pd.DataFrame(all_lvl2_data)
+
+    for col in df_lvl2_base.columns:
+        if df_lvl2_base[col].apply(lambda x: isinstance(x, list)).any():
+            df_lvl2_base[col] = df_lvl2_base[col].apply(lambda x: ', '.join(map(str, x)) if isinstance(x, list) else x)
+
     if 'Infrastructure' in df_lvl2_base.columns:
         df_lvl2_base['Infrastructure'] = df_lvl2_base['Infrastructure'].str.strip()
+    
     df_lvl2_base = df_lvl2_base.rename(columns={
         'Infraestructure': 'Infrastructure',
         'Effect on the insfrastructure': 'Effect on the infrastructure',
         'Proposed climate indicators': 'Proposed climate Indicator'
     })
 except Exception as e:
-    df_lvl2_base = pd.DataFrame() 
+    st.error(f"Error initializing data: {e}")
+    df_lvl2_base = pd.DataFrame()
 
 if 'saved_data' not in st.session_state:
     st.session_state.saved_data = pd.DataFrame(columns=df_lvl2_base.columns)
@@ -1385,20 +1156,25 @@ if 'calculated_results' not in st.session_state:
 if 'capex_df' not in st.session_state:
     st.session_state.capex_df = pd.DataFrame()
 
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-if not MISTRAL_API_KEY:
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
     try:
-        if hasattr(st, 'secrets') and "MISTRAL_API_KEY" in st.secrets:
-            MISTRAL_API_KEY = st.secrets["MISTRAL_API_KEY"]
+        if hasattr(st, 'secrets') and "GEMINI_API_KEY" in st.secrets:
+            GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
     except Exception:
         pass
 
-if MISTRAL_API_KEY:
-    st.session_state["mistral_api_key"] = MISTRAL_API_KEY
+if GEMINI_API_KEY:
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        st.session_state["gemini_client"] = client
+        st.session_state["gemini_model_version"] = GEMINI_MODEL_VERSION
+    except Exception as e:
+        st.error(f"Error initializing Gemini client: {e}")
+        st.session_state["gemini_client"] = None
 else:
-    st.warning(
-        "⚠️ MISTRAL_API_KEY not found. AI report feature disabled. Please set the key.")
-    st.session_state["mistral_api_key"] = None
+    st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key.")
+    st.session_state["gemini_client"] = None
 
 st.set_page_config(page_title="General Decision Support Tool", layout="wide")
 
@@ -1428,33 +1204,44 @@ with st.sidebar:
         </a>
     """, unsafe_allow_html=True)
 
-tab_extraction, tab_lvl1, tab_lvl2 = st.tabs(
-    ["**Information Extraction and Mapping**", "**Level 1**", "**Level 2**"])
 
-with tab_extraction:
-    st.markdown(
-        """
-        Use the search box to find a location, then draw a polygon on the map and click **"Extract Information"** below the map.
-        """
+selected_step = sac.steps(
+        items=[
+            sac.StepsItem(title='Extraction', subtitle='Mapping & Data', icon='geo-alt'),
+            sac.StepsItem(title='Level 1', subtitle='Perceived Risks', icon='1-circle'),
+            sac.StepsItem(title='Level 2', subtitle='Technical Analysis', icon='2-circle'),
+        ], 
+        format_func='title', 
+        placement='horizontal', 
+        size='large',
+        variant='navigation',
+        color='dark',
+        return_index=True
     )
+
+if selected_step == 0:
 
     st.header("Select Infrastructure Types")
     cols = st.columns(4)
     checkbox_states = {}
     all_infra_keys = list(infra_options.keys())
 
-    for i, infra_name in enumerate(all_infra_keys):
-        col_index = i % 4
-        with cols[col_index]:
-            if f"check_{infra_name}" not in st.session_state:
-                default_state = infra_name in ["Buildings", "Roads", "Water"]
-                st.session_state[f"check_{infra_name}"] = default_state
+    infra_icon_map = {
+        'buildings': 'building', 'roads': 'car-front', 'railways': 'train-lightrail',
+        'water': 'water', 'power': 'lightning', 'landuse': 'map',
+        'man-made structures': 'tools', 'barriers': 'bar-chart-steps',
+        'natural features': 'tree', 'amenities': 'cup-hot', 'leisure': 'bicycle',
+        'dams & waterworks': 'bricks'
+    }
 
-            checkbox_states[infra_name] = st.checkbox(
-                infra_name,
-                value=st.session_state[f"check_{infra_name}"],
-                key=f"check_{infra_name}"
-            )
+    selected_infras = sac.chip(
+        items=[sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(), 'gear')) for k in all_infra_keys],
+        label='Choose Infrastructure for Analysis:',
+        multiple=True,
+        variant='outline',
+        color='blue',
+        key="infra_chip_selector"
+    )
 
     selected_infras = [
         k for k, is_selected in checkbox_states.items() if is_selected]
@@ -1552,14 +1339,14 @@ with tab_extraction:
                         center_lat, center_lon)
 
                 context_report = ""
-                if st.session_state.get("mistral_api_key"):
-                    with st.spinner(f"Generating Geographical & Infrastructure Report (Mistral)..."):
+                if st.session_state.get("gemini_client"):
+                    with st.spinner(f"Generating Geographical & Infrastructure Report (Internet Search)..."):
                         context_report = generate_context_report(
                             center_lat, center_lon, area_sq_km, elements)
 
                 koppen_report = ""
-                if st.session_state.get("mistral_api_key"):
-                    with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Mistral)..."):
+                if st.session_state.get("gemini_client"):
+                    with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Internet Search)..."):
                         koppen_report = generate_koppen_interpretation(
                             center_koppen_code)
 
@@ -1596,7 +1383,29 @@ with tab_extraction:
             st.markdown("---")
             st.subheader("Geographical & Infrastructure Context Report")
             if context_report:
+                render_ai_header("Geographical & Infrastructure Context Report")
+                with st.expander("📊 View Raw Infrastructure Data Fed to AI (OpenStreetMap)", expanded=False):
+                    st.caption("This is the underlying tabular data that was provided to the AI model for analysis.")
+                    has_raw_data = False
+                    for infra in selected_infras:
+                        keys_to_check = set()
+                        for filter_str in infra_options[infra]:
+                            key_match = re.search(r'\["(.+?)"', filter_str)
+                            if key_match:
+                                keys_to_check.add(key_match.group(1))
+                        infra_elements = [
+                            element for element in elements
+                            if element_matches_infrastructure(element, keys_to_check)
+                        ]
+                        if infra_elements:
+                            has_raw_data = True
+                            infra_df = create_detailed_dataframe(infra_elements)
+                            st.subheader(f"{infra} ({len(infra_elements)} items)")
+                            st.dataframe(infra_df[[col for col in infra_df.columns if not col.startswith('geometry')]].head(15), width=1200)
+                    if not has_raw_data:
+                        st.info("No detailed data to display for the selected infrastructure types.")
                 st.markdown(context_report)
+                render_ai_footer()
             else:
                 st.warning(
                     "The Geographical & Infrastructure Report failed to generate or the AI feature is disabled.")
@@ -1619,43 +1428,84 @@ with tab_extraction:
             st.markdown("---")
             st.subheader("Climate Interpretation Report")
             if koppen_report:
+                render_ai_header("Köppen-Geiger Climate Interpretation Report")
+                with st.expander("📊 View Raw Data Fed to AI (Köppen Climate Code)", expanded=False):
+                    st.caption("This is the climate classification code extracted from the Köppen-Geiger map that was provided to the AI model.")
+                    koppen_code_display = st.session_state["extracted_data"].get("koppen_code", "N/A")
+                    st.markdown(f"**Köppen Climate Code:** `{koppen_code_display}`")
+                    st.markdown("The code was derived from the Köppen-Geiger Climate Classification raster (1991–2020) based on the centroid of your selected polygon.")
                 st.markdown(koppen_report)
+                render_ai_footer()
             else:
                 st.warning(
                     "The Climate Interpretation Report failed to generate or the AI feature is disabled.")
 
             with st.expander("View Extracted Infrastructure Data Tables (OpenStreetMap Raw Data)"):
-                st.subheader("Detailed Infrastructure Data Tables")
-                has_data_for_any_infra = False
+                st.info("The raw OpenStreetMap data tables are shown inside the **'View Raw Infrastructure Data Fed to AI'** expander above, directly beneath the Context Report.")
+    pass
 
-                for infra in selected_infras:
-                    keys_to_check = set()
-                    for filter_str in infra_options[infra]:
-                        key_match = re.search(r'\["(.+?)"', filter_str)
-                        if key_match:
-                            keys_to_check.add(key_match.group(1))
-
-                    infra_elements = [
-                        element for element in elements
-                        if element_matches_infrastructure(element, keys_to_check)
-                    ]
-
-                    if infra_elements:
-                        has_data_for_any_infra = True
-                        infra_df = create_detailed_dataframe(infra_elements)
-                        st.subheader(
-                            f"{infra} ({len(infra_elements)} infrastructure items)")
-                        st.dataframe(infra_df[[col for col in infra_df.columns if not col.startswith(
-                            'geometry')]].head(15), width=1200)
-
-                if not has_data_for_any_infra:
-                    st.info(
-                        "No detailed data to display for the selected infrastructure types.")
-
-
-with tab_lvl1:
+elif selected_step == 1:
 
     st.header("Perceived Risks Assessment")
+    st.subheader("1. Scope Definition")
+    st.info("Define the location, infrastructure, and hazard for this specific assessment.")
+
+    has_lvl0_polygon = st.session_state.get("last_polygon") is not None
+    use_previous_poly = st.checkbox(
+        "Use same polygon from 'Information Extraction and Mapping' section", 
+        value=has_lvl0_polygon, 
+        disabled=not has_lvl0_polygon
+    )
+
+    if use_previous_poly and has_lvl0_polygon:
+        lvl1_poly = st.session_state["last_polygon"]
+        lvl1_center = st.session_state["map_center"]
+        lvl1_zoom = st.session_state["map_zoom"]
+    else:
+        lvl1_center = st.session_state.get("map_center", [51.1657, 10.4515])
+        lvl1_zoom = st.session_state.get("map_zoom", 6)
+        lvl1_poly = st.session_state.get("lvl1_polygon", None)
+
+    m_lvl1 = build_folium_map_object(lvl1_center, lvl1_zoom, lvl1_poly, "lvl1_draw_key")
+    lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
+
+    if lvl1_map_output and lvl1_map_output.get("last_active_drawing"):
+        drawing = lvl1_map_output["last_active_drawing"]
+        if drawing.get("geometry"):
+            st.session_state["lvl1_polygon"] = drawing
+            coords = drawing["geometry"]["coordinates"][0]
+            lats = [c[1] for c in coords]
+            lons = [c[0] for c in coords]
+            st.session_state["lvl1_bbox"] = [min(lats), min(lons), max(lats), max(lons)]
+
+    col_scope1, col_scope2 = st.columns(2)
+    with col_scope1:
+        selected_infra_type = st.selectbox(
+            "Select Infrastructure Type",
+            options=[
+                "Road", "Railway", "Tunnels", "Bridges", 
+                "green spaces", "Dams", "River training infrastructure", 
+                "Torrent control infrastructure"
+            ]
+        )
+    with col_scope2:
+        selected_hazard_type = st.selectbox(
+            "Select Hazard Driver",
+            options=[
+                'Extreme high temperatures (Heatwave)', 'Extreme cold temperatures (Coldwave, cold snap)', 
+                'Drought', 'Wildfire (Forest fire or Bush fire)', 'Desertification', 
+                'Storms & strong winds', 'Hail', 'Aeolian erosion', 
+                'Pluvial flood, heavy rainfall and surface runoff', 'Fluvial flood', 
+                'Coastal flood (e.g. storm surge)', 'Impact floods and Tsunami', 
+                'Fluvial sediment transport', 'Stream bank & bed erosion', 
+                'Sheet erosion & rill erosion', 'Gully erosion', 
+                'Coastal and shoreline erosion (includes freshwater environments)', 
+                'Debris flood (Volumetric Sediment Concentration 20-40%)', 
+                'Debris flow (Volumetric Sediment Concentration >40%)', 'Small Rockfall (Diameter)'
+            ]
+        )
+
+    st.markdown("---")
 
     df_data = st.session_state["risk_matrix_data"]
     df = pd.DataFrame(df_data, index=kpis)
@@ -1704,8 +1554,8 @@ with tab_lvl1:
                 width="small"
             )
 
-        st.markdown("### 1. Risk Rating (Critical infrastructure Condition)")
-
+        st.markdown(f"### 1. Risk Rating (Critical infrastructure Condition) for {selected_infra_type}")
+        
         with st.form("risk_rating_form"):
             risk_edited_df = st.data_editor(
                 df,
@@ -1714,13 +1564,12 @@ with tab_lvl1:
                 key="risk_matrix_editor_widget"
             )
             submit_risk = st.form_submit_button("Save Risk Ratings")
-
+        
         if submit_risk:
             st.session_state["risk_matrix_data"] = risk_edited_df.to_dict()
             st.rerun()
-
-        st.markdown("### 2. Extent of Loss Rating (CI)")
-
+        st.markdown(f"### 2. Extent of Loss Rating (CI) for {selected_infra_type}")
+        
         df_loss_data = st.session_state["loss_matrix_data"]
         df_loss = pd.DataFrame(df_loss_data, index=kpis)
         df_loss.index.name = "KPI / Indicator"
@@ -1746,19 +1595,16 @@ with tab_lvl1:
                 ci_column_original = df_loss['CI'].copy()
                 reconstructed_df_loss = loss_edited_df_display.assign(
                     CI=ci_column_original)
-                st.session_state["loss_matrix_data"] = reconstructed_df_loss.to_dict(
-                )
+                st.session_state["loss_matrix_data"] = reconstructed_df_loss.to_dict()
             else:
-                st.session_state["loss_matrix_data"] = loss_edited_df_display.to_dict(
-                )
+                st.session_state["loss_matrix_data"] = loss_edited_df_display.to_dict()
             st.rerun()
 
         st.markdown("---")
         st.subheader("Radar Plot of Input Risks")
-
-        df_risk_current = pd.DataFrame(
-            st.session_state["risk_matrix_data"], index=kpis)
-
+        
+        df_risk_current = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
+        
         try:
             kpis_for_plot = df_risk_current.reset_index()
         except Exception:
@@ -1825,7 +1671,7 @@ with tab_lvl1:
 
             df_for_plot_loss = pd.DataFrame(
                 st.session_state["loss_matrix_data"], index=kpis)
-
+            
             df_for_plot_risk = pd.DataFrame(
                 st.session_state["risk_matrix_data"], index=kpis)
 
@@ -1843,9 +1689,9 @@ with tab_lvl1:
         st.markdown("---")
         with st.expander("Interpretation"):
 
-            if st.session_state.get("mistral_api_key"):
+            if st.session_state.get("gemini_client"):
 
-                if st.button("Generate Interpretation Report", type="primary", help="Analyze the current risk matrix using Mistral with contextual search."):
+                if st.button("Generate Interpretation Report", type="primary", help="Analyze the current risk matrix using Gemini with contextual search."):
 
                     if not 'risk_matrix_data' in st.session_state:
                         st.error(
@@ -1861,7 +1707,7 @@ with tab_lvl1:
                         current_df = None
 
                     if current_df is not None:
-                        with st.spinner("Generating Risk Matrix Interpretation (Mistral)..."):
+                        with st.spinner("Generating Risk Matrix Interpretation (Gemini with Google Search)..."):
                             interpretation_report = generate_risk_interpretation(
                                 current_df, kpis, scenarios)
 
@@ -1869,24 +1715,32 @@ with tab_lvl1:
 
                         st.subheader("Risk Matrix Interpretation Report")
                         if interpretation_report:
+                            render_ai_header("Risk Matrix Interpretation Report")
+                            with st.expander("📊 View Raw Data Fed to AI (Risk Assessment Matrix)", expanded=False):
+                                st.caption("This is the risk matrix data that was provided to the AI model for interpretation.")
+                                st.dataframe(current_df, use_container_width=True)
                             st.markdown(interpretation_report)
+                            render_ai_footer()
                         else:
                             st.warning(
                                 "The Risk Matrix Interpretation Report failed to generate.")
 
                 if st.session_state["interpretation_report"]:
                     st.subheader("Risk Matrix Interpretation Report")
+                    render_ai_header("Risk Matrix Interpretation Report")
                     st.markdown(st.session_state["interpretation_report"])
+                    render_ai_footer()
                 else:
                     st.info(
                         "Click the button above to generate the AI interpretation report based on the current matrix data.")
 
             else:
                 st.warning(
-                    "Mistral API key not initialized. AI interpretation feature disabled. Ensure MISTRAL_API_KEY is available.")
+                    "Gemini client not initialized. AI interpretation feature disabled. Ensure GEMINI_API_KEY is available.")
 
+        pass
 
-with tab_lvl2:
+elif selected_step == 2:
     st.header('Infrastructure Impact & Hazard Analysis')
 
     infrastructure_col = 'Infrastructure'
@@ -1902,32 +1756,24 @@ with tab_lvl2:
         st.warning("No infrastructure definitions found.")
     else:
         with col_f1:
-            unique_infrastructures = sorted(
-                df_lvl2_base[infrastructure_col].unique().tolist())
-            selected_infrastructures = st.multiselect(
-                'Infrastructure', unique_infrastructures)
-            df_filtered_infra = df_lvl2_base[df_lvl2_base[infrastructure_col].isin(
-                selected_infrastructures)] if selected_infrastructures else df_lvl2_base
+            unique_infrastructures = sorted(df_lvl2_base[infrastructure_col].unique().tolist())
+            selected_infrastructures = st.multiselect('Infrastructure', unique_infrastructures)
+            df_filtered_infra = df_lvl2_base[df_lvl2_base[infrastructure_col].isin(selected_infrastructures)] if selected_infrastructures else df_lvl2_base
 
         with col_f2:
-            unique_climate_drivers = sorted(
-                df_filtered_infra[climate_driver_col].unique().tolist())
-            selected_climate_drivers = st.multiselect(
-                'Climate Driver', unique_climate_drivers)
-            df_filtered_driver = df_filtered_infra[df_filtered_infra[climate_driver_col].isin(
-                selected_climate_drivers)] if selected_climate_drivers else df_filtered_infra
+            unique_climate_drivers = sorted(df_filtered_infra[climate_driver_col].unique().tolist())
+            selected_climate_drivers = st.multiselect('Climate Driver', unique_climate_drivers)
+            df_filtered_driver = df_filtered_infra[df_filtered_infra[climate_driver_col].isin(selected_climate_drivers)] if selected_climate_drivers else df_filtered_infra
 
         with col_f3:
-            unique_types = sorted(
-                df_filtered_driver[type_impact_col].unique().tolist())
+            unique_types = sorted(df_filtered_driver[type_impact_col].unique().tolist())
             selected_types = st.multiselect('Type of Impact', unique_types)
-            final_filtered_df = df_filtered_driver[df_filtered_driver[type_impact_col].isin(
-                selected_types)] if selected_types else df_filtered_driver
+            final_filtered_df = df_filtered_driver[df_filtered_driver[type_impact_col].isin(selected_types)] if selected_types else df_filtered_driver
 
-        if st.button("Add filtered items to Table", type="primary"):
+        if st.button("Add filtered items to Table", type="primary", use_container_width=True):
             if not final_filtered_df.empty:
                 st.session_state.saved_data = pd.concat(
-                    [st.session_state.saved_data, final_filtered_df],
+                    [st.session_state.saved_data, final_filtered_df], 
                     ignore_index=True
                 ).drop_duplicates()
                 st.success(f"Added {len(final_filtered_df)} items.")
@@ -1937,6 +1783,105 @@ with tab_lvl2:
     st.divider()
     st.subheader("2. Selected Impact Models Table")
 
+    climate_drivers = [
+        'Air surface temperature increase (High temperatures)', 
+        'Change in Temperature (High temperatures)', 
+        'Change in precipitation', 
+        'Change in precipitation (Low)', 
+        'Change in temperature (Low temperature)', 
+        'Changes in Temperature (High temperatures)', 
+        'Changes in Temperature (Low temperatures)', 
+        'Changes in precipitation', 
+        'Changes in snow intensity', 
+        'Changes in temperature (High temperatures)', 
+        'Changes in temperature (Low temperatures)', 
+        'Changes in wind intensity', 
+        'Extreme heat (including heatwaves)', 
+        'Extreme precipitation', 
+        'Extreme temperature (low)', 
+        'Increased solar intensity', 
+        'Low precipitation', 
+        'Reduced atmosferic humidity'
+    ]
+
+    climate_indicators = {
+        "tas": "Annual mean temperature",
+        "tasmax": "Annual mean maximum temperature",
+        "tasmin": "Annual mean minimum temperature",
+        "tn20": "Annual days with minimum temperature < -20°C",
+        "tx40": "Annual days with maximum temperature > 40°C",
+        "cdd": "Maximum yearly Consecutive Dry Days",
+        "cwd": "Maximum yearly Consecutive Wet Days",
+        "prcptot_year": "Total yearly precipitation",
+        "rx1day": "Maximum 1-day precipitation",
+        "rx5day": "Maximum 5-day precipitation",
+        "rx1day_rp100": "100-year return level of maximum 1-day precipitation",
+        "rx5day_rp100": "100-year return level of maximum 5-day precipitation",
+        "solidprcptot_winter": "Winter months accumulated solid precipitation",
+        "solidprcptot_year": "Annual accumulated solid precipitation",
+        "hi35": "Yearly days with heat index > 35°C",
+        "hurs_year": "Annual mean relative humidity",
+        "vpd": "Annual mean vapor pressure deficit",
+        "par_plant_level": "Photosynthetically active radiation at plant level",
+        "hurs40_days": "Annual days with relative humidity under 40%",
+        "spei3_severe_prob": "Annual probability of severe agricultural drought (SPEI-3)"
+    }
+
+    # --- TABLE CONTROLS & ALIGNED BUTTONS ---
+    # We define 4 columns. The first 3 hold our buttons, the last is empty space to push them left.
+    btn_col1, btn_col2, btn_col3, _ = st.columns([1.2, 1.4, 2.5, 3])
+
+    with btn_col1:
+        if st.button("🗑️ Reset Table", help="Clear all selected impact models and results", type="secondary", use_container_width=True):
+            st.session_state.saved_data = pd.DataFrame(columns=df_lvl2_base.columns)
+            st.session_state.calculated_results = pd.DataFrame()
+            st.session_state.capex_df = pd.DataFrame()
+            st.rerun()
+
+    with btn_col3:
+        # The popover is placed in the 3rd column, putting it right next to the Remove button
+        with st.popover("➕ Add Custom Impact Model", use_container_width=True):
+            st.markdown("##### Define Custom Impact Model")
+            st.caption("Manually define an asset and its climate sensitivity. All manual entries are recorded for AI transparency.")
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                new_infra = st.selectbox(
+                    "Infrastructure Category", 
+                    ["Road", "Railway", "Tunnels", "Bridges", "green spaces", "Dams", "River training infrastructure", "Torrent control infrastructure"],
+                    key="manual_infra_sel"
+                )
+                new_driver = st.selectbox("Climate Driver", climate_drivers, key="manual_driver_sel")
+                new_impact = st.text_input("Impact Model Description", placeholder="e.g., Structural buckling due to heat", key="manual_impact_in")
+
+            with c2:
+                new_asset = st.text_input("Specific Asset Name", placeholder="e.g., Steel Rail Track", key="manual_asset_in")
+                indicator_names = list(climate_indicators.values())
+                new_indicator_name = st.selectbox("Select Climate Indicator", indicator_names, key="manual_ind_sel")
+                
+            if st.button("Confirm and Add to Table", type="primary", use_container_width=True):
+                if new_impact.strip() and new_asset.strip():
+                    new_dict_key = [k for k, v in climate_indicators.items() if v == new_indicator_name][0]
+                    
+                    new_row = {
+                        infrastructure_col: new_infra,
+                        climate_driver_col: new_driver,
+                        impact_model_col: new_impact,
+                        'Asset': new_asset,
+                        dictionary_key_col: new_dict_key,
+                        'Type of impact': 'Custom',
+                        'Consequences': 'Custom',
+                        'Proposed climate Indicator': new_indicator_name,
+                        'Possible Hazards': []
+                    }
+                    
+                    st.session_state.saved_data = pd.concat([st.session_state.saved_data, pd.DataFrame([new_row])], ignore_index=True)
+                    st.toast(f"Added {new_asset} to the analysis table!", icon="✅")
+                    st.rerun()
+                else:
+                    st.error("Please provide both an Impact Model and an Asset name.")
+
+    # --- TABLE RENDERING ---
     if not st.session_state.saved_data.empty:
         cols_to_display = [impact_model_col, infrastructure_col, dictionary_key_col]
         st.session_state.saved_data = st.session_state.saved_data.reset_index(drop=True)
@@ -1949,15 +1894,17 @@ with tab_lvl2:
             key="impact_table_selection"
         )
 
-        if st.button("Remove Selected Rows"):
-            selected_indices = selection_event.selection.rows
-            if selected_indices:
-                st.session_state.saved_data = st.session_state.saved_data.drop(selected_indices).reset_index(drop=True)
-                st.rerun()
-            else:
-                st.warning("Select rows to remove.")
+        with btn_col2:
+            # We place the remove button here so it draws in the 2nd column at the top!
+            if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
+                selected_indices = selection_event.selection.rows
+                if selected_indices:
+                    st.session_state.saved_data = st.session_state.saved_data.drop(selected_indices).reset_index(drop=True)
+                    st.rerun()
+                else:
+                    st.warning("Select rows to remove.")
     else:
-        st.info("Table is empty. Use filters above to add items.")
+        st.info("Table is empty. Use filters above or add a custom impact model to populate items.")
 
     st.divider()
     st.subheader("3. Hazard Variation Analysis")
@@ -1970,45 +1917,41 @@ with tab_lvl2:
     INDEX_TO_LEVEL = {v: k for k, v in LEVEL_TO_INDEX.items()}
 
     has_extracted_coords = (
-        st.session_state.get("extracted_data") is not None
+        st.session_state.get("extracted_data") is not None 
         and st.session_state["extracted_data"].get("center_lat") is not None
     )
 
     use_poly_center = st.checkbox(
-        "Use Polygon Center Coordinates",
-        value=has_extracted_coords,
+        "Use Polygon Center Coordinates", 
+        value=has_extracted_coords, 
         disabled=not has_extracted_coords,
-        help="If checked, uses the center of the polygon drawn in the first tab."
+        help="If checked, uses the center of the polygon drawn in the Information Extraction and Mapping tab."
     )
 
     if use_poly_center and has_extracted_coords:
         default_lat = st.session_state["extracted_data"]["center_lat"]
         default_lon = st.session_state["extracted_data"]["center_lon"]
-        input_disabled = True
+        input_disabled = True 
     else:
         default_lat = st.session_state["map_center"][0] if st.session_state["map_center"] else 50.7764
         default_lon = st.session_state["map_center"][1] if st.session_state["map_center"] else 6.0839
         input_disabled = False
 
     row1_c1, row1_c2 = st.columns(2)
-
+    
     with row1_c1:
-        lat = st.number_input("Latitude:", value=float(
-            default_lat), format="%.4f", disabled=input_disabled)
-
+        lat = st.number_input("Latitude:", value=float(default_lat), format="%.4f", disabled=input_disabled)
+        
     with row1_c2:
-        selected_scenario_label = st.radio(
-            "Select Scenario:", ("RCP4.5", "RCP8.5"), horizontal=True)
+        selected_scenario_label = st.radio("Select Scenario:", ("RCP4.5", "RCP8.5"), horizontal=True)
 
     row2_c1, row2_c2 = st.columns(2)
-
+    
     with row2_c1:
-        lon = st.number_input("Longitude:", value=float(
-            default_lon), format="%.4f", disabled=input_disabled)
-
+        lon = st.number_input("Longitude:", value=float(default_lon), format="%.4f", disabled=input_disabled)
+        
     with row2_c2:
-        selected_term_label = st.radio(
-            "Select Time Horizon:", ("Short Term", "Medium Term", "Long Term"), horizontal=True)
+        selected_term_label = st.radio("Select Time Horizon:", ("Short Term", "Medium Term", "Long Term"), horizontal=True)
 
     st.markdown(" ")
     if st.button("Calculate Hazard Variation & Level", type="primary", use_container_width=True):
@@ -2016,8 +1959,7 @@ with tab_lvl2:
             st.error("Please add items to the table first.")
         else:
             scenario_map = {"RCP4.5": "rcp45", "RCP8.5": "rcp85"}
-            term_map = {"Short Term": "short",
-                        "Medium Term": "medium", "Long Term": "long"}
+            term_map = {"Short Term": "short", "Medium Term": "medium", "Long Term": "long"}
 
             api_scenario = scenario_map[selected_scenario_label]
             api_term = term_map[selected_term_label]
@@ -2026,7 +1968,7 @@ with tab_lvl2:
             level_list = []
             progress_bar = st.progress(0)
             total_rows = len(st.session_state.saved_data)
-
+            
             for index, row in st.session_state.saved_data.iterrows():
                 dict_key = row.get(dictionary_key_col)
                 final_idx = 0
@@ -2035,56 +1977,42 @@ with tab_lvl2:
                 if dict_key and dict_key != "Not found":
                     val_selected = None
                     val_historical = None
-
+                    
                     try:
-                        payload_sel = {
-                            "index_type": dict_key, "scenario": api_scenario, "lat": lat, "lon": lon}
-                        resp_sel = requests.post(
-                            URL, json=payload_sel, timeout=10)
+                        payload_sel = {"index_type": dict_key, "scenario": api_scenario, "lat": lat, "lon": lon}
+                        resp_sel = requests.post(URL, json=payload_sel, timeout=10)
                         if resp_sel.status_code == 200 and resp_sel.json().get('status') == 'success':
                             val_selected = resp_sel.json().get('results', {}).get(api_term, {}).get('value')
 
-                        payload_hist = {
-                            "index_type": dict_key, "scenario": "historical", "lat": lat, "lon": lon}
-                        resp_hist = requests.post(
-                            URL, json=payload_hist, timeout=10)
+                        payload_hist = {"index_type": dict_key, "scenario": "historical", "lat": lat, "lon": lon}
+                        resp_hist = requests.post(URL, json=payload_hist, timeout=10)
                         if resp_hist.status_code == 200 and resp_hist.json().get('status') == 'success':
-                            val_historical = resp_hist.json().get(
-                                'results', {}).get('historical', {}).get('value')
+                            val_historical = resp_hist.json().get('results', {}).get('historical', {}).get('value')
                     except:
                         pass
 
                     if val_selected is not None and val_historical is not None:
                         try:
                             if val_historical == 0:
-                                variation_val = 0.0 if val_selected == 0 else float(
-                                    'inf')
+                                variation_val = 0.0 if val_selected == 0 else float('inf')
                             else:
-                                variation_val = abs(
-                                    (val_selected - val_historical) / val_historical) * 100
-
-                            if variation_val == 0:
-                                final_idx, final_lvl = 0, "No variation"
-                            elif variation_val == float('inf') or variation_val > 75:
-                                final_idx, final_lvl = 5, "Extreme"
-                            elif variation_val <= 10:
-                                final_idx, final_lvl = 1, "Low"
-                            elif variation_val <= 25:
-                                final_idx, final_lvl = 2, "Medium"
-                            elif variation_val <= 50:
-                                final_idx, final_lvl = 3, "High"
-                            elif variation_val <= 75:
-                                final_idx, final_lvl = 4, "Very High"
+                                variation_val = abs((val_selected - val_historical) / val_historical) * 100
+                            
+                            if variation_val == 0: final_idx, final_lvl = 0, "No variation"
+                            elif variation_val == float('inf') or variation_val > 75: final_idx, final_lvl = 5, "Extreme"
+                            elif variation_val <= 10: final_idx, final_lvl = 1, "Low"
+                            elif variation_val <= 25: final_idx, final_lvl = 2, "Medium"
+                            elif variation_val <= 50: final_idx, final_lvl = 3, "High"
+                            elif variation_val <= 75: final_idx, final_lvl = 4, "Very High"
                         except:
                             pass
-
+                
                 index_list.append(final_idx)
                 level_list.append(final_lvl)
                 progress_bar.progress((index + 1) / total_rows)
 
-            result_df = st.session_state.saved_data[[
-                infrastructure_col, climate_driver_col, impact_model_col]].copy()
-
+            result_df = st.session_state.saved_data[[infrastructure_col, climate_driver_col, impact_model_col]].copy()
+            
             result_df["Hazard Index"] = index_list
             result_df["Hazard Level"] = level_list
             st.session_state.calculated_results = result_df
@@ -2093,28 +2021,45 @@ with tab_lvl2:
 
     if not st.session_state.calculated_results.empty:
         st.subheader("Natural Hazards Table")
-
-        hide_empty = st.checkbox("Hide impact models without climate information")
+        if st.button("Delete rows without climate information", type="primary", help="Permanently remove rows where Hazard Index is 0 or N/A from the dataset."):
+            before_count = len(st.session_state.calculated_results)
+            st.session_state.calculated_results = st.session_state.calculated_results[
+                (st.session_state.calculated_results["Hazard Index"] != 0) & 
+                (st.session_state.calculated_results["Hazard Index"].notna())
+            ].reset_index(drop=True)
+            
+            after_count = len(st.session_state.calculated_results)
+            st.toast(f"Deleted {before_count - after_count} rows.", icon="🗑️")
+            st.rerun()
 
         display_df = st.session_state.calculated_results.copy()
         
-        if hide_empty:
-            display_df = display_df[
-                (display_df["Hazard Index"] != 0) & 
-                (display_df["Hazard Index"].notna())
-            ]
+        # 1. Clean up any leftover emojis if data was previously saved with them
+        old_to_new_map = {
+            "⚪ No variation": "No variation", "🟢 Low": "Low", "🟡 Medium": "Medium", 
+            "🟠 High": "High", "🔴 Very High": "Very High", "🚨 Extreme": "Extreme"
+        }
+        if "Hazard Level" in display_df.columns:
+            display_df["Hazard Level"] = display_df["Hazard Level"].replace(old_to_new_map)
+            
+        # 2. Force the column to numeric so the Progress Bar renders correctly
+        display_df["Hazard Index"] = pd.to_numeric(display_df["Hazard Index"], errors='coerce').fillna(0)
         
         column_config = {
-            "Hazard Index": st.column_config.NumberColumn(
-                "Hazard Index", min_value=1, max_value=5, step=1, required=True
+            # --- THE NEW PROGRESS BAR COLUMN ---
+            "Hazard Index": st.column_config.ProgressColumn(
+                "Hazard Index", min_value=0, max_value=5, format="%d"
             ),
+            # --- THE EDITABLE TEXT DROPDOWN ---
             "Hazard Level": st.column_config.SelectboxColumn(
-                "Hazard Level", options=["No variation", "Low", "Medium", "High", "Very High", "Extreme"], required=True
+                "Hazard Level", 
+                options=["No variation", "Low", "Medium", "High", "Very High", "Extreme"], 
+                required=True
             ),
             infrastructure_col: st.column_config.TextColumn(disabled=True),
             climate_driver_col: st.column_config.TextColumn(disabled=True),
             impact_model_col: st.column_config.TextColumn(disabled=True),
-
+            
             "Sensitivity Index": None,
             "Exposure Index": None,
             "Vulnerability Index": None,
@@ -2123,33 +2068,34 @@ with tab_lvl2:
             "PRI values": None
         }
 
+        # 3. USE A NEW KEY TO BREAK THE STREAMLIT CACHE
         temp_hazard_df = st.data_editor(
             display_df,
             column_config=column_config,
             use_container_width=True,
             hide_index=True,
             num_rows="fixed",
-            key="hazard_editor"
+            key="hazard_editor_v3" 
         )
 
         if st.button("Save Hazard Changes", type="primary"):
             updated = False
-
+            
             for i in temp_hazard_df.index:
                 old_level = display_df.loc[i, "Hazard Level"]
                 new_level = temp_hazard_df.loc[i, "Hazard Level"]
                 old_index = display_df.loc[i, "Hazard Index"]
                 new_index = temp_hazard_df.loc[i, "Hazard Index"]
 
+                # If the user changes the text dropdown, update the numeric index
                 if new_level != old_level:
-                    temp_hazard_df.at[i, "Hazard Index"] = LEVEL_TO_INDEX.get(
-                        new_level, 0)
+                    temp_hazard_df.at[i, "Hazard Index"] = LEVEL_TO_INDEX.get(new_level, 0)
                     updated = True
+                # If for some reason the index was changed, update the text (fail-safe)
                 elif new_index != old_index:
-                    temp_hazard_df.at[i, "Hazard Level"] = INDEX_TO_LEVEL.get(
-                        new_index, "Low")
+                    temp_hazard_df.at[i, "Hazard Level"] = INDEX_TO_LEVEL.get(new_index, "Low")
                     updated = True
-
+                    
             if temp_hazard_df["Hazard Index"].max() > 5 or temp_hazard_df["Hazard Index"].min() < 0:
                 st.error("Error: Hazard Index values must be between 0 and 5.")
             else:
@@ -2160,289 +2106,347 @@ with tab_lvl2:
         st.markdown(
             """
             <span style='font-size: 20px; font-weight: bold;'>
-                💡Tips: Values of the 'Hazard Level' and 'Hazard Index' columns are editable. 
-                Click 'Save Hazard Changes' to apply updates.
+                💡Tips: To manually adjust a hazard rating, change the 'Hazard Level' text dropdown and click 'Save Hazard Changes'. 
+                The bar chart will update automatically.
             </span>
             """,
             unsafe_allow_html=True
         )
 
-        # --- AI REPORT BUTTON ---
-        if st.button("Generate Climate Hazard Report", type="secondary", use_container_width=True, help="Analyze the generated hazard table using Mistral."):
-            with st.spinner("Generating Report from Hazard Table (Mistral)..."):
-                report_text = generate_hazard_report_mistral(
-                    st.session_state.calculated_results)
+        # --- GEMINI REPORT BUTTON ---
+        if st.button("Generate Climate Hazard Report", type="secondary", use_container_width=True, help="Analyze the generated hazard table using Gemini."):
+            with st.spinner("Generating Report from Hazard Table (Gemini)..."):
+                report_text = generate_hazard_report_gemini(st.session_state.calculated_results)
                 st.session_state["hazard_report"] = report_text
 
-        if st.session_state["hazard_report"]:
+        if st.session_state.get("hazard_report"):
             with st.expander("View Climate Hazard Report", expanded=True):
+                render_ai_header("Climate Hazard Report")
+                with st.expander("📊 View Raw Data Fed to AI (Hazard Table)", expanded=False):
+                    st.caption("This is the hazard table that was provided to the AI model for analysis.")
+                    st.dataframe(st.session_state.calculated_results, use_container_width=True)
                 st.markdown(st.session_state["hazard_report"])
+                render_ai_footer()
 
     st.divider()
     st.subheader("4. Exposure Index Analysis")
+    st.info("Determine the exposure of the assets based on their economic value (Revenue and CAPEX).")
 
     col_exp1, col_exp2 = st.columns(2)
     with col_exp1:
-        economic_available = st.checkbox("Economic data for infrastructure assets are available")
+        economic_available = st.toggle("💰 Economic data for infrastructure assets are available", value=False)
     with col_exp2:
-        use_default_thresholds = st.checkbox(
-            "Use default threshold values for OPEX and Revenue", value=True)
+        use_default_thresholds = st.toggle("⚙️ Use default threshold values", value=True, disabled=not economic_available, help="Toggle off to set custom Revenue and CAPEX thresholds.")
 
-    if 'capex_df' not in st.session_state or st.button("Refresh Asset List"):
+    if 'capex_df' not in st.session_state:
+        st.session_state.capex_df = pd.DataFrame()
+
+    def refresh_asset_list():
         if not st.session_state.calculated_results.empty:
             if 'Asset' not in st.session_state.calculated_results.columns:
                 try:
-                    st.session_state.calculated_results['Asset'] = st.session_state.saved_data.loc[
-                        st.session_state.calculated_results.index, 'Asset']
+                    st.session_state.calculated_results['Asset'] = st.session_state.saved_data.loc[st.session_state.calculated_results.index, 'Asset']
                 except:
                     pass
-
             if 'Asset' in st.session_state.calculated_results.columns:
-                unique_assets = st.session_state.calculated_results['Asset'].unique(
-                )
+                unique_assets = st.session_state.calculated_results['Asset'].unique()
             else:
                 unique_assets = st.session_state.saved_data['Asset'].unique()
-
+                
             st.session_state.capex_df = pd.DataFrame({
                 "Exposed assets": unique_assets,
                 "CAPEX (M€/year)": 0.0
             })
 
-    exposure_val = 3
+    if st.session_state.capex_df.empty:
+        refresh_asset_list()
+
+    exposure_val = 3 
 
     if economic_available:
-        revenue_input = st.number_input(
-            "REVENUES (M€/year)", min_value=0.0, value=0.0, step=0.1)
-
-        st.write("Enter CAPEX for each asset:")
-        if not st.session_state.capex_df.empty:
-            edited_capex = st.data_editor(
-                st.session_state.capex_df,
-                use_container_width=True,
-                hide_index=True,
-                key="capex_editor"
-            )
-        else:
-            st.warning("No assets found. Run hazards calculation first.")
-            edited_capex = pd.DataFrame()
-
+        with st.container(border=True):
+            col_rev, col_btn = st.columns([2, 1])
+            with col_rev:
+                revenue_input = st.number_input("Annual REVENUES (M€/year)", min_value=0.0, value=0.0, step=0.1, help="Total annual revenue generated by the infrastructure.")
+            with col_btn:
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("🔄 Refresh Asset List", use_container_width=True, help="Fetch latest assets from the hazard table"):
+                    refresh_asset_list()
+            
+            st.markdown("##### Capital Expenditure (CAPEX) per Asset")
+            if not st.session_state.capex_df.empty:
+                edited_capex = st.data_editor(
+                    st.session_state.capex_df,
+                    column_config={
+                        "Exposed assets": st.column_config.TextColumn("Exposed Asset", disabled=True),
+                        "CAPEX (M€/year)": st.column_config.NumberColumn("CAPEX (M€/year)", min_value=0.0, format="%.2f M€")
+                    },
+                    use_container_width=True,
+                    hide_index=True,
+                    key="capex_editor"
+                )
+            else:
+                st.warning("No assets found. Run hazards calculation first.")
+                edited_capex = pd.DataFrame()
+        
         if not use_default_thresholds:
-            st.info("Define your custom threshold boundaries:")
-            ct1, ct2, ct3, ct4 = st.columns(4)
-            with ct1: rev_low = st.number_input("Revenue Low Threshold", value=1.0)
-            with ct2: rev_high = st.number_input("Revenue High Threshold", value=2.5)
-            with ct3: cap_low = st.number_input("CAPEX Low Threshold", value=1.5)
-            with ct4: cap_high = st.number_input("CAPEX High Threshold", value=10.0)
+            with st.container(border=True):
+                st.markdown("##### 🎛️ Custom Threshold Boundaries")
+                ct1, ct2, ct3, ct4 = st.columns(4)
+                with ct1: rev_low = st.number_input("Rev. Low (M€)", value=1.0, step=0.5)
+                with ct2: rev_high = st.number_input("Rev. High (M€)", value=2.5, step=0.5)
+                with ct3: cap_low = st.number_input("CAPEX Low (M€)", value=5.0, step=0.5)
+                with ct4: cap_high = st.number_input("CAPEX High (M€)", value=10.0, step=0.5)
         else:
-            rev_low, rev_high, cap_low, cap_high = 1.0, 2.5, 1.5, 10.0
+            rev_low, rev_high, cap_low, cap_high = 1.0, 2.5, 5.0, 10.0
 
-        def calculate_exposure(rev, cap, r_l, r_h, c_l, c_h):
-            if rev < r_l:
-                if cap < c_l: return 1
-                elif c_l <= cap <= c_h: return 2
-                else: return 3
-            elif r_l <= rev <= r_h:
-                if cap < c_l: return 2
-                elif c_l <= cap <= c_h: return 3
-                else: return 4
-            else: 
-                if cap < c_l: return 3
-                elif c_l <= cap <= c_h: return 4
-                else: return 5
+        with st.expander("📊 View Exposure Matrix Calculation Logic"):
+            colors = {1: "#6dbf7a", 2: "#a6d17b", 3: "#ffeb84", 4: "#f9a674", 5: "#f76d6d"}
+            html_table = f"""
+            <style>
+                .exp-table {{ width: 100%; border-collapse: collapse; font-family: sans-serif; text-align: center; border: 1px solid #000; }}
+                .exp-table th, .exp-table td {{ border: 1px solid #444; padding: 12px; font-weight: bold; }}
+                .header-dark {{ background-color: #2e4d23; color: white; }}
+                .header-light {{ background-color: #ffffff; color: black; }}
+            </style>
+            <table class="exp-table">
+                <tr>
+                    <th rowspan="2" colspan="2" class="header-dark">Exposure Index thresholds</th>
+                    <th colspan="3" class="header-dark">Assets CAPEX (M€/year)</th>
+                </tr>
+                <tr>
+                    <th class="header-light">< {cap_low}</th>
+                    <th class="header-light">{cap_low} - {cap_high}</th>
+                    <th class="header-light">> {cap_high}</th>
+                </tr>
+                <tr>
+                    <td rowspan="3" class="header-dark" style="width: 20%;">Annual revenues (M€/year)</td>
+                    <td class="header-light">< {rev_low}</td>
+                    <td style="background-color: {colors[1]};">1</td>
+                    <td style="background-color: {colors[2]};">2</td>
+                    <td style="background-color: {colors[3]};">3</td>
+                </tr>
+                <tr>
+                    <td class="header-light">{rev_low} - {rev_high}</td>
+                    <td style="background-color: {colors[2]};">2</td>
+                    <td style="background-color: {colors[3]};">3</td>
+                    <td style="background-color: {colors[4]};">4</td>
+                </tr>
+                <tr>
+                    <td class="header-light">> {rev_high}</td>
+                    <td style="background-color: {colors[3]};">3</td>
+                    <td style="background-color: {colors[4]};">4</td>
+                    <td style="background-color: {colors[5]};">5</td>
+                </tr>
+            </table>
+            """
+            st.markdown(html_table, unsafe_allow_html=True)
 
-    if st.button("Calculate Exposure Indexes"):
+    if st.button("Calculate Exposure Indexes", type="primary", use_container_width=True):
         if economic_available and not edited_capex.empty:
             total_capex = edited_capex["CAPEX (M€/year)"].sum()
-            exposure_val = calculate_exposure(
-                revenue_input, total_capex, rev_low, rev_high, cap_low, cap_high)
-            st.session_state.capex_df = edited_capex
+            exposure_val = calculate_exposure(revenue_input, total_capex, rev_low, rev_high, cap_low, cap_high)
+            st.session_state.capex_df = edited_capex 
         else:
             exposure_val = 3
-
+        
         if not st.session_state.calculated_results.empty:
             st.session_state.calculated_results["Exposure Index"] = exposure_val
-            st.success(f"Exposure Index calculated: {exposure_val}")
+            st.success(f"✅ Exposure Index calculated: **{exposure_val}**")
         else:
             st.error("No impact models available to update.")
 
     if not st.session_state.calculated_results.empty and "Exposure Index" in st.session_state.calculated_results.columns:
-        st.write("### Exposure Results")
-
+        st.markdown("##### 📈 Exposure Results")
+        
         exp_col_config = {
-             "Sensitivity Index": None,
-             "Vulnerability Index": None,
-             "Asset": None,
-             "PRI scores": None,
-             "PRI values": None,
-             
-             "Hazard Index": None,
-             "Hazard Level": None
-        }
+            "Exposure Index": st.column_config.ProgressColumn(
+                "Exposure Index",
+                help="Calculated Exposure score (1-5)",
+                format="%d",
+                min_value=0,
+                max_value=5,
+                ),
+            "Sensitivity Index": None,
+            "Vulnerability Index": None,
+            "Asset": None,
+            "PRI scores": None,
+            "PRI values": None,
+            "Hazard Index": None,
+            "Hazard Level": None,
+            "Possible Hazards": None,
+            "Specific Hazard": None
+            }
         st.dataframe(
-            st.session_state.calculated_results,
+            st.session_state.calculated_results, 
             column_config=exp_col_config,
             use_container_width=True
         )
-
     st.divider()
     st.subheader("5. Vulnerability Index Analysis")
 
-    if not st.session_state.calculated_results.empty:
+    st.info("Assess vulnerability by defining the Sensitivity Index and configuring the Adaptive Capacity of each asset.")
 
+    if not st.session_state.calculated_results.empty:
+        
         if 'Asset' not in st.session_state.calculated_results.columns:
             try:
-                st.session_state.calculated_results['Asset'] = st.session_state.saved_data.loc[
-                    st.session_state.calculated_results.index, 'Asset']
+                st.session_state.calculated_results['Asset'] = st.session_state.saved_data.loc[st.session_state.calculated_results.index, 'Asset']
             except Exception as e:
-                st.error(
-                    f"Error aligning asset data: {e}. Please try resetting the table.")
+                st.error(f"Error aligning asset data: {e}. Please try resetting the table.")
 
         if 'Sensitivity Index' not in st.session_state.calculated_results.columns:
             st.session_state.calculated_results['Sensitivity Index'] = 3
 
-        st.markdown("#### Step 5.1: Define Sensitivity Index")
-        st.info("Edit the **Sensitivity Index** column (1-5) below. Changes are applied when you click 'Calculate'.")
+        with st.container(border=True):
+            st.markdown("#### Step 5.1: Define Sensitivity Index")
+            st.caption("Set the Sensitivity Index for each impact model. Use the dropdown in the table (1 = Low Sensitivity, 5 = High Sensitivity).")
 
-        vuln_input_df = st.session_state.calculated_results.copy()
+            vuln_input_df = st.session_state.calculated_results.copy()
 
-        vuln_col_config = {
-            "Sensitivity Index": st.column_config.NumberColumn(
-                "Sensitivity Index", min_value=1, max_value=5, step=1, required=True
-            ),
+            vuln_col_config = {
+                "Sensitivity Index": st.column_config.SelectboxColumn(
+                    "Sensitivity Index (1-5)", 
+                    options=[1, 2, 3, 4, 5], 
+                    required=True,
+                    help="Select a value between 1 (best) and 5 (worst)"
+                ),
+                "Exposure Index": None,
+                "Vulnerability Index": None, 
+                "PRI scores": None,
+                "PRI values": None,
+                "Hazard Index": None,
+                "Hazard Level": None,
+                "Infrastructure": st.column_config.TextColumn(disabled=True),
+                "Climate driver": st.column_config.TextColumn(disabled=True),
+                "Impact model": st.column_config.TextColumn(disabled=True),
+                "Asset": st.column_config.TextColumn(disabled=True),
+            }
 
-            "Exposure Index": None,
-            "Vulnerability Index": None,
-            "PRI scores": None,
-            "PRI values": None,
+            temp_edited_df = st.data_editor(
+                vuln_input_df,
+                column_config=vuln_col_config,
+                use_container_width=True,
+                hide_index=True,
+                key="sensitivity_editor_v2" 
+            )
 
-            "Hazard Index": None,
-            "Hazard Level": None,
+        with st.container(border=True):
+            st.markdown("#### 🛡️ Step 5.2: Adaptive Capacity Configuration")
+            ac_available = st.toggle("⚙️ Configure Adaptive Capacity for Assets", value=False)
+            
+            asset_ac_params = {}
+            unique_assets_list = st.session_state.calculated_results['Asset'].unique()
 
-            "Infrastructure": st.column_config.TextColumn(disabled=True),
-            "Climate driver": st.column_config.TextColumn(disabled=True),
-            "Impact model": st.column_config.TextColumn(disabled=True),
-            "Asset": st.column_config.TextColumn(disabled=True),
-        }
+            if ac_available:
+                st.write("##### Set Parameters per Asset")
+                
+                asset_tab_names = [sac.TabsItem(label=asset, icon='gear-wide-connected') for asset in unique_assets_list]
+                selected_asset = sac.tabs(asset_tab_names, align='center', variant='segmented', key="ac_tabs")
 
-        temp_edited_df = st.data_editor(
-            vuln_input_df,
-            column_config=vuln_col_config,
-            use_container_width=True,
-            hide_index=True,
-            key="sensitivity_editor_v2"
-        )
+                if 'asset_ac_params' not in st.session_state:
+                    st.session_state.asset_ac_params = {}
 
-        st.markdown("#### Step 5.2: Adaptive Capacity Configuration")
-
-        ac_available = st.checkbox(
-            "Adaptive capacity of the assets available?")
-
-        asset_ac_params = {}
-        unique_assets_list = st.session_state.calculated_results['Asset'].unique(
-        )
-
-        if ac_available:
-            st.write(
-                "Please configure the Adaptive Capacity parameters for each asset:")
-            for asset in unique_assets_list:
-                with st.expander(f"{asset}", expanded=False):
+                asset = selected_asset
+                with st.container(border=True):
+                    st.markdown(f"**Settings for:** `{asset}`")
                     c1, c2 = st.columns(2)
-
+                    
                     with c1:
                         ac0 = st.number_input(
-                            f"Initial Adaptive Capacity (AC0) for {asset}",
+                            "Initial Adaptive Capacity (AC0)",
                             min_value=0.0, max_value=0.4, value=0.0, step=0.01,
-                            help="Maximum value is 0.4",
+                            help="Baseline adaptive capacity. Maximum value is 0.4.",
                             key=f"ac0_{asset}"
                         )
-
                     with c2:
                         lf_label = st.radio(
-                            f"Lifetime of {asset}",
-                            options=["Greenfield", "Intermediate",
-                                     "High (> 25 years)"],
+                            "Lifetime",
+                            options=["Greenfield", "Intermediate", "High (> 25 years)"],
                             index=1,
-                            key=f"lf_{asset}"
+                            key=f"lf_{asset}",
+                            horizontal=True
                         )
-                        if lf_label == "Greenfield":
-                            lf_val = 10
-                        elif lf_label == "High (> 25 years)":
-                            lf_val = -10
-                        else:
-                            lf_val = 0
-
+                    
+                    st.divider()
                     c3, c4 = st.columns(2)
-
+                    
                     with c3:
                         lm_label = st.radio(
-                            f"Level of maintenance for {asset}",
+                            "Level of maintenance",
                             options=["High", "Medium", "Low"],
                             index=1,
-                            key=f"lm_{asset}"
+                            key=f"lm_{asset}",
+                            horizontal=True
                         )
-                        if lm_label == "High":
-                            lm_val = 10
-                        elif lm_label == "Low":
-                            lm_val = -10
-                        else:
-                            lm_val = 0
-
                     with c4:
                         dt_label = st.radio(
-                            f"Design topology for {asset}",
-                            options=["Resilient", "Acceptable",
-                                     "Not acceptable"],
+                            "Design topology",
+                            options=["Resilient", "Acceptable", "Not acceptable"],
                             index=1,
-                            key=f"dt_{asset}"
+                            key=f"dt_{asset}",
+                            horizontal=True
                         )
-                        if dt_label == "Resilient":
-                            dt_val = 10
-                        elif dt_label == "Not acceptable":
-                            dt_val = -10
-                        else:
-                            dt_val = 0
+                    
+                for a in unique_assets_list:
+                    s_ac0 = st.session_state.get(f"ac0_{a}", 0.0)
+                    s_lf = st.session_state.get(f"lf_{a}", "Intermediate")
+                    s_lm = st.session_state.get(f"lm_{a}", "Medium")
+                    s_dt = st.session_state.get(f"dt_{a}", "Acceptable")
+                    v_lf = 10 if s_lf == "Greenfield" else (-10 if s_lf == "High (> 25 years)" else 0)
+                    v_lm = 10 if s_lm == "High" else (-10 if s_lm == "Low" else 0)
+                    v_dt = 10 if s_dt == "Resilient" else (-10 if s_dt == "Not acceptable" else 0)
+                    
+                    asset_ac_params[a] = {"AC0": s_ac0, "lf": v_lf, "lm": v_lm, "dt": v_dt}
 
-                    asset_ac_params[asset] = {
-                        "AC0": ac0, "lf": lf_val, "lm": lm_val, "dt": dt_val}
-
-        if st.button("Calculate Vulnerability Index", type="primary"):
-
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Calculate Vulnerability Index", type="primary", use_container_width=True):
+            
             st.session_state.calculated_results['Sensitivity Index'] = temp_edited_df['Sensitivity Index']
-
             vulnerability_results = []
-
+            
             for index, row in st.session_state.calculated_results.iterrows():
                 asset_name = row['Asset']
                 sensitivity_val = row['Sensitivity Index']
-
+                
                 final_ac = 0.0
-
+                
                 if ac_available and asset_name in asset_ac_params:
                     params = asset_ac_params[asset_name]
-                    calculated_ac = params["AC0"] + \
-                        ((params["lf"] + params["lm"] + params["dt"]) / 100.0)
+                    calculated_ac = params["AC0"] + ((params["lf"] + params["lm"] + params["dt"]) / 100.0)
                     final_ac = min(calculated_ac, 0.4)
-                    final_ac = max(final_ac, 0.0)
-
+                    final_ac = max(final_ac, 0.0) 
+                
                 vuln_index = sensitivity_val * (1 - final_ac)
                 vulnerability_results.append(vuln_index)
-
+                
             st.session_state.calculated_results['Vulnerability Index'] = vulnerability_results
+            st.success("✅ Vulnerability Index calculated successfully!")
 
-            st.success("Vulnerability Index calculated successfully!")
-
-            st.subheader("Vulnerability Results")
-
+        # --- MOVED OUTSIDE THE BUTTON CLICK ---
+        # This ensures the table stays visible even when you click buttons in Section 6
+        if 'Vulnerability Index' in st.session_state.calculated_results.columns:
+            st.markdown("##### 📊 Vulnerability Results")
+            
             final_col_config = {
-                "Sensitivity Index": None,
+                "Sensitivity Index": st.column_config.NumberColumn("Sensitivity", format="%d"),
+                "Vulnerability Index": st.column_config.ProgressColumn(
+                    "Vulnerability Index",
+                    help="Calculated Vulnerability score based on Sensitivity and AC.",
+                    format="%.2f",
+                    min_value=0,
+                    max_value=5,
+                ),
                 "Exposure Index": None,
                 "PRI scores": None,
                 "PRI values": None,
                 "Asset": None,
                 "Hazard Index": None,
+                "Possible Hazards": None,
+                "Specific Hazard": None,
                 "Hazard Level": None
             }
-
+            
             st.dataframe(
                 st.session_state.calculated_results,
                 column_config=final_col_config,
@@ -2450,26 +2454,30 @@ with tab_lvl2:
             )
 
     else:
-        st.warning(
-            "Please complete the previous sections (Filters -> Hazards -> Exposure) to generate the data for analysis.")
-
+        st.warning("Please complete the previous sections (Filters -> Hazards -> Exposure) to generate the data for analysis.")
     st.divider()
-    st.header("Potential Risk Index")
+    st.subheader("6. Potential Risk Index")
 
-    if st.button("Calculate the Potential Risk Index (PRI)"):
+    if st.button("Calculate the Potential Risk Index (PRI)", type="primary", use_container_width=True):
         if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
-            df_pri = st.session_state.calculated_results.copy()
-
+            df_base = st.session_state.calculated_results.copy()
+            
+            if 'Possible Hazards' not in df_base.columns and 'saved_data' in st.session_state:
+                try:
+                    df_base['Possible Hazards'] = st.session_state.saved_data.loc[df_base.index, 'Possible Hazards']
+                except Exception:
+                    pass
+            
             hazard_col = 'Hazard Index'
             exposure_col = 'Exposure Index'
             vulnerability_col = 'Vulnerability Index'
-
+            
             required_cols = [hazard_col, exposure_col, vulnerability_col]
-
-            if all(col in df_pri.columns for col in required_cols):
+            
+            if all(col in df_base.columns for col in required_cols):
                 pri_scores = []
                 pri_values = []
-
+                
                 pri_table = {
                     0: {'score': 0, 'value': 'NO RISK'},
                     25: {'score': 1, 'value': 'VERY LOW'},
@@ -2478,100 +2486,138 @@ with tab_lvl2:
                     100: {'score': 4, 'value': 'HIGH'},
                     125: {'score': 5, 'value': 'EXTREME'}
                 }
-                allowed_levels = list(pri_table.keys())
+                allowed_levels = list(pri_table.keys()) 
 
-                for index, row in df_pri.iterrows():
+                for index, row in df_base.iterrows():
                     try:
-                        h = float(row[hazard_col]) if pd.notnull(
-                            row[hazard_col]) else 0.0
-                        v = float(row[vulnerability_col]) if pd.notnull(
-                            row[vulnerability_col]) else 0.0
-                        e = float(row[exposure_col]) if pd.notnull(
-                            row[exposure_col]) else 0.0
+                        h = float(row[hazard_col]) if pd.notnull(row[hazard_col]) else 0.0
+                        v = float(row[vulnerability_col]) if pd.notnull(row[vulnerability_col]) else 0.0
+                        e = float(row[exposure_col]) if pd.notnull(row[exposure_col]) else 0.0
                     except ValueError:
                         h, v, e = 0.0, 0.0, 0.0
 
                     raw_product = h * v * e
-
-                    lookup_key = min(
-                        allowed_levels, key=lambda x: abs(x - raw_product))
+                    lookup_key = min(allowed_levels, key=lambda x: abs(x - raw_product))
 
                     pri_scores.append(pri_table[lookup_key]['score'])
                     pri_values.append(pri_table[lookup_key]['value'])
+                
+                df_base['PRI scores'] = pri_scores
+                df_base['PRI values'] = pri_values
 
-                df_pri['PRI scores'] = pri_scores
-                df_pri['PRI values'] = pri_values
+                st.session_state.calculated_results = df_base
 
-                cols = list(df_pri.columns)
-                core_cols = [c for c in cols if c not in [hazard_col, 'Hazard Level', exposure_col,
-                                                          'Sensitivity Index', vulnerability_col, 'PRI scores', 'PRI values']]
-                index_cols = [hazard_col, 'Hazard Level',
-                              exposure_col, 'Sensitivity Index', vulnerability_col]
-                final_pri_cols = ['PRI scores', 'PRI values']
+                df_pri_display = df_base.copy()
 
+                all_hazards_list = [
+                    "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)", "Drought", 
+                    "Wildfire (Forest fire or Bush fire)", "Desertification", "Storms & strong winds", "Hail", 
+                    "Aeolian erosion", "Pluvial flood, heavy rainfall and surface runoff", "Fluvial flood", 
+                    "Coastal flood (e.g. storm surge)", "Impact floods and Tsunami", "Fluvial sediment transport", 
+                    "Stream bank & bed erosion", "Sheet erosion & rill erosion", "Gully erosion", 
+                    "Coastal and shoreline erosion (includes freshwater environments)", 
+                    "Debris flood (Volumetric Sediment Concentration 20-40%)", "Debris flow (Volumetric Sediment Concentration >40%)", 
+                    "Small Rockfall (Diameter <25cm)", "Large Rockfall (Diameter >25-100 cm)", "Landslides < 2 m depth", 
+                    "Landslides 2-10 m depth", "Landslides > 10 m depths", "Mud or Earth flow", 
+                    "Soil slope deformation & Soil creep", "Snow avalanches", "Snow drift", "Snow creep & slide"
+                ]
+
+                def parse_and_match_hazards(val):
+                    if isinstance(val, list):
+                        valid = [h for h in val if h in all_hazards_list]
+                        return valid if valid else ["None Identified"]
+                    elif isinstance(val, str):
+                        found = [h for h in all_hazards_list if h in val]
+                        return found if found else ["None Identified"]
+                    return ["None Identified"]
+
+                if 'Possible Hazards' in df_pri_display.columns:
+                    df_pri_display['Specific Hazard'] = df_pri_display['Possible Hazards'].apply(parse_and_match_hazards)
+                    df_pri_display = df_pri_display.explode('Specific Hazard').reset_index(drop=True)
+                else:
+                    df_pri_display['Specific Hazard'] = "None Identified"
+
+                cols = list(df_pri_display.columns)
+                core_cols = [c for c in cols if c not in [hazard_col, 'Hazard Level', exposure_col, 'Sensitivity Index', vulnerability_col, 'PRI scores', 'PRI values', 'Specific Hazard', 'Possible Hazards']]
+                index_cols = [hazard_col, 'Hazard Level', exposure_col, 'Sensitivity Index', vulnerability_col]
+                final_pri_cols = ['Specific Hazard', 'PRI scores', 'PRI values', 'Possible Hazards']
+                
                 new_order = core_cols + index_cols + final_pri_cols
-                
-                df_pri = df_pri[new_order]
+                df_pri_display = df_pri_display[new_order]
 
-                final_config = {
-                    "Sensitivity Index": None,
-                    "PRI scores": st.column_config.NumberColumn("PRI Score", format="%d"),
-                    "PRI values": st.column_config.TextColumn("PRI Value"),
-                    hazard_col: st.column_config.NumberColumn("Hazard Index"),
-                    exposure_col: st.column_config.NumberColumn("Exposure Index"),
-                    vulnerability_col: st.column_config.NumberColumn("Vuln. Index"),
-                    "Hazard Level": st.column_config.TextColumn("Hazard Level"),
-                }
-                
-                st.subheader("Potential Risk Index Results")
-                st.dataframe(
-                    df_pri,
-                    column_config=final_config,
-                    use_container_width=True
-                )
-                
-                st.session_state.calculated_results = df_pri
-                st.success(
-                    "Potential Risk Index (PRI) calculated successfully!")
+                st.session_state.pri_display_df = df_pri_display
+
+                st.success("Potential Risk Index (PRI) calculated successfully!")
                 st.rerun()
             else:
-                missing = [c for c in required_cols if c not in df_pri.columns]
-                st.error(
-                    f"Missing columns: {', '.join(missing)}. Please run previous steps (Hazards, Exposure, Vulnerability).")
+                missing = [c for c in required_cols if c not in df_base.columns]
+                st.error(f"Missing columns: {', '.join(missing)}. Please run previous steps (Hazards, Exposure, Vulnerability).")
         else:
             st.warning("Please complete previous sections to generate data.")
 
-    if 'calculated_results' in st.session_state and 'PRI scores' in st.session_state.calculated_results.columns:
-
+    if 'pri_display_df' in st.session_state and not st.session_state.pri_display_df.empty:
+        
         final_config = {
             "Sensitivity Index": None,
-            "PRI scores": st.column_config.NumberColumn("PRI Score", format="%d"),
-            "PRI values": st.column_config.TextColumn("PRI Value"),
-            "Hazard Index": st.column_config.NumberColumn("Hazard Index"),
-            "Exposure Index": st.column_config.NumberColumn("Exposure Index"),
-            "Vulnerability Index": st.column_config.NumberColumn("Vuln. Index"),
-            "Hazard Level": st.column_config.TextColumn("Hazard Level"),
-        }
+            "Possible Hazards": None,
+            "Hazard Level": None,
+            "Specific Hazard": None,
+            "PRI scores": st.column_config.ProgressColumn(
+                "PRI Score", 
+                help="Final Potential Risk Index Score (0-5)",
+                format="%d", 
+                min_value=0, 
+                max_value=5
+            ),
+            "PRI values": st.column_config.TextColumn("PRI Level"),
+            
+            "Hazard Index": st.column_config.ProgressColumn(
+                "Hazard Index", 
+                help="Final Hazard Index",
+                format="%d", 
+                min_value=0, 
+                max_value=5
+            ),
+            "Exposure Index": st.column_config.ProgressColumn(
+                "Exposure Index", 
+                help="Final Exposure Index",
+                format="%d", 
+                min_value=0, 
+                max_value=5
+            ),
+            "Vulnerability Index": st.column_config.ProgressColumn(
+                "Vuln. Index", 
+                help="Final Vulnerability Index",
+                format="%.2f", 
+                min_value=0, 
+                max_value=5
+            ),
 
+        }
+        
         st.dataframe(
-            st.session_state.calculated_results,
+            st.session_state.pri_display_df,
             column_config=final_config,
             use_container_width=True
         )
 
         if st.button("Generate PRI Assessment Report", type="primary", use_container_width=True):
-            if not st.session_state.get("mistral_api_key"):
+            if not st.session_state.get("gemini_client"):
                 st.error("Please provide a valid API Key to generate the report.")
             else:
-                with st.spinner("Analyzing Risk Indices and writing report (Mistral)..."):
-                    pri_report_text = generate_pri_report_mistral(
-                        st.session_state.calculated_results)
+                with st.spinner("Analyzing Risk Indices and writing report (Gemini)..."):
+                    pri_report_text = generate_pri_report_gemini(st.session_state.pri_display_df)
                     st.session_state["pri_report"] = pri_report_text
 
         if "pri_report" in st.session_state and st.session_state["pri_report"]:
             with st.expander("View PRI Assessment Report", expanded=True):
+                render_ai_header("Potential Risk Index (PRI) Assessment Report")
+                with st.expander("📊 View Raw Data Fed to AI (PRI Table)", expanded=False):
+                    st.caption("This is the PRI data table that was provided to the AI model for analysis.")
+                    st.dataframe(st.session_state.pri_display_df, use_container_width=True)
                 st.markdown(st.session_state["pri_report"])
-
+                render_ai_footer()
+            
             st.download_button(
                 label="Download Report as Text",
                 data=st.session_state["pri_report"],
@@ -2582,96 +2628,103 @@ with tab_lvl2:
     st.subheader("7. Nature-based Solutions (NbS) Recommendations")
     st.markdown("#### Step 7.1: Potential Hazards Selection")
     all_hazards_for_selector = [
-        "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)", "Drought",
-        "Wildfire (Forest fire or Bush fire)", "Desertification", "Storms & strong winds", "Hail",
-        "Aeolian erosion", "Pluvial flood, heavy rainfall and surface runoff", "Fluvial flood",
-        "Coastal flood (e.g. storm surge)", "Impact floods and Tsunami", "Fluvial sediment transport",
-        "Stream bank & bed erosion", "Sheet erosion & rill erosion", "Gully erosion",
-        "Coastal and shoreline erosion (includes freshwater environments)",
-        "Debris flood (Volumetric Sediment Concentration 20-40%)", "Debris flow (Volumetric Sediment Concentration >40%)",
-        "Small Rockfall (Diameter <25cm)", "Large Rockfall (Diameter >25-100 cm)", "Landslides < 2 m depth",
-        "Landslides 2-10 m depth", "Landslides > 10 m depths", "Mud or Earth flow",
+        "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)", "Drought", 
+        "Wildfire (Forest fire or Bush fire)", "Desertification", "Storms & strong winds", "Hail", 
+        "Aeolian erosion", "Pluvial flood, heavy rainfall and surface runoff", "Fluvial flood", 
+        "Coastal flood (e.g. storm surge)", "Impact floods and Tsunami", "Fluvial sediment transport", 
+        "Stream bank & bed erosion", "Sheet erosion & rill erosion", "Gully erosion", 
+        "Coastal and shoreline erosion (includes freshwater environments)", 
+        "Debris flood (Volumetric Sediment Concentration 20-40%)", "Debris flow (Volumetric Sediment Concentration >40%)", 
+        "Small Rockfall (Diameter <25cm)", "Large Rockfall (Diameter >25-100 cm)", "Landslides < 2 m depth", 
+        "Landslides 2-10 m depth", "Landslides > 10 m depths", "Mud or Earth flow", 
         "Soil slope deformation & Soil creep", "Snow avalanches", "Snow drift", "Snow creep & slide"
     ]
 
     if 'selected_nbs_hazards' not in st.session_state:
         st.session_state.selected_nbs_hazards = []
 
-    if st.button("Automatic Extraction from PRI Table", type="secondary", help="Extracts hazards listed in the 'Possible Hazards' column."):
+    if st.button("Automatic Extraction from PRI Table", type="primary", help="Extracts hazards and maps NbS solutions to assets."):
         if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
             extracted_hazards = set()
+            df_nbs = st.session_state.calculated_results.copy()
+            
+            if 'Possible Hazards' not in df_nbs.columns and 'saved_data' in st.session_state:
+                df_nbs['Possible Hazards'] = st.session_state.saved_data.loc[df_nbs.index, 'Possible Hazards']
+            
+            if 'Possible Hazards' in df_nbs.columns:
+                primary_sol_col = []
+                supportive_sol_col = []
+                nbs_db = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
+                valid_nbs_keys = list(nbs_db.keys())
 
-            if 'Possible Hazards' in st.session_state.calculated_results.columns:
-                for item in st.session_state.calculated_results['Possible Hazards']:
-                    if isinstance(item, str):
-                        clean_item = item.replace("[", "").replace(
-                            "]", "").replace("'", "").replace('"', "")
-                        parts = [h.strip() for h in clean_item.split(',')]
-                        extracted_hazards.update(parts)
-                    elif isinstance(item, list):
-                        extracted_hazards.update(item)
-
-            elif 'saved_data' in st.session_state and not st.session_state.saved_data.empty:
-                indices = st.session_state.calculated_results.index
-                if 'Possible Hazards' in st.session_state.saved_data.columns:
-                    subset = st.session_state.saved_data.loc[indices,
-                                                             'Possible Hazards']
-                    for item in subset:
-                        if isinstance(item, list):
-                            extracted_hazards.update(item)
-                        elif isinstance(item, str):
-                            clean_item = item.replace("[", "").replace(
-                                "]", "").replace("'", "").replace('"', "")
-                            parts = [h.strip() for h in clean_item.split(',')]
-                            extracted_hazards.update(parts)
-
-            valid_extracted = [
-                h for h in extracted_hazards if h in all_hazards_for_selector]
-
-            if valid_extracted:
-                current = set(st.session_state.selected_nbs_hazards)
-                current.update(valid_extracted)
-                st.session_state.selected_nbs_hazards = list(current)
-                st.success(f"Extracted {len(valid_extracted)} hazards.")
+                for _, row in df_nbs.iterrows():
+                    hazards_item = row['Possible Hazards']
+                    if isinstance(hazards_item, str):
+                        clean_item = hazards_item.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
+                        current_hazards = [h.strip() for h in clean_item.split(',')]
+                    else:
+                        current_hazards = hazards_item if isinstance(hazards_item, list) else []
+                    
+                    extracted_hazards.update([h for h in current_hazards if h in all_hazards_for_selector])
+                    
+                    p_sols, s_sols = set(), set()
+                    for h in current_hazards:
+                        h_strip = h.strip()
+                        if h_strip in nbs_db:
+                            p_sols.update(nbs_db[h_strip].get("Yes", []))
+                            s_sols.update(nbs_db[h_strip].get("Supportive", []))
+                            
+                    primary_sol_col.append(", ".join(sorted(list(p_sols))))
+                    supportive_sol_col.append(", ".join(sorted(list(s_sols))))
+                
+                st.session_state.calculated_results["Primary Solutions"] = primary_sol_col
+                st.session_state.calculated_results["Supportive Solutions"] = supportive_sol_col
+                st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
+                
+                st.success(f"✅ Extracted {len(st.session_state.selected_nbs_hazards)} hazards and mapped solutions to assets.")
                 st.rerun()
             else:
-                st.warning("No matching hazards found.")
+                st.error("Could not find hazard data in the PRI table.")
         else:
-            st.error("No calculated results available.")
+            st.error("No PRI calculation results available to extract from.")
 
-    col1, col2, col3 = st.columns([3.5, 6, 1])
+    col1, col2, col3 = st.columns([1, 8, 1]) 
     with col2:
-        current_indices = [
-            all_hazards_for_selector.index(h)
-            for h in st.session_state.selected_nbs_hazards
-            if h in all_hazards_for_selector
-        ]
-
+        current_indices = [all_hazards_for_selector.index(h) for h in st.session_state.selected_nbs_hazards if h in all_hazards_for_selector]
         transfer_output = sac.transfer(
             items=all_hazards_for_selector,
-            label="Select Hazards",
-            index=current_indices,
-            titles=["Available", "Selected"],
+            label="Adjust Hazard Selection",
+            index=current_indices, 
+            titles=["Available Hazards", "Selected Hazards"],
             format_func="title",
             search=True,
             height=500,
-            pagination=False,
+            width='100%',
             reload=True
         )
-
         if transfer_output is not None:
             st.session_state.selected_nbs_hazards = transfer_output
 
-    if st.session_state.selected_nbs_hazards:
-        st.markdown("### Recommended Solutions")
-        nbs_data_source = NbS_list[0] if isinstance(
-            NbS_list, list) and len(NbS_list) > 0 else {}
+    if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
+        st.markdown("#### NbS Implementation Mapping Summary")
+        summary_display_df = st.session_state.calculated_results.copy()
+        if 'Possible Hazards' not in summary_display_df.columns and 'saved_data' in st.session_state:
+            summary_display_df['Possible Hazards'] = st.session_state.saved_data.loc[summary_display_df.index, 'Possible Hazards']
+            
+        available_cols = summary_display_df.columns.tolist()
+        required_cols = ["Infrastructure", "Asset", "Impact model", "Possible Hazards", "Primary Solutions", "Supportive Solutions"]
+        cols_to_show = [c for c in required_cols if c in available_cols]
+        
+        st.dataframe(summary_display_df[cols_to_show], use_container_width=True, hide_index=True)
 
+    if st.session_state.selected_nbs_hazards:
+        st.markdown("### Initial Recommended Solutions")
+        nbs_data_source = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
+        
         for hazard in st.session_state.selected_nbs_hazards:
             with st.expander(f"**{hazard}**", expanded=False):
                 if hazard in nbs_data_source:
                     rec_data = nbs_data_source[hazard]
-
                     c_yes, c_supp = st.columns(2)
                     with c_yes:
                         st.markdown("#### ✅ Primary Solutions")
@@ -2682,239 +2735,423 @@ with tab_lvl2:
                         for item in rec_data.get("Supportive", []):
                             st.warning(f"- {item}")
                 else:
-                    st.info("No specific NbS data found for this hazard.")
-
-    st.markdown("#### Step 7.2. NbS Implementation Summary Table")
-
-    if st.button("Generate NbS Summary Table"):
-        if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
-            df_nbs = st.session_state.calculated_results.copy()
-            if 'Possible Hazards' not in df_nbs.columns and 'saved_data' in st.session_state:
-                df_nbs['Possible Hazards'] = st.session_state.saved_data.loc[df_nbs.index,
-                                                                             'Possible Hazards']
-
-            if 'Possible Hazards' in df_nbs.columns:
-                primary_sol_col = []
-                supportive_sol_col = []
-                nbs_db = NbS_list[0] if isinstance(
-                    NbS_list, list) and len(NbS_list) > 0 else {}
-                valid_nbs_keys = list(nbs_db.keys())
-
-                for _, row in df_nbs.iterrows():
-                    hazards_item = row['Possible Hazards']
-                    current_hazards = hazards_item if isinstance(hazards_item, list) else [
-                        k for k in valid_nbs_keys if k in str(hazards_item)]
-
-                    p_sols, s_sols = set(), set()
-                    for h in current_hazards:
-                        if h.strip() in nbs_db:
-                            p_sols.update(nbs_db[h.strip()].get("Yes", []))
-                            s_sols.update(
-                                nbs_db[h.strip()].get("Supportive", []))
-
-                    primary_sol_col.append(", ".join(sorted(list(p_sols))))
-                    supportive_sol_col.append(", ".join(sorted(list(s_sols))))
-                st.session_state.calculated_results["Primary Solutions"] = primary_sol_col
-                st.session_state.calculated_results["Supportive Solutions"] = supportive_sol_col
-
-                st.success("Solutions mapped and saved to session memory.")
-                st.dataframe(st.session_state.calculated_results[[
-                             "Infrastructure", "Asset", "Primary Solutions"]], use_container_width=True)
-            else:
-                st.error("Missing hazard data.")
-        else:
-            st.warning("Please run previous analysis steps first.")
+                    st.info(f"No specific database entries for {hazard}.")
     st.divider()
-    st.markdown("#### 7.3. Sort NbS Solutions for Best Selection")
-    if 'nbs_primary_options' not in st.session_state:
-        st.session_state.nbs_primary_options = []
-    if 'nbs_supportive_options' not in st.session_state:
-        st.session_state.nbs_supportive_options = []
-    if 'nbs_selection_primary' not in st.session_state:
-        st.session_state.nbs_selection_primary = []
-    if 'nbs_selection_supportive' not in st.session_state:
-        st.session_state.nbs_selection_supportive = []
-    if 'nbs_eval_df_primary' not in st.session_state:
-        st.session_state.nbs_eval_df_primary = pd.DataFrame()
-    if 'nbs_eval_df_supportive' not in st.session_state:
-        st.session_state.nbs_eval_df_supportive = pd.DataFrame()
-    col_btn_ext, col_chk_supp, col_btn_res, _ = st.columns([1.5, 2, 1.5, 2.5])
+    st.markdown("#### Step 7.2: Filtration of the Recommended NbS Solutions")
+    st.info("Filter and refine NbS selection by integrating Site-Specific Feasibility (SSF), Socio-Economic acceptance (SEI), and Hazard Impact Attenuation (HIA).")
+    if 'ssf_lookup' not in st.session_state:
+        st.session_state.ssf_lookup = {
+            "Terracing (slope shaping, reduction of slope inclination)": {"Slope instability": {"Explanation": "Terracing improves slope stability.", "Value": 100}, "Limited vegetation and low quality of soil": {"Explanation": "Harder to shape in shallow/poor soils.", "Value": 50}, "Limited access for implementation": {"Explanation": "Requires machinery and work space, the personnel to reach the area and be able to carry the material up to there. All hinders the implementation and maintenance.", "Value": 0}, "Cold temperatures": {"Explanation": "Requires periodic upkeep, there should be monitoring to double check the condition over the cold period.", "Value": 0}, "Limited water availability": {"Explanation": "Soil compaction more difficult when dry.", "Value": 50}, "Lack of connection to major services": {"Explanation": "Machinery delivery required.", "Value": 50}, "Space Constraints": {"Explanation": "Needs substantial bench width.", "Value": 0}, "Exposure to soil, water and/or air pollution": {"Explanation": "Sediment transported by runoff is a factor that may weaken terrace edges.", "Value": 50}, "Limitations due to high population density": {"Explanation": "Remote area.", "Value": 100}},
+            "Earth dams and barriers (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Avalanche mounds": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "3-D steel grids (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Reinforced soil and earth packs (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Afforestation and reforestation": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 0}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 0}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Protection forest management": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Retention forest": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Wildfire-forest management": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Buffer vegetation strips and coppice management": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Firebreaks and firestrips": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 50}},
+            "Fire-resistant tree species & plants": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Prescribed burning": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 0}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 0}, "Limitations due to high population density": {"Value": 0}},
+            "Riparian buffer zones": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Floodplain restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Meandering channel planform": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Channel widening": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 50}},
+            "Sills": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Groynes (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated flood protection dams, dikes & levees": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Water retention basins and ponds (storage ponds)": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Wetland conservation and restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Constructed rural wetlands": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Salt marsh restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Shoreline reforestation & living shorelines (mangroves)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 0}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 50}},
+            "Dune restoration and coastal vegetation": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 50}},
+            "Sand dune stabilization": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Seagrass bed restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 0}, "Limitations due to high population density": {"Value": 50}},
+            "Coral reef conservation and restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 0}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 0}, "Limitations due to high population density": {"Value": 50}},
+            "Agroforestry": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Horticulture": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Water retention, harvesting & cisterns": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Managed aquifer recharge (MAR)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 0}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 0}, "Limitations due to high population density": {"Value": 100}},
+            "Green corridors & tree rows": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Biodiverse hedgerows": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Meadow & grassland restoration": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Vegetated buffer zones": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Controlled grazing": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Fire-smart agriculture": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Contour trenching": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 50}},
+            "Conservation tillage": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Mulching": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Cover cropping": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Soil amendments (previosly organic amendments)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Hydro and mulch seeding": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated biodegradeable erosion control meshes": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Sod (turves)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Live staking": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Live fencing (for slope engineering)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Live slope grids or contour logs": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Live layered techniques": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated cribwall (layer-based design)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated drainage systems": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Wattle fence (for water enginering)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Tree revetment (tree spurs)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated riprap": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Root wad": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated crib wall (fascine-based design)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Live fascines": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Brush mattress": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Live palisades and live weirs": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vegetated log/stone barriers and live/rock check dams": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Wooden log fences": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
+            "Open green spaces": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Green pavers": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Green roofs": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Vertical greenery": {"Slope instability": {"Value": 50}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 50}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 0}, "Lack of connection to major services": {"Value": 0}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Urban forests": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 50}},
+            "Rain gardens": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Bio-retention cells, basins and ponds": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Constructed urban wetlands": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 50}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Infiltration trenches": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 100}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
+            "Bioswales": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}}
+        }
 
-    with col_btn_ext:
-        extract_solutions_btn = st.button(
-            "Extract Available Solutions", help="Parse solutions paired with assets from Section 7.2.")
+    nbs_effectiveness_scores = {
+        'Terracing (slope shaping, reduction of slope inclination)': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 3.5, 'Snow drift': 3.5, 'Snow creep & slide': 3.5}, 
+        'Vegetated earth dams and barriers (transversal)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 3.0, 'Small Rockfall (Diameter <25cm)': 3.0, 'Large Rockfall (Diameter >25-100 cm)': 3.0, 'Landslides < 2 m depth': 3.0, 'Landslides 2-10 m depth': 3.0, 'Landslides > 10 m depths': 3.0, 'Mud or Earth flow': 3.0, 'Soil slope deformation & Soil creep': 3.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
+        'Afforestation and reforestation': {'Extreme high temperatures (Heatwave)': 3.5, 'Extreme cold temperatures (Coldwave, cold snap)': 3.5, 'Drought': 3.5, 'Wildfire (Forest fire or Bush fire)': 3.5, 'Desertification': 3.5, 'Storms & strong winds': 4.0, 'Hail': 4.0, 'Aeolian erosion': 4.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
+        'Protection forest management': {'Extreme high temperatures (Heatwave)': 3.5, 'Extreme cold temperatures (Coldwave, cold snap)': 3.5, 'Drought': 3.5, 'Wildfire (Forest fire or Bush fire)': 3.5, 'Desertification': 3.5, 'Storms & strong winds': 4.0, 'Hail': 4.0, 'Aeolian erosion': 4.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
+        'Buffer vegetation strips and coppice management': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 2.5, 'Snow drift': 2.5, 'Snow creep & slide': 2.5}, 
+        'Firebreaks and firestrips': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Fire-resistant tree species & plants': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Riparian buffer zones': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 2.5, 'Snow drift': 2.5, 'Snow creep & slide': 2.5}, 
+        'Floodplain restoration': {'Extreme high temperatures (Heatwave)': 2.5, 'Extreme cold temperatures (Coldwave, cold snap)': 2.5, 'Drought': 2.5, 'Wildfire (Forest fire or Bush fire)': 2.5, 'Desertification': 2.5, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Channel widening': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Bioswales': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Vegetated levees, dikes, and flood protection dams (longitudinal)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Water retention basins and ponds (storage ponds)': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Wetland conservation and restoration': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Salt marsh restoration': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Dune restoration and coastal vegetation': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Green corridors & tree rows': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 3.0, 'Fluvial flood': 3.0, 'Coastal flood (e.g. storm surge)': 3.0, 'Impact floods and Tsunami': 3.0, 'Fluvial sediment transport': 3.0, 'Stream bank & bed erosion': 3.0, 'Sheet erosion & rill erosion': 3.0, 'Gully erosion': 3.0, 'Coastal and shoreline erosion (includes freshwater environments)': 3.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 1.5, 'Snow drift': 1.5, 'Snow creep & slide': 1.5}, 
+        'Biodiverse hedgerows': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 1.5, 'Snow drift': 1.5, 'Snow creep & slide': 1.5}, 
+        'Vegetated buffer zones': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 3.5, 'Snow drift': 3.5, 'Snow creep & slide': 3.5}, 
+        'Controlled grazing': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.0, 'Fluvial flood': 1.0, 'Coastal flood (e.g. storm surge)': 1.0, 'Impact floods and Tsunami': 1.0, 'Fluvial sediment transport': 1.0, 'Stream bank & bed erosion': 1.0, 'Sheet erosion & rill erosion': 1.0, 'Gully erosion': 1.0, 'Coastal and shoreline erosion (includes freshwater environments)': 1.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Fire-smart agriculture': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Cover cropping': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Soil amendments (previously organic amendments)': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Wattle fence (for water engineering)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Vegetated riprap': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.5, 'Fluvial flood': 2.5, 'Coastal flood (e.g. storm surge)': 2.5, 'Impact floods and Tsunami': 2.5, 'Fluvial sediment transport': 2.5, 'Stream bank & bed erosion': 2.5, 'Sheet erosion & rill erosion': 2.5, 'Gully erosion': 2.5, 'Coastal and shoreline erosion (includes freshwater environments)': 2.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Vegetated log/stone barriers and live/rock check dams': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.5, 'Fluvial flood': 2.5, 'Coastal flood (e.g. storm surge)': 2.5, 'Impact floods and Tsunami': 2.5, 'Fluvial sediment transport': 2.5, 'Stream bank & bed erosion': 2.5, 'Sheet erosion & rill erosion': 2.5, 'Gully erosion': 2.5, 'Coastal and shoreline erosion (includes freshwater environments)': 2.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 1.0, 'Snow drift': 1.0, 'Snow creep & slide': 1.0}, 
+        'Open green spaces': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Green pavers': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Vertical greenery': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.5, 'Fluvial flood': 0.5, 'Coastal flood (e.g. storm surge)': 0.5, 'Impact floods and Tsunami': 0.5, 'Fluvial sediment transport': 0.5, 'Stream bank & bed erosion': 0.5, 'Sheet erosion & rill erosion': 0.5, 'Gully erosion': 0.5, 'Coastal and shoreline erosion (includes freshwater environments)': 0.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Raingardens': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 3.5, 'Hail': 3.5, 'Aeolian erosion': 3.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Bio-retention cells': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
+        'Infiltration trenches': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}
+    }
 
-    with col_chk_supp:
-        include_supportive_chk = st.checkbox(
-            "Include Supportive Solutions in Analysis", value=False)
+    relevant_methods = set()
+    if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
+        for _, row in st.session_state.calculated_results.iterrows():
+            for col in ["Primary Solutions", "Supportive Solutions"]:
+                raw = str(row.get(col, ""))
+                if raw and raw != "nan":
+                    for sol in [x.strip() for x in raw.split(',')]:
+                        if sol: relevant_methods.add(sol)
 
-    with col_btn_res:
-        if st.button("Reset All Selections", help="Clear all solution lists and evaluation data."):
-            st.session_state.nbs_primary_options = []
-            st.session_state.nbs_supportive_options = []
-            st.session_state.nbs_selection_primary = []
-            st.session_state.nbs_selection_supportive = []
-            st.session_state.nbs_eval_df_primary = pd.DataFrame()
-            st.session_state.nbs_eval_df_supportive = pd.DataFrame()
-            st.toast("Selections and evaluation tables cleared.", icon="🧹")
-            st.rerun()
-    if extract_solutions_btn:
-        if 'calculated_results' not in st.session_state or "Primary Solutions" not in st.session_state.calculated_results.columns:
-            st.error("❌ No mapped solutions found. Please click 'Generate NbS Summary Table' in Section 7.2 first to link solutions to your specific assets.")
+    edit_ssf_toggle = st.toggle("🛠️ Customize Site-Specific Feasibility (SSF) Rules", help="Modify the baseline assumptions for how site constraints affect each NbS method.")
+    
+    if edit_ssf_toggle:
+        st.markdown("##### Edit SSF Rulebook")
+        val_to_str = {100: "Highly Feasible", 50: "Moderately Feasible", 0: "Not Feasible"}
+        str_to_val = {v: k for k, v in val_to_str.items()}
+        ssf_criteria_list = [
+            "Slope instability", "Limited vegetation and low quality of soil", 
+            "Limited access for implementation", "Cold temperatures", 
+            "Limited water availability", "Lack of connection to major services", 
+            "Space Constraints", "Exposure to soil, water and/or air pollution", 
+            "Limitations due to high population density"
+        ]
+        edit_data = []
+        for method in sorted(list(relevant_methods)):
+            if method in st.session_state.ssf_lookup:
+                row_dict = {"NbS Method": method}
+                for crit in ssf_criteria_list:
+                    crit_data = st.session_state.ssf_lookup[method].get(crit, {})
+                    val = crit_data.get("Value", 100) if isinstance(crit_data, dict) else 100
+                    row_dict[crit] = val_to_str.get(val, "Highly Feasible")
+                edit_data.append(row_dict)
+        if edit_data:
+            col_config = {"NbS Method": st.column_config.TextColumn(disabled=True)}
+            for crit in ssf_criteria_list:
+                col_config[crit] = st.column_config.SelectboxColumn(options=["Highly Feasible", "Moderately Feasible", "Not Feasible"], required=True)
+            edited_df = st.data_editor(pd.DataFrame(edit_data), column_config=col_config, hide_index=True, use_container_width=True, key="ssf_rule_editor")
+            for _, row in edited_df.iterrows():
+                method = row["NbS Method"]
+                for crit in ssf_criteria_list:
+                    new_val = str_to_val[row[crit]]
+                    if method in st.session_state.ssf_lookup:
+                        if crit not in st.session_state.ssf_lookup[method]: st.session_state.ssf_lookup[method][crit] = {}
+                        st.session_state.ssf_lookup[method][crit]["Value"] = new_val
         else:
-            df_source = st.session_state.calculated_results
-            primary_context_set = set()
-            supportive_context_set = set()
+            st.info("No identified solutions found to edit. Please run Step 7.1 first.")
+        st.divider()
+    col_input1, col_input2 = st.columns(2)
+    with col_input1:
+        with st.container(border=True):
+            st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
+            site_conditions = {
+                "Slope instability": st.toggle("Unstable/Steep Slopes", value=True),
+                "Limited vegetation and low quality of soil": st.toggle("Poor Soil/Low Vegetation"),
+                "Limited access for implementation": st.toggle("Difficult Site Access"),
+                "Cold temperatures": st.toggle("Cold Temperatures / Frost Risk"),
+                "Limited water availability": st.toggle("Water Scarcity"),
+                "Lack of connection to major services": st.toggle("No Infrastructure/Services Access"),
+                "Space Constraints": st.toggle("Very Limited Space"),
+                "Exposure to soil, water and/or air pollution": st.toggle("Polluted Soil/Water/Air"),
+                "Limitations due to high population density": st.toggle("Urban/Densely Populated Area")
+            }
+    with col_input2:
+        with st.container(border=True):
+            st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
+            sei_factors = ["Community Engagement", "Cultural Preferences", "Workforce Availability", "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints"]
+            sei_ratings = {}
+            for f in sei_factors:
+                val = st.select_slider(f"{f}", options=[1, 2, 3], value=1, help="1: Favorable, 2: Neutral, 3: Unfavorable")
+                sei_ratings[f] = 100 if val == 1 else (50 if val == 2 else 0)
 
-            for _, row in df_source.iterrows():
-                asset_name = str(row.get('Asset', 'Asset'))
-                p_raw = str(row.get("Primary Solutions", ""))
-                if p_raw and p_raw != "nan" and p_raw.strip() != "":
-                    for sol in [x.strip() for x in p_raw.split(',')]:
-                        if sol:
-                            primary_context_set.add(f"{sol} for {asset_name}")
-                s_raw = str(row.get("Supportive Solutions", ""))
-                if s_raw and s_raw != "nan" and s_raw.strip() != "":
-                    for sol in [x.strip() for x in s_raw.split(',')]:
-                        if sol:
-                            supportive_context_set.add(
-                                f"{sol} for {asset_name}")
+    # 4. FILTRATION CALCULATION
+    st.session_state.filtered_nbs_pool = []
+    low_perf_pool = []
+    if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
+        unique_pairs = {}
+        for _, row in st.session_state.calculated_results.iterrows():
+            pri_score = row.get("PRI scores", 0) 
+            raw_hazards = row.get("Possible Hazards", [])
+            if isinstance(raw_hazards, str):
+                val_clean = raw_hazards.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
+                hazards = [h.strip() for h in val_clean.split(',') if h.strip()]
+            elif isinstance(raw_hazards, list): hazards = raw_hazards
+            else: hazards = []
+            hazards = [h for h in hazards if h in all_hazards_for_selector]
+            raw_p_sols = str(row.get("Primary Solutions", ""))
+            p_sols = [s.strip() for s in raw_p_sols.split(',') if s.strip()]
+            for h in hazards:
+                for sol in p_sols:
+                    pair_name = f"{sol} method for {h}"
+                    score = nbs_effectiveness_scores.get(sol, {}).get(h, "N/A")
+                    if score != "N/A" and isinstance(score, (int, float)):
+                        rpri = pri_score * (1.0 - (score / 5.0))
+                        eff_percent = (score / 5.0) * 100
+                        if pair_name not in unique_pairs or unique_pairs[pair_name].get("rpri", -1) < rpri:
+                            unique_pairs[pair_name] = {"rpri": rpri, "eff_percent": eff_percent, "original_pri": pri_score, "status": "scored"}
+                    else:
+                        if pair_name not in unique_pairs: unique_pairs[pair_name] = {"status": "unscored"}
 
-            st.session_state.nbs_primary_options = sorted(
-                list(primary_context_set))
-            st.session_state.nbs_supportive_options = sorted(
-                list(supportive_context_set))
+        for name, data in unique_pairs.items():
+            method_base = name.split(" method for ")[0]
+            m_ssf_data = st.session_state.ssf_lookup.get(method_base, {})
+            ssf_scores = []
+            for crit, active in site_conditions.items():
+                if active:
+                    c_info = m_ssf_data.get(crit, {})
+                    val = c_info.get("Value", 100) if isinstance(c_info, dict) else 100
+                    ssf_scores.append(val)
+                else: ssf_scores.append(100)
+            avg_ssf = sum(ssf_scores) / len(ssf_scores)
+            avg_sei = sum(sei_ratings.values()) / len(sei_ratings)
+            avg_hia = data.get("eff_percent", 0) if data["status"] == "scored" else 0
+            total_score = (avg_ssf + avg_sei + avg_hia) / 3
+            data.update({"name": name, "method_only": method_base, "ssf": avg_ssf, "sei": avg_sei, "hia": avg_hia, "total": total_score})
+            if total_score >= 50: st.session_state.filtered_nbs_pool.append(data)
+            else: low_perf_pool.append(data)
 
-            if st.session_state.nbs_primary_options:
-                st.success(
-                    f"✅ Successfully extracted {len(primary_context_set)} unique asset-solution pairs.")
-                st.rerun()
+        if not st.session_state.filtered_nbs_pool and unique_pairs:
+            st.warning("⚠️ No solutions strictly passed the 50% feasibility threshold. Showing all potential methods for your review.")
+            st.session_state.filtered_nbs_pool = list(unique_pairs.values())
+        elif st.session_state.filtered_nbs_pool:
+            st.success(f"Filtration complete: {len(st.session_state.filtered_nbs_pool)} solutions passed the feasibility threshold.")
+
+        # 5. VISUALS
+        if st.session_state.filtered_nbs_pool:
+            st.markdown("---")
+            st.subheader("NbS Feasibility Spider Diagram")
+            df_final = pd.DataFrame(st.session_state.filtered_nbs_pool).sort_values(by="total", ascending=False)
+            top_m = df_final.head(5)
+            fig = go.Figure()
+            for _, r in top_m.iterrows():
+                fig.add_trace(go.Scatterpolar(r=[r["ssf"], r["sei"], r["hia"], r["ssf"]], theta=['Site Feasibility (SSF)', 'Socio-Economic (SEI)', 'Hazard Attenuation (HIA)', 'Site Feasibility (SSF)'], fill='toself', name=r["name"]))
+            fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # --- UPGRADE 2: PROGRESS BARS FOR SCORES ---
+            with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
+                filt_config = {
+                    "name": st.column_config.TextColumn("NbS Method"),
+                    "ssf": st.column_config.ProgressColumn("SSF (%)", format="%.0f%%", min_value=0, max_value=100),
+                    "sei": st.column_config.ProgressColumn("SEI (%)", format="%.0f%%", min_value=0, max_value=100),
+                    "hia": st.column_config.ProgressColumn("HIA (%)", format="%.0f%%", min_value=0, max_value=100),
+                    "total": st.column_config.ProgressColumn("Final Index (%)", format="%.0f%%", min_value=0, max_value=100)
+                }
+                st.dataframe(
+                    df_final[["name", "ssf", "sei", "hia", "total"]], 
+                    column_config=filt_config,
+                    use_container_width=True, 
+                    hide_index=True
+                )
+
+            if low_perf_pool:
+                st.markdown("##### ⚠️ Threshold Analysis")
+                with st.expander(f"View {len(low_perf_pool)} methods below 50% threshold", expanded=False):
+                    for item in low_perf_pool: st.warning(f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%).")
+
+            st.divider()
+            st.markdown("#### 7.3. Final NbS Recommendation Strategy")
+            rec_strategy = st.radio("Choose recommendation strategy for filtered solutions:", ["Ranking Based on Residual Potential Risk Index (RPRI)", "Ranking Based On Expert Opinion (Priority Ranking)"], horizontal=True, key="strategy_radio")
+
+            if rec_strategy == "Ranking Based on Residual Potential Risk Index (RPRI)":
+                consolidated_rpri_dict = {}
+                for item in st.session_state.filtered_nbs_pool:
+                    method = item["method_only"]
+                    if method not in consolidated_rpri_dict or (item.get("rpri", 0) > consolidated_rpri_dict[method].get("rpri", 0)):
+                        consolidated_rpri_dict[method] = item
+
+                scored_sorted = sorted([i for i in consolidated_rpri_dict.values() if i["status"] == "scored"], key=lambda x: (x["eff_percent"] == 0, x["rpri"]))
+                unscored_items = [i for i in consolidated_rpri_dict.values() if i["status"] == "unscored"]
+                
+                def get_color_for_rpri(rpri_val, eff_percent):
+                    if eff_percent == 0.0: return "#d32f2f"
+                    if rpri_val <= 0.25: return "#1b5e20"
+                    elif rpri_val <= 0.50: return "#2e7d32"
+                    elif rpri_val <= 0.75: return "#66bb6a"
+                    elif rpri_val <= 1.00: return "#aed581"
+                    elif rpri_val <= 1.50: return "#fff176"
+                    elif rpri_val <= 2.00: return "#ffb74d"   
+                    elif rpri_val <= 3.00: return "#f57c00"
+                    else: return "#d32f2f"
+
+                st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
+                for rank, item in enumerate(scored_sorted, 1):
+                    bg = get_color_for_rpri(item['rpri'], item['eff_percent'])
+                    tx = "white" if (item['eff_percent'] == 0.0 or item['rpri'] <= 0.50 or item['rpri'] > 3.0) else "black"
+                    with st.container(border=True):
+                        col_rank, col_details = st.columns([1, 4])
+                        with col_rank:
+                            badge_color = "#28a745" if item['rpri'] < 1 else "#ffc107"
+                            st.markdown(f"""
+                                <div style="
+                                    background-color: {badge_color}; 
+                                    color: white; 
+                                    border-radius: 50%; 
+                                    width: 40px; 
+                                    height: 40px; 
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center; 
+                                    font-weight: bold; 
+                                    font-size: 18px;
+                                    margin-top: 5px;">
+                                    {rank}
+                                </div>
+                                """, unsafe_allow_html=True)
+                        with col_details:
+                            st.markdown(f"**{item['method_only']}**")
+                            st.caption(f"Residual PRI: {item['rpri']:.2f} | Efficiency: {item['eff_percent']:.0f}%")
+                if unscored_items:
+                    with st.expander("Solutions with unavailable technical efficiency values", expanded=False):
+                        for item in unscored_items: st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #ddd; color: black;"><h6 style="margin:0;">- {item["name"]}</h6><p style="margin:0; font-size: 0.9em; color: #555;"><i>Technical efficiency values are not available for this method.</i></p></div>', unsafe_allow_html=True)
+
             else:
-                st.warning(
-                    "No solutions were found in the 7.2 table for the current hazards.")
-    if st.session_state.nbs_primary_options:
-        st.markdown("##### Select Primary Solutions to Evaluate")
-        st.session_state.nbs_selection_primary = sac.transfer(
-            items=st.session_state.nbs_primary_options,
-            label="Primary Solutions",
-            titles=["Available", "Selected for Evaluation"],
-            search=True,
-            reload=True,
-            key="sac_primary_filtered"
-        )
-    else:
-        st.info("Please calculate the Potential Risk Index (PRI) above to enable report generation.")
+                if 'nbs_eval_df_primary' not in st.session_state: st.session_state.nbs_eval_df_primary = pd.DataFrame()
+                if 'nbs_eval_df_supportive' not in st.session_state: st.session_state.nbs_eval_df_supportive = pd.DataFrame()
+                
+                # --- UPGRADE 3: ALIGNED CONTROL PANEL ---
+                with st.container(border=True):
+                    colA, colB, colC = st.columns([1, 1, 1])
+                    with colA: 
+                        extract_btn = st.button("📥 Extract Feasible Solutions", use_container_width=True, key="extract_expert")
+                    with colB: 
+                        st.markdown("<div style='text-align: center; margin-top: 5px;'>", unsafe_allow_html=True)
+                        include_supp = st.toggle("➕ Include Supportive Solutions", value=False, key="chk_supp_expert")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    with colC: 
+                        if st.button("🗑️ Reset Selections", use_container_width=True, type="secondary"):
+                            st.session_state.nbs_eval_df_primary = pd.DataFrame()
+                            st.session_state.nbs_eval_df_supportive = pd.DataFrame()
+                            st.rerun()
 
-        if include_supportive_chk and st.session_state.nbs_supportive_options:
-            st.markdown("##### Select Supportive Solutions to Evaluate")
-            st.session_state.nbs_selection_supportive = sac.transfer(
-                items=st.session_state.nbs_supportive_options,
-                label="Supportive Solutions",
-                titles=["Available", "Selected for Evaluation"],
-                search=True,
-                reload=True,
-                key="sac_supportive_filtered"
-            )
-        if st.button("Initialize Evaluation Tables"):
-            if not st.session_state.nbs_selection_primary:
-                st.warning(
-                    "Please select at least one Primary solution for evaluation.")
-            else:
-                kpi_rows = [
-                    "Safety, Reliability and Security (SRS)",
-                    "Availability and Maintainability (AM)",
-                    "Economy (EC)",
-                    "Environment (EV)",
-                    "Health and Politics (HP)"
-                ]
-                data_p = {
-                    col: [3]*5 for col in st.session_state.nbs_selection_primary}
-                st.session_state.nbs_eval_df_primary = pd.DataFrame(
-                    data_p, index=kpi_rows)
+                if extract_btn:
+                    st.session_state.nbs_primary_options = sorted([item["name"] for item in st.session_state.filtered_nbs_pool])
+                    supp_set = set()
+                    for _, row in st.session_state.calculated_results.iterrows():
+                        s_raw = str(row.get("Supportive Solutions", ""))
+                        if s_raw and s_raw != "nan":
+                            for sol in [x.strip() for x in s_raw.split(',')]:
+                                if sol:
+                                    m_ssf = st.session_state.ssf_lookup.get(sol, {})
+                                    s_scores = [m_ssf.get(c,{}).get("Value",100) if site_conditions[c] else 100 for c in site_conditions]
+                                    avg_s = (sum(s_scores)/len(s_scores) + sum(sei_ratings.values())/len(sei_ratings))/2
+                                    if avg_s >= 50 or not st.session_state.filtered_nbs_pool: supp_set.add(f"{sol} for {row.get('Asset','Asset')}")
+                    st.session_state.nbs_supportive_options = sorted(list(supp_set))
+                    st.rerun()
 
-                if include_supportive_chk and st.session_state.nbs_selection_supportive:
-                    data_s = {
-                        col: [3]*5 for col in st.session_state.nbs_selection_supportive}
-                    st.session_state.nbs_eval_df_supportive = pd.DataFrame(
-                        data_s, index=kpi_rows)
-                else:
-                    st.session_state.nbs_eval_df_supportive = pd.DataFrame()
-                st.rerun()
-    if not st.session_state.nbs_eval_df_primary.empty:
-        st.markdown("#### Expert Evaluation: CI(HN) Scores (1-5)")
-        st.caption(
-            "1 = Significant condition improvement, 5 = Minimal/No improvement. Default is 3.")
-
-        st.markdown("**Primary Solutions Evaluation**")
-        edited_primary = st.data_editor(
-            st.session_state.nbs_eval_df_primary,
-            use_container_width=True,
-            key="editor_primary_final"
-        )
-        edited_supportive = pd.DataFrame()
-        if not st.session_state.nbs_eval_df_supportive.empty:
-            st.markdown("**Supportive Solutions Evaluation**")
-            edited_supportive = st.data_editor(
-                st.session_state.nbs_eval_df_supportive,
-                use_container_width=True,
-                key="editor_supportive_final"
-            )
-        if st.button("Validate and Rank Solutions"):
-            all_valid = (edited_primary.values.min() >=
-                         1 and edited_primary.values.max() <= 5)
-            if not edited_supportive.empty:
-                all_valid = all_valid and (edited_supportive.values.min(
-                ) >= 1 and edited_supportive.values.max() <= 5)
-
-            if not all_valid:
-                st.error("All scores must be between 1 and 5.")
-            else:
-                st.session_state.nbs_eval_df_primary = edited_primary
-                if not edited_supportive.empty:
-                    st.session_state.nbs_eval_df_supportive = edited_supportive
-                color_map = {1: "#6dbf7a", 2: "#a6d17b",
-                             3: "#ffeb84", 4: "#f9a674", 5: "#f76d6d"}
-                primary_results = []
-                for col in edited_primary.columns:
-                    primary_results.append({
-                        "Context": col,
-                        "Score": int(edited_primary[col].min())
-                    })
-                primary_results.sort(key=lambda x: x["Score"])
-
-                st.subheader(
-                    "🏆 Primary NbS Ranking for Infrastructure Condition Improvement")
-                for rank, res in enumerate(primary_results, 1):
-                    score = res['Score']
-                    st.markdown(
-                        f"""
-                        <div style="background-color: {color_map.get(score, '#fff')}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;">
-                            <h4 style="margin:0;">#{rank}: {res['Context']}</h4>
-                            <p style="margin:0;">Condition Improvement Score: <b>{score}</b></p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                if not edited_supportive.empty:
-                    supportive_results = []
-                    for col in edited_supportive.columns:
-                        supportive_results.append({
-                            "Context": col,
-                            "Score": int(edited_supportive[col].min())
-                        })
-                    supportive_results.sort(key=lambda x: x["Score"])
-
-                    st.markdown("---")
-                    st.subheader(
-                        "🏆 Supportive NbS Ranking for Infrastructure Condition Improvement")
-                    for rank, res in enumerate(supportive_results, 1):
-                        score = res['Score']
-                        st.markdown(
-                            f"""
-                            <div style="background-color: {color_map.get(score, '#fff')}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;">
-                                <h4 style="margin:0;">#{rank}: {res['Context']}</h4>
-                                <p style="margin:0;">Condition Improvement Score: <b>{score}</b></p>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
+                if 'nbs_primary_options' in st.session_state and st.session_state.nbs_primary_options:
+                    col_left, col_center, col_right = st.columns([1, 8, 1])
+                    
+                    with col_center:
+                        sel_p = sac.transfer(
+                            items=st.session_state.nbs_primary_options, 
+                            label="Primary Solutions (Maintain Hazard Context for Expert Evaluation)", 
+                            titles=["Available", "Selected"], 
+                            search=True, 
+                            key="sac_p_expert",
+                            height=600,
+                            width='100%'
                         )
+                        
+                        if include_supp and st.session_state.nbs_supportive_options:
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            sel_s = sac.transfer(
+                                items=st.session_state.nbs_supportive_options, 
+                                label="Supportive Solutions", 
+                                titles=["Available", "Selected"], 
+                                search=True, 
+                                key="sac_s_expert",
+                                height=600,
+                                width='100%'
+                            )
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("Initialize Evaluation Tables", type="primary"):
+                        kpi_rows = ["Safety, Reliability and Security (SRS)", "Availability and Maintainability (AM)", "Economy (EC)", "Environment (EV)", "Health and Politics (HP)"]
+                        st.session_state.nbs_eval_df_primary = pd.DataFrame({col: [3]*5 for col in sel_p}, index=kpi_rows)
+                        if include_supp and sel_s: st.session_state.nbs_eval_df_supportive = pd.DataFrame({col: [3]*5 for col in sel_s}, index=kpi_rows)
+                        st.rerun()
+
+                if not st.session_state.nbs_eval_df_primary.empty:
+                    st.markdown("#### Expert Evaluation: CI(HN) Scores")
+                    st.caption("Rate the expected resilience improvement for each KPI. **(1 = Best, 5 = Worst)**")
+                    def create_expert_config(df_to_config):
+                        return {col: st.column_config.SelectboxColumn(col, options=[1, 2, 3, 4, 5], required=True) for col in df_to_config.columns}
+
+                    ed_p = st.data_editor(st.session_state.nbs_eval_df_primary, column_config=create_expert_config(st.session_state.nbs_eval_df_primary), use_container_width=True, key="ed_p_final")
+                    
+                    if not st.session_state.nbs_eval_df_supportive.empty:
+                        st.markdown("##### Supportive Solutions Evaluation")
+                        ed_s = st.data_editor(st.session_state.nbs_eval_df_supportive, column_config=create_expert_config(st.session_state.nbs_eval_df_supportive), use_container_width=True, key="ed_s_final")
+                    else:
+                        ed_s = None
+                        
+                    if st.button("Validate and Rank"):
+                        cmap = {1: "#6dbf7a", 2: "#a6d17b", 3: "#ffeb84", 4: "#f9a674", 5: "#f76d6d"}
+                        st.subheader("🏆 Primary NbS Expert Ranking")
+                        for rank, res in enumerate(sorted([{"Context": c, "Score": int(ed_p[c].min())} for c in ed_p.columns], key=lambda x: x["Score"]), 1):
+                            st.markdown(f'<div style="background-color: {cmap.get(res["Score"], "#fff")}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;"><h4 style="margin:0;">#{rank}: {res["Context"]}</h4><p style="margin:0;">Expert Score: <b>{res["Score"]}</b></p></div>', unsafe_allow_html=True)
+                        if ed_s is not None:
+                            st.subheader("🏆 Supportive NbS Expert Ranking")
+                            for rank, res in enumerate(sorted([{"Context": c, "Score": int(ed_s[c].min())} for c in ed_s.columns], key=lambda x: x["Score"]), 1):
+                                st.markdown(f'<div style="background-color: {cmap.get(res["Score"], "#fff")}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;"><h4 style="margin:0;">#{rank}: {res["Context"]}</h4><p style="margin:0;">Expert Score: <b>{res["Score"]}</b></p></div>', unsafe_allow_html=True)
+    else: 
+        st.warning("Please run Step 7.1 first.")
