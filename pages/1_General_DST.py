@@ -637,7 +637,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     system_instruction = (
         "You are an expert geographical and infrastructure analyst. Your task is to generate a report "
         "by analyzing the provided OpenStreetMap data and geographical coordinate. "
-        "**You must use the Google Search tool** to find contextual data, elevation, and topography for the given coordinate. "
+        "**Base your analysis solely on the provided OpenStreetMap data and your training knowledge. No web search is available. "
         "Follow the specified structured output format strictly. DO NOT include any climate or weather information."
         " Analyze all provided tags in the detailed infrastructure data for deeper insights, such as materials or surfaces."
     )
@@ -656,7 +656,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
     {detailed_str}
 
     **REPORT INSTRUCTIONS:**
-    Please use the coordinate and the extracted infrastructure details to search the internet for more contextual information about this geographical area.
+    Analyse the coordinate and the extracted infrastructure details provided above. Note that web search is not available — base your analysis on the provided data and your training knowledge only.
     
     **Provide the report in the following structured format:**...
     """
@@ -666,8 +666,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements):
             model='gemini-2.5-flash',
             contents=[user_prompt],
             config={
-                "system_instruction": system_instruction,
-                "tools": [{"google_search": {}}]
+                "system_instruction": system_instruction
             }
         )
         return response.text
@@ -686,7 +685,7 @@ def generate_koppen_interpretation(koppen_code):
 
     system_instruction = (
         "You are an expert climatologist. Your task is to provide a detailed, easy-to-understand interpretation "
-        "of the given Köppen Climate Classification code. **You must use the Google Search tool** "
+        "of the given Köppen Climate Classification code. Base your interpretation solely on your training knowledge of Köppen climate classifications. No web search is available. "
         "to find detailed climate conditions. Ensure all temperatures are provided in Celcius. "
         "The response must focus purely on climate conditions and meaning."
     )
@@ -707,8 +706,7 @@ def generate_koppen_interpretation(koppen_code):
             model='gemini-2.5-flash',
             contents=[user_prompt],
             config={
-                "system_instruction": system_instruction,
-                "tools": [{"google_search": {}}]
+                "system_instruction": system_instruction
             }
         )
         return response.text
@@ -792,8 +790,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
             model='gemini-2.5-flash',
             contents=[user_prompt],
             config={
-                "system_instruction": system_instruction, 
-                "tools": [{"google_search": {}}] 
+                "system_instruction": system_instruction
             }
         )
         return response.text
@@ -1176,22 +1173,268 @@ else:
     st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key.")
     st.session_state["gemini_client"] = None
 
-st.set_page_config(page_title="General Decision Support Tool", layout="wide")
+st.set_page_config(page_title="General Decision Support Tool", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
-    button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
-        font-size: 32px !important;  /* Adjust this value for even larger font */
-        font-weight: bold !important;
-        color: #000000 !important;   /* Black for high contrast; change to #FF0000 for red if needed */
-    }
-    button[data-baseweb="tab"] {
-        padding: 10px 20px !important;  /* Makes tabs physically larger */
-        border-bottom: 3px solid transparent !important;
-    }
-    button[data-baseweb="tab"][aria-selected="true"] {
-        border-bottom: 3px solid #FF4B4B !important;  /* Red underline for active tab */
-    }
+/* ── Google Font (Inter) ─────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ── Design tokens — Forest Nature theme ────────────────────────────────── */
+:root {
+    --bg:         #ffffff;
+    --surface:    #ffffff;
+    --sidebar-bg: #1b3a2d;
+    --accent:     #2d6a4f;
+    --accent2:    #52b788;
+    --grad:       linear-gradient(135deg, #1b4332 0%, #2d6a4f 50%, #52b788 100%);
+    --text:       #1a2e1f;
+    --muted:      #5a7a65;
+    --border:     #d8e8df;
+    --shadow-sm:  0 1px 3px rgba(27,67,50,.08), 0 1px 2px rgba(27,67,50,.05);
+    --shadow-md:  0 4px 14px rgba(27,67,50,.10), 0 2px 4px rgba(27,67,50,.06);
+    --r:          10px;
+    --r-lg:       14px;
+}
+
+/* ── Global base ─────────────────────────────────────────────────────────── */
+html, body, [data-testid="stAppViewContainer"] {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    background-color: var(--bg) !important;
+    color: var(--text) !important;
+}
+
+/* 4 px gradient accent bar at the top */
+[data-testid="stHeader"] {
+    background: var(--grad) !important;
+    height: 4px !important;
+    min-height: 4px !important;
+}
+
+[data-testid="stHeader"] {
+    z-index: 999;
+}
+
+/* ── Main content area ───────────────────────────────────────────────────── */
+[data-testid="stMainBlockContainer"],
+.main .block-container {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    padding: 1.6rem 2.6rem 3rem !important;
+    max-width: 1440px;
+}
+
+/* ── Sidebar — deep forest green + background image ─────────────────────── */
+[data-testid="stSidebar"] {
+    background:
+        linear-gradient(180deg, rgba(27,58,45,.45) 0%, rgba(27,58,45,.55) 100%),
+        url("https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/side_back.png")
+        center center / cover no-repeat !important;
+    border-right: none !important;
+    box-shadow: 2px 0 18px rgba(0,0,0,.25) !important;
+}
+[data-testid="stSidebar"] * { color: #b7d5c4 !important; }
+[data-testid="stSidebar"] strong,
+[data-testid="stSidebar"] a { color: #d4edde !important; }
+[data-testid="stSidebar"] img {
+    padding: 20px 10px 10px !important;
+    filter: brightness(1.4) contrast(1.2) drop-shadow(0 2px 8px rgba(0,0,0,.50));
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+h1 {
+    font-size: 1.9rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px !important;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem !important;
+}
+h2 {
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 6px;
+    margin-top: 1.4rem !important;
+}
+h3 {
+    font-size: 1.02rem !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
+}
+h4, h5 {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: var(--muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em !important;
+}
+
+/* ── Cards — st.container(border=True) ──────────────────────────────────── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-lg) !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 1rem 1.3rem !important;
+    margin-bottom: 0.9rem !important;
+    transition: box-shadow .2s ease;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    box-shadow: var(--shadow-md) !important;
+}
+
+/* ── Expanders ───────────────────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r) !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin-bottom: 0.6rem !important;
+}
+[data-testid="stExpander"] summary {
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    padding: 0.65rem 1rem !important;
+}
+
+/* ── Native st.tabs ──────────────────────────────────────────────────────── */
+button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
+    font-size: 0.90rem !important;
+    font-weight: 600 !important;
+    color: var(--muted) !important;
+    letter-spacing: 0.01em;
+}
+button[data-baseweb="tab"][aria-selected="true"]
+    > div[data-testid="stMarkdownContainer"] > p {
+    color: var(--accent) !important;
+}
+button[data-baseweb="tab"] {
+    padding: 8px 18px !important;
+    border-bottom: 2px solid transparent !important;
+    transition: border-color .15s, background .15s;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    border-bottom: 2px solid var(--accent) !important;
+    background: rgba(45,106,79,.07) !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+/* ── sac.steps navigation ────────────────────────────────────────────────── */
+.ant-steps-item-finish .ant-steps-item-icon,
+.ant-steps-item-process .ant-steps-item-icon {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+}
+.ant-steps-item-title { font-size: 0.88rem !important; font-weight: 600 !important; }
+
+/* ── Primary buttons ─────────────────────────────────────────────────────── */
+[data-testid="baseButton-primary"],
+button[kind="primary"] {
+    background: var(--grad) !important;
+    border: none !important;
+    border-radius: var(--r) !important;
+    font-weight: 600 !important;
+    font-size: 0.87rem !important;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 8px rgba(45,106,79,.28) !important;
+    transition: transform .15s ease, box-shadow .15s ease !important;
+}
+[data-testid="baseButton-primary"]:hover,
+button[kind="primary"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 5px 16px rgba(45,106,79,.38) !important;
+}
+
+/* ── Secondary buttons ───────────────────────────────────────────────────── */
+[data-testid="baseButton-secondary"],
+button[kind="secondary"] {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r) !important;
+    font-weight: 500 !important;
+    font-size: 0.87rem !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    transition: border-color .15s, background .15s;
+}
+[data-testid="baseButton-secondary"]:hover,
+button[kind="secondary"]:hover {
+    border-color: var(--accent) !important;
+    background: rgba(45,106,79,.04) !important;
+}
+
+/* ── Text / number inputs ────────────────────────────────────────────────── */
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stMultiSelect"] > div > div {
+    border-radius: var(--r) !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    font-size: 0.87rem !important;
+    transition: border-color .15s, box-shadow .15s;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stNumberInput"] input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(45,106,79,.14) !important;
+    outline: none !important;
+}
+
+/* ── Metric cards ────────────────────────────────────────────────────────── */
+[data-testid="stMetric"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 18px;
+    box-shadow: var(--shadow-sm);
+}
+[data-testid="stMetricValue"] {
+    font-size: 1.55rem !important;
+    font-weight: 700 !important;
+    color: var(--accent) !important;
+}
+
+/* ── Dataframe / data-editor ─────────────────────────────────────────────── */
+[data-testid="stDataFrame"],
+[data-testid="stDataEditor"] {
+    border-radius: var(--r) !important;
+    border: 1px solid var(--border) !important;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── st.status widget ────────────────────────────────────────────────────── */
+[data-testid="stStatus"] {
+    border-radius: var(--r) !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ── Alert boxes (info / warning / success / error) ─────────────────────── */
+[data-testid="stAlert"] {
+    border-radius: var(--r) !important;
+    border-left-width: 4px !important;
+    font-size: 0.875rem !important;
+}
+
+/* ── Horizontal rules ────────────────────────────────────────────────────── */
+hr {
+    border: none !important;
+    border-top: 1px solid var(--border) !important;
+    margin: 1.2rem 0 !important;
+}
+
+/* ── Slim, modern scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #52b788; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2d6a4f; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1245,8 +1488,6 @@ if selected_step == 0:
     if len(selected_infras) > 5:
         st.warning(
             "⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
-            
-    st.markdown("---")
 
     st.header("Search Location and Draw Polygon")
     search_col, _ = st.columns([3, 1])
@@ -1320,33 +1561,37 @@ if selected_step == 0:
                 center_lon = sum(c[1] for c in coords) / len(coords)
 
                 query = build_query(coords, selected_infras)
-                with st.spinner("Retrieving data from OpenStreetMap..."):
+                with st.status("Extracting and analyzing regional data...", expanded=True) as status:
+                    st.write("🌍 Fetching OpenStreetMap data...")
                     response = make_overpass_request(query)
                     if response is None or response.status_code != 200:
                         st.session_state["extract_clicked"] = False
                         st.stop()
                     data = response.json()
-                elements = data.get("elements", [])
+                    elements = data.get("elements", [])
 
-                if not elements:
-                    st.warning(
-                        "No data found in the selected area for the chosen types.")
+                    if not elements:
+                        st.warning(
+                            "No data found in the selected area for the chosen types.")
 
-                with st.spinner("Analyzing climate map data..."):
+                    st.write("🗺️ Analyzing climate map data...")
                     _, center_koppen_code = generate_koppen_map_plot(
                         center_lat, center_lon)
 
-                context_report = ""
-                if st.session_state.get("gemini_client"):
-                    with st.spinner(f"Generating Geographical & Infrastructure Report (Internet Search)..."):
+                    context_report = ""
+                    if st.session_state.get("gemini_client"):
+                        st.write("🤖 Generating AI Context Report (Internet Search)...")
                         context_report = generate_context_report(
                             center_lat, center_lon, area_sq_km, elements)
 
-                koppen_report = ""
-                if st.session_state.get("gemini_client"):
-                    with st.spinner(f"Generating Köppen Interpretation Report for code {center_koppen_code} (Internet Search)..."):
+                    koppen_report = ""
+                    if st.session_state.get("gemini_client"):
+                        st.write("🌡️ Generating Köppen Climate Interpretation...")
                         koppen_report = generate_koppen_interpretation(
                             center_koppen_code)
+
+                    status.update(label="Extraction Complete!", state="complete", expanded=False)
+
 
                 st.session_state["extracted_data"] = {
                     "elements": elements, "coords": coords, "area_sq_km": area_sq_km,
@@ -1378,8 +1623,8 @@ if selected_step == 0:
                 st.success(
                     f"Successfully processed {len(elements)} OSM items (Area: {area_sq_km:.4f} km²)")
 
-            st.markdown("---")
-            st.subheader("Geographical & Infrastructure Context Report")
+            with st.container(border=True):
+              st.subheader("Geographical & Infrastructure Context Report")
             if context_report:
                 render_ai_header("Geographical & Infrastructure Context Report")
                 with st.expander("📊 View Raw Infrastructure Data Fed to AI (OpenStreetMap)", expanded=False):
@@ -1408,8 +1653,8 @@ if selected_step == 0:
                 st.warning(
                     "The Geographical & Infrastructure Report failed to generate or the AI feature is disabled.")
 
-            st.markdown("---")
-            st.subheader("Köppen-Geiger Climate Classification Map (Visual)")
+            with st.container(border=True):
+              st.subheader("Köppen-Geiger Climate Classification Map (Visual)")
 
             if center_lat is not None and center_lon is not None:
                 plot_result, _ = generate_koppen_map_plot(
@@ -1423,8 +1668,8 @@ if selected_step == 0:
                 st.warning(
                     "Cannot display Köppen map: Center coordinates for the drawn polygon could not be determined.")
 
-            st.markdown("---")
-            st.subheader("Climate Interpretation Report")
+            with st.container(border=True):
+              st.subheader("Climate Interpretation Report")
             if koppen_report:
                 render_ai_header("Köppen-Geiger Climate Interpretation Report")
                 with st.expander("📊 View Raw Data Fed to AI (Köppen Climate Code)", expanded=False):
@@ -1465,7 +1710,12 @@ elif selected_step == 1:
         lvl1_poly = st.session_state.get("lvl1_polygon", None)
 
     m_lvl1 = build_folium_map_object(lvl1_center, lvl1_zoom, lvl1_poly, "lvl1_draw_key")
-    lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
+
+    if use_previous_poly and has_lvl0_polygon:
+        with st.expander("🗺️ View / Edit Polygon", expanded=False):
+            lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
+    else:
+        lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
 
     if lvl1_map_output and lvl1_map_output.get("last_active_drawing"):
         drawing = lvl1_map_output["last_active_drawing"]
@@ -2337,64 +2587,54 @@ elif selected_step == 2:
             unique_assets_list = st.session_state.calculated_results['Asset'].unique()
 
             if ac_available:
-                st.write("##### Set Parameters per Asset")
-                
-                asset_tab_names = [sac.TabsItem(label=asset, icon='gear-wide-connected') for asset in unique_assets_list]
-                selected_asset = sac.tabs(asset_tab_names, align='center', variant='segmented', key="ac_tabs")
+                st.caption("Configure all asset parameters in one compact table. Changes take effect when you click **Calculate Vulnerability Index**.")
 
-                if 'asset_ac_params' not in st.session_state:
-                    st.session_state.asset_ac_params = {}
+                # Build a default DataFrame for the data editor
+                if 'ac_editor_df' not in st.session_state or set(st.session_state.ac_editor_df['Asset'].tolist()) != set(unique_assets_list.tolist()):
+                    st.session_state.ac_editor_df = pd.DataFrame({
+                        "Asset": list(unique_assets_list),
+                        "Initial AC (0-0.4)": [0.0] * len(unique_assets_list),
+                        "Lifetime": ["Intermediate"] * len(unique_assets_list),
+                        "Maintenance": ["Medium"] * len(unique_assets_list),
+                        "Topology": ["Acceptable"] * len(unique_assets_list),
+                    })
 
-                asset = selected_asset
-                with st.container(border=True):
-                    st.markdown(f"**Settings for:** `{asset}`")
-                    c1, c2 = st.columns(2)
-                    
-                    with c1:
-                        ac0 = st.number_input(
-                            "Initial Adaptive Capacity (AC0)",
-                            min_value=0.0, max_value=0.4, value=0.0, step=0.01,
-                            help="Baseline adaptive capacity. Maximum value is 0.4.",
-                            key=f"ac0_{asset}"
-                        )
-                    with c2:
-                        lf_label = st.radio(
-                            "Lifetime",
-                            options=["Greenfield", "Intermediate", "High (> 25 years)"],
-                            index=1,
-                            key=f"lf_{asset}",
-                            horizontal=True
-                        )
-                    
-                    st.divider()
-                    c3, c4 = st.columns(2)
-                    
-                    with c3:
-                        lm_label = st.radio(
-                            "Level of maintenance",
-                            options=["High", "Medium", "Low"],
-                            index=1,
-                            key=f"lm_{asset}",
-                            horizontal=True
-                        )
-                    with c4:
-                        dt_label = st.radio(
-                            "Design topology",
-                            options=["Resilient", "Acceptable", "Not acceptable"],
-                            index=1,
-                            key=f"dt_{asset}",
-                            horizontal=True
-                        )
-                    
-                for a in unique_assets_list:
-                    s_ac0 = st.session_state.get(f"ac0_{a}", 0.0)
-                    s_lf = st.session_state.get(f"lf_{a}", "Intermediate")
-                    s_lm = st.session_state.get(f"lm_{a}", "Medium")
-                    s_dt = st.session_state.get(f"dt_{a}", "Acceptable")
+                ac_col_config = {
+                    "Asset": st.column_config.TextColumn("Asset", disabled=True),
+                    "Initial AC (0-0.4)": st.column_config.NumberColumn(
+                        "Initial AC (0-0.4)", min_value=0.0, max_value=0.4,
+                        step=0.01, format="%.2f",
+                        help="Baseline adaptive capacity. Maximum value is 0.4."
+                    ),
+                    "Lifetime": st.column_config.SelectboxColumn(
+                        "Lifetime", options=["Greenfield", "Intermediate", "High (> 25 years)"], required=True
+                    ),
+                    "Maintenance": st.column_config.SelectboxColumn(
+                        "Maintenance Level", options=["High", "Medium", "Low"], required=True
+                    ),
+                    "Topology": st.column_config.SelectboxColumn(
+                        "Design Topology", options=["Resilient", "Acceptable", "Not acceptable"], required=True
+                    ),
+                }
+
+                edited_ac_df = st.data_editor(
+                    st.session_state.ac_editor_df,
+                    column_config=ac_col_config,
+                    hide_index=True,
+                    use_container_width=True,
+                    key="ac_data_editor"
+                )
+
+                # Build asset_ac_params from data editor result
+                for _, row in edited_ac_df.iterrows():
+                    a = row["Asset"]
+                    s_ac0 = row["Initial AC (0-0.4)"]
+                    s_lf = row["Lifetime"]
+                    s_lm = row["Maintenance"]
+                    s_dt = row["Topology"]
                     v_lf = 10 if s_lf == "Greenfield" else (-10 if s_lf == "High (> 25 years)" else 0)
                     v_lm = 10 if s_lm == "High" else (-10 if s_lm == "Low" else 0)
                     v_dt = 10 if s_dt == "Resilient" else (-10 if s_dt == "Not acceptable" else 0)
-                    
                     asset_ac_params[a] = {"AC0": s_ac0, "lf": v_lf, "lm": v_lm, "dt": v_dt}
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -2896,29 +3136,30 @@ elif selected_step == 2:
         else:
             st.info("No identified solutions found to edit. Please run Step 7.1 first.")
         st.divider()
-    col_input1, col_input2 = st.columns(2)
-    with col_input1:
-        with st.container(border=True):
-            st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
-            site_conditions = {
-                "Slope instability": st.toggle("Unstable/Steep Slopes", value=True),
-                "Limited vegetation and low quality of soil": st.toggle("Poor Soil/Low Vegetation"),
-                "Limited access for implementation": st.toggle("Difficult Site Access"),
-                "Cold temperatures": st.toggle("Cold Temperatures / Frost Risk"),
-                "Limited water availability": st.toggle("Water Scarcity"),
-                "Lack of connection to major services": st.toggle("No Infrastructure/Services Access"),
-                "Space Constraints": st.toggle("Very Limited Space"),
-                "Exposure to soil, water and/or air pollution": st.toggle("Polluted Soil/Water/Air"),
-                "Limitations due to high population density": st.toggle("Urban/Densely Populated Area")
-            }
-    with col_input2:
-        with st.container(border=True):
-            st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
-            sei_factors = ["Community Engagement", "Cultural Preferences", "Workforce Availability", "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints"]
-            sei_ratings = {}
-            for f in sei_factors:
-                val = st.select_slider(f"{f}", options=[1, 2, 3], value=1, help="1: Favorable, 2: Neutral, 3: Unfavorable")
-                sei_ratings[f] = 100 if val == 1 else (50 if val == 2 else 0)
+    with st.expander("⚙️ Configure Site Conditions & Socio-Economic Factors", expanded=True):
+        col_input1, col_input2 = st.columns(2)
+        with col_input1:
+            with st.container(border=True):
+                st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
+                site_conditions = {
+                    "Slope instability": st.toggle("Unstable/Steep Slopes", value=True),
+                    "Limited vegetation and low quality of soil": st.toggle("Poor Soil/Low Vegetation"),
+                    "Limited access for implementation": st.toggle("Difficult Site Access"),
+                    "Cold temperatures": st.toggle("Cold Temperatures / Frost Risk"),
+                    "Limited water availability": st.toggle("Water Scarcity"),
+                    "Lack of connection to major services": st.toggle("No Infrastructure/Services Access"),
+                    "Space Constraints": st.toggle("Very Limited Space"),
+                    "Exposure to soil, water and/or air pollution": st.toggle("Polluted Soil/Water/Air"),
+                    "Limitations due to high population density": st.toggle("Urban/Densely Populated Area")
+                }
+        with col_input2:
+            with st.container(border=True):
+                st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
+                sei_factors = ["Community Engagement", "Cultural Preferences", "Workforce Availability", "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints"]
+                sei_ratings = {}
+                for f in sei_factors:
+                    val = st.select_slider(f"{f}", options=[1, 2, 3], value=1, help="1: Favorable, 2: Neutral, 3: Unfavorable")
+                    sei_ratings[f] = 100 if val == 1 else (50 if val == 2 else 0)
 
     # 4. FILTRATION CALCULATION
     st.session_state.filtered_nbs_pool = []
