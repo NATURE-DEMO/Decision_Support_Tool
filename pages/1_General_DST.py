@@ -2905,11 +2905,10 @@ elif selected_step == 2:
                     extracted_hazards.update(current_hazards)
                 
                 st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
-                # Clear the sac.transfer widget's cached key so it re-initialises
-                # with the new `index` on the next render (fixes deployed-env bug
-                # where Streamlit restores the old keyed widget state and ignores `index`)
-                if "hazard_transfer_logic" in st.session_state:
-                    del st.session_state["hazard_transfer_logic"]
+                
+                # Force widget re-render
+                st.session_state.hazard_transfer_key = st.session_state.get("hazard_transfer_key", 0) + 1
+                
                 st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
                 st.rerun()
             else:
@@ -2921,6 +2920,9 @@ elif selected_step == 2:
     
     current_indices = [all_hazards_for_selector.index(h) for h in st.session_state.selected_nbs_hazards if h in all_hazards_for_selector]
     safe_indices = current_indices if len(current_indices) > 0 else None
+    if "hazard_transfer_key" not in st.session_state:
+        st.session_state.hazard_transfer_key = 0
+
     col_left, col_center, col_right = st.columns([2, 8, 1])
     
     with col_center:
@@ -2932,9 +2934,8 @@ elif selected_step == 2:
             search=True,
             height=400,
             width="100%",
-            key="hazard_transfer_logic"
+            key=f"hazard_transfer_logic_{st.session_state.hazard_transfer_key}" 
         )
-
     if selected_hazards is not None:
         valid_hazards = [h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector]
         if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
@@ -2944,8 +2945,7 @@ elif selected_step == 2:
         if st.button("🗑️ Clear Hazard Selection", key="clear_hazard_sel",
                      help="Remove all active hazards and reset the NbS panels."):
             st.session_state.selected_nbs_hazards = []
-            st.session_state.nbs_chip_deselected = {}
-            st.session_state.nbs_chip_supp_deselected = {}
+            st.session_state.hazard_transfer_key = st.session_state.get("hazard_transfer_key", 0) + 1
             st.rerun()
 
     dynamic_nbs_list = set()
@@ -3165,8 +3165,8 @@ elif selected_step == 2:
                         valid_primary = [sol for sol in db_yes if sol in approved_nbs]
                         valid_supportive = [sol for sol in db_supp if sol in approved_supportive]
                     else:
-                        valid_primary = db_yes
-                        valid_supportive = db_supp
+                        valid_primary = []
+                        valid_supportive = []
                         
                     p_sols.update(valid_primary)
                     s_sols.update(valid_supportive)
