@@ -21,7 +21,7 @@ import traceback
 import plotly.graph_objects as go
 import plotly.express as px
 import streamlit_antd_components as sac
-
+import math
 
 GEMINI_MODEL_VERSION = "gemini-2.5-flash"
 
@@ -397,119 +397,119 @@ torrent_data = [
 
 NbS_list = [{
   "Extreme high temperatures (Heatwave)": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Bioswales"]
+    "Yes": ["Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
+    "Supportive": ["Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Bioswales"]
   },
   "Extreme cold temperatures (Coldwave, cold snap)": {
     "Yes": [],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Living shorelines", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Green roofs", "Vertical greenery", "Urban forests"]
+    "Supportive": ["Afforestation and reforestation", "Protection forest management", "Retention forest", "Living shorelines", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Green roofs", "Vertical greenery", "Urban forests"]
   },
   "Drought": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Wetland conservation and restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Constructed wetlands", "Salt marsh restoration", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches", "Bioswales"]
+    "Yes": ["Afforestation and reforestation", "Protection forest management", "Wetland conservation and restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)"],
+    "Supportive": ["Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Constructed wetlands", "Salt marsh restoration", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches", "Bioswales"]
   },
   "Wildfire (Forest fire or Bush fire)": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Firebreaks and firestrips", "Fire-resistant tree species & plants", "Prescribed burning", "Channel widening", "Controlled grazing", "Fire-smart agriculture"],
-    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Salt marsh restoration", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)"]
+    "Yes": ["Wildfire-forest management", "Buffer vegetation strips and coppice management", "Firebreaks and firestrips", "Fire-resistant tree species & plants", "Prescribed burning", "Channel widening", "Controlled grazing", "Fire-smart agriculture"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Salt marsh restoration", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)"]
   },
   "Desertification": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)"],
     "Supportive": ["Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Living shorelines", "Salt marsh restoration", "Mangroves", "Sod (turves)", "Live staking", "Live slope grids or contour logs", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Live fascines", "Brush mattress", "Open green spaces", "Green pavers", "Green roofs", "Vertical greenery", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
   },
   "Storms & strong winds": {
     "Yes": ["Agroforestry", "Live fencing (for slope engineering)"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Living shorelines", "Mangroves", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Live palisades and live weirs", "Wooden log fences"]
+    "Supportive": ["Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Floodplain restoration", "Living shorelines", "Mangroves", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Live palisades and live weirs", "Wooden log fences"]
   },
   "Hail": {
-    "Yes": ["Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "Agroforestry", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Green roofs"]
+    "Yes": ["Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management"],
+    "Supportive": ["Agroforestry", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Green roofs"]
   },
   "Aeolian erosion": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Fire-smart agriculture", "Contour trenching", "Conservation tillage", "Mulching", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "Floodplain restoration", "Cover cropping", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"]
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Controlled grazing", "Fire-smart agriculture", "Contour trenching", "Conservation tillage", "Mulching", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
+    "Supportive": ["Floodplain restoration", "Cover cropping", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"]
   },
   "Pluvial flood, heavy rainfall and surface runoff": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Green pavers", "Green roofs", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Vertical greenery", "Bioswales"]
+    "Yes": ["Earth dams and barriers (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Green pavers", "Green roofs", "Urban forests", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Vertical greenery", "Bioswales"]
   },
   "Fluvial flood": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Urban forests", "Bioswales"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Green pavers", "Green roofs", "Vertical greenery", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
+    "Yes": ["Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Salt marsh restoration", "Agroforestry", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Mulching", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Open green spaces", "Urban forests", "Bioswales"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Controlled grazing", "Conservation tillage", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Tree revetment (tree spurs)", "Root wad", "Wooden log fences", "Green pavers", "Green roofs", "Vertical greenery", "Rain gardens", "Bio-retention cells, basins and ponds", "Infiltration trenches"]
   },
   "Coastal flood (e.g. storm surge)": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "Vegetated flood protection dams, dikes & levees", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Live staking", "Wattle fence (for water enginering)"],
-    "Supportive": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Wetland conservation and restoration", "Constructed wetlands", "Coral reef conservation and restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques"]
+    "Yes": ["Vegetated flood protection dams, dikes & levees", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Live staking", "Wattle fence (for water enginering)"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Wetland conservation and restoration", "Constructed wetlands", "Coral reef conservation and restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques"]
   },
   "Impact floods and Tsunami": {
-    "Yes": ["Can be supportive to conventional structural measures"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves"]
+    "Yes": [],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Mangroves"]
   },
   "Fluvial sediment transport": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Green corridors & tree rows", "Vegetated buffer zones", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Green corridors & tree rows", "Vegetated buffer zones", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
     "Supportive": ["Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Biodiverse hedgerows", "Meadow & grassland restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Urban forests", "Infiltration trenches", "Bioswales"]
   },
   "Stream bank & bed erosion": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Riparian buffer zones", "Floodplain restoration", "Meandering channel planform", "Channel widening", "Sills", "Groynes (vegetated)", "Vegetated flood protection dams, dikes & levees", "Salt marsh restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
     "Supportive": ["Avalanche mounds", "Water retention basins and ponds (storage ponds)", "Wetland conservation and restoration", "Constructed wetlands", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Wattle fence (for water enginering)", "Urban forests", "Infiltration trenches", "Bioswales"]
   },
   "Sheet erosion & rill erosion": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Contour trenching", "Conservation tillage", "Mulching", "Cover cropping", "Soil amendments (previosly organic amendments)", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"],
     "Supportive": ["Avalanche mounds", "Controlled grazing", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Infiltration trenches"]
   },
   "Gully erosion": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Salt marsh restoration", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated drainage systems", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences"],
     "Supportive": ["Avalanche mounds", "Agroforestry", "Vegetated buffer zones", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)"]
   },
   "Coastal and shoreline erosion (includes freshwater environments)": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Living shorelines", "Dune restoration and coastal vegetation", "Sand dune stabilization", "Salt marsh restoration", "Mangroves", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs"],
     "Supportive": ["Avalanche mounds", "Vegetated flood protection dams, dikes & levees", "Seagrass bed restoration", "Coral reef conservation and restoration", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones"]
   },
   "Debris flood (Volumetric Sediment Concentration 20-40%)": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Channel widening", "Vegetated flood protection dams, dikes & levees"],
-    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Riparian buffer zones", "Sills", "Groynes (vegetated)", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Open green spaces", "Urban forests", "Rain gardens", "Infiltration trenches"]
+    "Yes": ["Earth dams and barriers (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Buffer vegetation strips and coppice management", "Channel widening", "Vegetated flood protection dams, dikes & levees"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Riparian buffer zones", "Sills", "Groynes (vegetated)", "Salt marsh restoration", "Agroforestry", "Horticulture", "Water retention, harvesting & cisterns", "Managed aquifer recharge (MAR)", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Sod (turves)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Wattle fence (for water enginering)", "Tree revetment (tree spurs)", "Vegetated riprap", "Root wad", "Vegetated crib wall (fascine-based design)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Vegetated log/stone barriers and live/rock check dams", "Wooden log fences", "Open green spaces", "Urban forests", "Rain gardens", "Infiltration trenches"]
   },
   "Debris flow (Volumetric Sediment Concentration >40%)": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Urban forests"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Retention forest", "Vegetated flood protection dams, dikes & levees", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams", "Urban forests"],
     "Supportive": ["3-D steel grids (vegetated)", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live fascines", "Brush mattress", "Live palisades and live weirs", "Wooden log fences"]
   },
   "Small Rockfall (Diameter <25cm)": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated riprap", "Wooden log fences", "Urban forests"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "3-D steel grids (vegetated)", "Vegetated cribwall (layer-based design)"]
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated riprap", "Wooden log fences", "Urban forests"],
+    "Supportive": ["Retention forest", "3-D steel grids (vegetated)", "Vegetated cribwall (layer-based design)"]
   },
   "Large Rockfall (Diameter >25-100 cm)": {
-    "Yes": ["Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "Afforestation and reforestation", "Protection forest management", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated riprap", "Wooden log fences", "Urban forests"]
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)"],
+    "Supportive": ["Afforestation and reforestation", "Protection forest management", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated riprap", "Wooden log fences", "Urban forests"]
   },
   "Landslides < 2 m depth": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Urban forests"],
-    "Supportive": ["Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones"]
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Vegetated riprap", "Urban forests"],
+    "Supportive": ["Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones"]
   },
   "Landslides 2-10 m depth": {
     "Yes": ["Vegetated drainage systems"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Urban forests"]
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Urban forests"]
   },
   "Landslides > 10 m depths": {
-    "Yes": ["Can be supportive to conventional structural measures", "Vegetated drainage systems"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Afforestation and reforestation", "Protection forest management"]
+    "Yes": ["Vegetated drainage systems"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Afforestation and reforestation", "Protection forest management"]
   },
   "Mud or Earth flow": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
-    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
+    "Yes": ["Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
   },
   "Soil slope deformation & Soil creep": {
-    "Yes": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
-    "Supportive": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Avalanche mounds", "3-D steel grids (vegetated)", "Reinforced soil and earth packs (vegetated)", "Afforestation and reforestation", "Protection forest management", "Live layered techniques", "Vegetated cribwall (layer-based design)", "Vegetated drainage systems", "Urban forests"],
+    "Supportive": ["Retention forest", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Biodiverse hedgerows", "Meadow & grassland restoration", "Vegetated buffer zones", "Hydro and mulch seeding", "Vegetated biodegradeable erosion control meshes", "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)", "Live staking", "Live fencing (for slope engineering)", "Live slope grids or contour logs", "Vegetated riprap"]
   },
   "Snow avalanches": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management"],
-    "Supportive": ["Mitigation of ongoing Hazard Process", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams"]
+    "Yes": ["Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Vegetated log/stone barriers and live/rock check dams"]
   },
   "Snow drift": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
-    "Supportive": ["NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Meadow & grassland restoration", "Live staking", "Live fencing (for slope engineering)"]
+    "Yes": ["Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Green corridors & tree rows", "Biodiverse hedgerows", "Vegetated buffer zones", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
+    "Supportive": ["Terracing (slope shaping - reduction of slope inclination)", "Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Meadow & grassland restoration", "Live staking", "Live fencing (for slope engineering)"]
   },
   "Snow creep & slide": {
-    "Yes": ["Mitigation of Formation or Trigger mechanism", "Mitigation of ongoing Hazard Process", "Can be supportive to conventional structural measures", "NbS-Type: Terracing (slope shaping, reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Vegetated buffer zones", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
+    "Yes": ["Terracing (slope shaping - reduction of slope inclination)", "Earth dams and barriers (vegetated)", "Avalanche mounds", "Afforestation and reforestation", "Protection forest management", "Vegetated buffer zones", "Live fencing (for slope engineering)", "Vegetated cribwall (layer-based design)", "Vegetated crib wall (fascine-based design)", "Wooden log fences", "Urban forests"],
     "Supportive": ["Retention forest", "Wildfire-forest management", "Buffer vegetation strips and coppice management", "Riparian buffer zones", "Agroforestry", "Horticulture", "Green corridors & tree rows", "Meadow & grassland restoration"]
   }
 }]
@@ -1475,7 +1475,6 @@ if selected_step == 0:
         'dams & waterworks': 'bricks'
     }
 
-    # This component now correctly stores the user's selection directly in selected_infras
     selected_infras = sac.chip(
         items=[sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(), 'gear')) for k in all_infra_keys],
         label='Choose Infrastructure for Analysis:',
@@ -2075,8 +2074,6 @@ elif selected_step == 2:
         "spei3_severe_prob": "Annual probability of severe agricultural drought (SPEI-3)"
     }
 
-    # --- TABLE CONTROLS & ALIGNED BUTTONS ---
-    # We define 4 columns. The first 3 hold our buttons, the last is empty space to push them left.
     btn_col1, btn_col2, btn_col3, _ = st.columns([1.2, 1.4, 2.5, 3])
 
     with btn_col1:
@@ -2087,7 +2084,6 @@ elif selected_step == 2:
             st.rerun()
 
     with btn_col3:
-        # The popover is placed in the 3rd column, putting it right next to the Remove button
         with st.popover("➕ Add Custom Impact Model", use_container_width=True):
             st.markdown("##### Define Custom Impact Model")
             st.caption("Manually define an asset and its climate sensitivity. All manual entries are recorded for AI transparency.")
@@ -2129,7 +2125,6 @@ elif selected_step == 2:
                 else:
                     st.error("Please provide both an Impact Model and an Asset name.")
 
-    # --- TABLE RENDERING ---
     if not st.session_state.saved_data.empty:
         cols_to_display = [impact_model_col, infrastructure_col, dictionary_key_col]
         st.session_state.saved_data = st.session_state.saved_data.reset_index(drop=True)
@@ -2143,7 +2138,6 @@ elif selected_step == 2:
         )
 
         with btn_col2:
-            # We place the remove button here so it draws in the 2nd column at the top!
             if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
                 selected_indices = selection_event.selection.rows
                 if selected_indices:
@@ -2214,50 +2208,59 @@ elif selected_step == 2:
 
             index_list = []
             level_list = []
+            unique_keys = [
+                k for k in st.session_state.saved_data[dictionary_key_col].unique()
+                if k and str(k).strip() not in ("", "Not found")
+            ]
+            total_fetches = len(unique_keys)
             progress_bar = st.progress(0)
-            total_rows = len(st.session_state.saved_data)
-            
-            for index, row in st.session_state.saved_data.iterrows():
-                dict_key = row.get(dictionary_key_col)
-                final_idx = 0
-                final_lvl = "No variation"
+            status_text = st.empty()
 
-                if dict_key and dict_key != "Not found":
-                    val_selected = None
-                    val_historical = None
-                    
+            key_cache = {}
+            for fetch_count, dict_key in enumerate(unique_keys, 1):
+                status_text.caption(f"Fetching climate data: **{dict_key}** ({fetch_count}/{total_fetches})")
+                val_selected = None
+                val_historical = None
+                try:
+                    payload_sel = {"index_type": dict_key, "scenario": api_scenario, "lat": lat, "lon": lon}
+                    resp_sel = requests.post(URL, json=payload_sel, timeout=10)
+                    if resp_sel.status_code == 200 and resp_sel.json().get('status') == 'success':
+                        val_selected = resp_sel.json().get('results', {}).get(api_term, {}).get('value')
+
+                    payload_hist = {"index_type": dict_key, "scenario": "historical", "lat": lat, "lon": lon}
+                    resp_hist = requests.post(URL, json=payload_hist, timeout=10)
+                    if resp_hist.status_code == 200 and resp_hist.json().get('status') == 'success':
+                        val_historical = resp_hist.json().get('results', {}).get('historical', {}).get('value')
+                except:
+                    pass
+
+                cached_idx, cached_lvl = 0, "No variation"
+                if val_selected is not None and val_historical is not None:
                     try:
-                        payload_sel = {"index_type": dict_key, "scenario": api_scenario, "lat": lat, "lon": lon}
-                        resp_sel = requests.post(URL, json=payload_sel, timeout=10)
-                        if resp_sel.status_code == 200 and resp_sel.json().get('status') == 'success':
-                            val_selected = resp_sel.json().get('results', {}).get(api_term, {}).get('value')
-
-                        payload_hist = {"index_type": dict_key, "scenario": "historical", "lat": lat, "lon": lon}
-                        resp_hist = requests.post(URL, json=payload_hist, timeout=10)
-                        if resp_hist.status_code == 200 and resp_hist.json().get('status') == 'success':
-                            val_historical = resp_hist.json().get('results', {}).get('historical', {}).get('value')
+                        if val_historical == 0:
+                            variation_val = 0.0 if val_selected == 0 else float('inf')
+                        else:
+                            variation_val = abs((val_selected - val_historical) / val_historical) * 100
+                        if variation_val == 0:                                    cached_idx, cached_lvl = 0, "No variation"
+                        elif variation_val == float('inf') or variation_val > 75: cached_idx, cached_lvl = 5, "Extreme"
+                        elif variation_val <= 10:                                  cached_idx, cached_lvl = 1, "Low"
+                        elif variation_val <= 25:                                  cached_idx, cached_lvl = 2, "Medium"
+                        elif variation_val <= 50:                                  cached_idx, cached_lvl = 3, "High"
+                        elif variation_val <= 75:                                  cached_idx, cached_lvl = 4, "Very High"
                     except:
                         pass
+                key_cache[dict_key] = (cached_idx, cached_lvl)
+                progress_bar.progress(fetch_count / total_fetches)
 
-                    if val_selected is not None and val_historical is not None:
-                        try:
-                            if val_historical == 0:
-                                variation_val = 0.0 if val_selected == 0 else float('inf')
-                            else:
-                                variation_val = abs((val_selected - val_historical) / val_historical) * 100
-                            
-                            if variation_val == 0: final_idx, final_lvl = 0, "No variation"
-                            elif variation_val == float('inf') or variation_val > 75: final_idx, final_lvl = 5, "Extreme"
-                            elif variation_val <= 10: final_idx, final_lvl = 1, "Low"
-                            elif variation_val <= 25: final_idx, final_lvl = 2, "Medium"
-                            elif variation_val <= 50: final_idx, final_lvl = 3, "High"
-                            elif variation_val <= 75: final_idx, final_lvl = 4, "Very High"
-                        except:
-                            pass
-                
+            status_text.empty()
+            for _, row in st.session_state.saved_data.iterrows():
+                dict_key = row.get(dictionary_key_col)
+                if dict_key and str(dict_key).strip() not in ("", "Not found") and dict_key in key_cache:
+                    final_idx, final_lvl = key_cache[dict_key]
+                else:
+                    final_idx, final_lvl = 0, "No variation"
                 index_list.append(final_idx)
                 level_list.append(final_lvl)
-                progress_bar.progress((index + 1) / total_rows)
 
             result_df = st.session_state.saved_data[[infrastructure_col, climate_driver_col, impact_model_col]].copy()
             
@@ -2281,8 +2284,7 @@ elif selected_step == 2:
             st.rerun()
 
         display_df = st.session_state.calculated_results.copy()
-        
-        # 1. Clean up any leftover emojis if data was previously saved with them
+
         old_to_new_map = {
             "⚪ No variation": "No variation", "🟢 Low": "Low", "🟡 Medium": "Medium", 
             "🟠 High": "High", "🔴 Very High": "Very High", "🚨 Extreme": "Extreme"
@@ -2290,15 +2292,13 @@ elif selected_step == 2:
         if "Hazard Level" in display_df.columns:
             display_df["Hazard Level"] = display_df["Hazard Level"].replace(old_to_new_map)
             
-        # 2. Force the column to numeric so the Progress Bar renders correctly
         display_df["Hazard Index"] = pd.to_numeric(display_df["Hazard Index"], errors='coerce').fillna(0)
         
         column_config = {
-            # --- THE NEW PROGRESS BAR COLUMN ---
             "Hazard Index": st.column_config.ProgressColumn(
                 "Hazard Index", min_value=0, max_value=5, format="%d"
             ),
-            # --- THE EDITABLE TEXT DROPDOWN ---
+
             "Hazard Level": st.column_config.SelectboxColumn(
                 "Hazard Level", 
                 options=["No variation", "Low", "Medium", "High", "Very High", "Extreme"], 
@@ -2313,10 +2313,12 @@ elif selected_step == 2:
             "Vulnerability Index": None,
             "Asset": None,
             "PRI scores": None,
-            "PRI values": None
+            "PRI values": None,
+            "Supportive Solutions": None,
+            "Primary Solutions": None,
+            "Possible Hazards": None
         }
 
-        # 3. USE A NEW KEY TO BREAK THE STREAMLIT CACHE
         temp_hazard_df = st.data_editor(
             display_df,
             column_config=column_config,
@@ -2335,11 +2337,9 @@ elif selected_step == 2:
                 old_index = display_df.loc[i, "Hazard Index"]
                 new_index = temp_hazard_df.loc[i, "Hazard Index"]
 
-                # If the user changes the text dropdown, update the numeric index
                 if new_level != old_level:
                     temp_hazard_df.at[i, "Hazard Index"] = LEVEL_TO_INDEX.get(new_level, 0)
                     updated = True
-                # If for some reason the index was changed, update the text (fail-safe)
                 elif new_index != old_index:
                     temp_hazard_df.at[i, "Hazard Level"] = INDEX_TO_LEVEL.get(new_index, "Low")
                     updated = True
@@ -2360,8 +2360,6 @@ elif selected_step == 2:
             """,
             unsafe_allow_html=True
         )
-
-        # --- GEMINI REPORT BUTTON ---
         if st.button("Generate Climate Hazard Report", type="secondary", use_container_width=True, help="Analyze the generated hazard table using Gemini."):
             with st.spinner("Generating Report from Hazard Table (Gemini)..."):
                 report_text = generate_hazard_report_gemini(st.session_state.calculated_results)
@@ -2523,7 +2521,10 @@ elif selected_step == 2:
             "Hazard Index": None,
             "Hazard Level": None,
             "Possible Hazards": None,
-            "Specific Hazard": None
+            "Specific Hazard": None,
+            "Supportive Solutions": None,
+            "Primary Solutions": None,
+            "Possible Hazards": None
             }
         st.dataframe(
             st.session_state.calculated_results, 
@@ -2565,6 +2566,9 @@ elif selected_step == 2:
                 "PRI values": None,
                 "Hazard Index": None,
                 "Hazard Level": None,
+                "Supportive Solutions": None,
+                "Primary Solutions": None,
+                "Possible Hazards": None,
                 "Infrastructure": st.column_config.TextColumn(disabled=True),
                 "Climate driver": st.column_config.TextColumn(disabled=True),
                 "Impact model": st.column_config.TextColumn(disabled=True),
@@ -2588,8 +2592,6 @@ elif selected_step == 2:
 
             if ac_available:
                 st.caption("Configure all asset parameters in one compact table. Changes take effect when you click **Calculate Vulnerability Index**.")
-
-                # Build a default DataFrame for the data editor
                 if 'ac_editor_df' not in st.session_state or set(st.session_state.ac_editor_df['Asset'].tolist()) != set(unique_assets_list.tolist()):
                     st.session_state.ac_editor_df = pd.DataFrame({
                         "Asset": list(unique_assets_list),
@@ -2625,7 +2627,6 @@ elif selected_step == 2:
                     key="ac_data_editor"
                 )
 
-                # Build asset_ac_params from data editor result
                 for _, row in edited_ac_df.iterrows():
                     a = row["Asset"]
                     s_ac0 = row["Initial AC (0-0.4)"]
@@ -2661,8 +2662,6 @@ elif selected_step == 2:
             st.session_state.calculated_results['Vulnerability Index'] = vulnerability_results
             st.success("✅ Vulnerability Index calculated successfully!")
 
-        # --- MOVED OUTSIDE THE BUTTON CLICK ---
-        # This ensures the table stays visible even when you click buttons in Section 6
         if 'Vulnerability Index' in st.session_state.calculated_results.columns:
             st.markdown("##### 📊 Vulnerability Results")
             
@@ -2682,7 +2681,10 @@ elif selected_step == 2:
                 "Hazard Index": None,
                 "Possible Hazards": None,
                 "Specific Hazard": None,
-                "Hazard Level": None
+                "Hazard Level": None,
+                "Supportive Solutions": None,
+                "Primary Solutions": None,
+                "Possible Hazards": None
             }
             
             st.dataframe(
@@ -2770,15 +2772,16 @@ elif selected_step == 2:
                     return ["None Identified"]
 
                 if 'Possible Hazards' in df_pri_display.columns:
-                    df_pri_display['Specific Hazard'] = df_pri_display['Possible Hazards'].apply(parse_and_match_hazards)
-                    df_pri_display = df_pri_display.explode('Specific Hazard').reset_index(drop=True)
+                    df_pri_display['Possible Hazards'] = df_pri_display['Possible Hazards'].apply(
+                        lambda x: ", ".join(parse_and_match_hazards(x))
+                    )
                 else:
-                    df_pri_display['Specific Hazard'] = "None Identified"
+                    df_pri_display['Possible Hazards'] = "None Identified"
 
                 cols = list(df_pri_display.columns)
                 core_cols = [c for c in cols if c not in [hazard_col, 'Hazard Level', exposure_col, 'Sensitivity Index', vulnerability_col, 'PRI scores', 'PRI values', 'Specific Hazard', 'Possible Hazards']]
                 index_cols = [hazard_col, 'Hazard Level', exposure_col, 'Sensitivity Index', vulnerability_col]
-                final_pri_cols = ['Specific Hazard', 'PRI scores', 'PRI values', 'Possible Hazards']
+                final_pri_cols = ['PRI scores', 'PRI values', 'Possible Hazards']
                 
                 new_order = core_cols + index_cols + final_pri_cols
                 df_pri_display = df_pri_display[new_order]
@@ -2800,6 +2803,9 @@ elif selected_step == 2:
             "Possible Hazards": None,
             "Hazard Level": None,
             "Specific Hazard": None,
+            "Supportive Solutions": None,
+            "Primary Solutions": None,
+            "Possible Hazards": None,
             "PRI scores": st.column_config.ProgressColumn(
                 "PRI Score", 
                 help="Final Potential Risk Index Score (0-5)",
@@ -2881,7 +2887,7 @@ elif selected_step == 2:
     if 'selected_nbs_hazards' not in st.session_state:
         st.session_state.selected_nbs_hazards = []
 
-    if st.button("Automatic Extraction from PRI Table", type="primary", help="Extracts hazards and maps NbS solutions to assets."):
+    if st.button("Automatic Extraction from PRI Table", type="primary"):
         if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
             extracted_hazards = set()
             df_nbs = st.session_state.calculated_results.copy()
@@ -2890,96 +2896,305 @@ elif selected_step == 2:
                 df_nbs['Possible Hazards'] = st.session_state.saved_data.loc[df_nbs.index, 'Possible Hazards']
             
             if 'Possible Hazards' in df_nbs.columns:
-                primary_sol_col = []
-                supportive_sol_col = []
-                nbs_db = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
-                valid_nbs_keys = list(nbs_db.keys())
-
                 for _, row in df_nbs.iterrows():
-                    hazards_item = row['Possible Hazards']
+                    hazards_item = row.get('Possible Hazards', [])
                     if isinstance(hazards_item, str):
-                        clean_item = hazards_item.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
-                        current_hazards = [h.strip() for h in clean_item.split(',')]
+                        current_hazards = [h for h in all_hazards_for_selector if h in hazards_item]
                     else:
-                        current_hazards = hazards_item if isinstance(hazards_item, list) else []
+                        current_hazards = [h for h in (hazards_item if isinstance(hazards_item, list) else []) if h in all_hazards_for_selector]
                     
-                    extracted_hazards.update([h for h in current_hazards if h in all_hazards_for_selector])
-                    
-                    p_sols, s_sols = set(), set()
-                    for h in current_hazards:
-                        h_strip = h.strip()
-                        if h_strip in nbs_db:
-                            p_sols.update(nbs_db[h_strip].get("Yes", []))
-                            s_sols.update(nbs_db[h_strip].get("Supportive", []))
-                            
-                    primary_sol_col.append(", ".join(sorted(list(p_sols))))
-                    supportive_sol_col.append(", ".join(sorted(list(s_sols))))
+                    extracted_hazards.update(current_hazards)
                 
-                st.session_state.calculated_results["Primary Solutions"] = primary_sol_col
-                st.session_state.calculated_results["Supportive Solutions"] = supportive_sol_col
                 st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
-                
-                st.success(f"✅ Extracted {len(st.session_state.selected_nbs_hazards)} hazards and mapped solutions to assets.")
+                st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
                 st.rerun()
             else:
                 st.error("Could not find hazard data in the PRI table.")
         else:
             st.error("No PRI calculation results available to extract from.")
-
-    col1, col2, col3 = st.columns([1, 8, 1]) 
-    with col2:
-        current_indices = [all_hazards_for_selector.index(h) for h in st.session_state.selected_nbs_hazards if h in all_hazards_for_selector]
-        transfer_output = sac.transfer(
+    if not isinstance(st.session_state.selected_nbs_hazards, list):
+        st.session_state.selected_nbs_hazards = []
+    
+    current_indices = [all_hazards_for_selector.index(h) for h in st.session_state.selected_nbs_hazards if h in all_hazards_for_selector]
+    safe_indices = current_indices if len(current_indices) > 0 else None
+    col_left, col_center, col_right = st.columns([2, 8, 1])
+    
+    with col_center:
+        selected_hazards = sac.transfer(
             items=all_hazards_for_selector,
-            label="Adjust Hazard Selection",
-            index=current_indices, 
-            titles=["Available Hazards", "Selected Hazards"],
-            format_func="title",
+            label="Select Hazards from Project Scope",
+            index=safe_indices,
+            titles=["Available Hazards", "Active Hazards"],
             search=True,
-            height=500,
-            width='100%',
-            reload=True
+            height=400,
+            width="100%",
+            key="hazard_transfer_logic"
         )
-        if transfer_output is not None:
-            st.session_state.selected_nbs_hazards = transfer_output
 
-    if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
+    if selected_hazards is not None:
+        valid_hazards = [h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector]
+        if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
+            st.session_state.selected_nbs_hazards = sorted(valid_hazards)
+
+    if selected_hazards is not None:
+        valid_hazards = [h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector]
+        if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
+            st.session_state.selected_nbs_hazards = sorted(valid_hazards)
+    col_clear, _ = st.columns([1, 4])
+    with col_clear:
+        if st.button("🗑️ Clear Hazard Selection", key="clear_hazard_sel",
+                     help="Remove all active hazards and reset the NbS panels."):
+            st.session_state.selected_nbs_hazards = []
+            st.session_state.nbs_chip_deselected = {}
+            st.session_state.nbs_chip_supp_deselected = {}
+            st.rerun()
+
+    dynamic_nbs_list = set()
+    nbs_db = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
+
+    if st.session_state.selected_nbs_hazards:
+        for h in st.session_state.selected_nbs_hazards:
+            if h in nbs_db:
+                dynamic_nbs_list.update(nbs_db[h].get("Yes", []))
+
+    dynamic_nbs_list = sorted(list(dynamic_nbs_list))
+
+    if 'prev_dynamic_nbs' not in st.session_state or st.session_state.prev_dynamic_nbs != dynamic_nbs_list:
+        st.session_state.prev_dynamic_nbs = dynamic_nbs_list
+        st.session_state.approved_nbs_methods = dynamic_nbs_list
+
+    _HAZARD_ICONS = {
+        "Heatwave": "🌡️", "Coldwave": "🧊", "Drought": "🏜️", "Wildfire": "🔥",
+        "Desertification": "🌵", "Storms": "🌪️", "Hail": "🌨️", "erosion": "⛰️",
+        "flood": "🌊", "Flood": "🌊", "sediment": "🪨", "Rockfall": "🪨",
+        "Landslide": "⛰️", "avalanche": "❄️", "Snow": "❄️", "Mud": "🌧️",
+    }
+    def _hazard_icon(name):
+        for kw, icon in _HAZARD_ICONS.items():
+            if kw.lower() in name.lower():
+                return icon
+        return "⚠️"
+
+    def _resolve_chip(chip_result, sols):
+        """Normalise sac.chip return to a list of label strings.
+        None means first render — treat as all items selected (default state).
+        sac.chip also returns [] after a rerun; same rule applies: keep all selected."""
+        if chip_result is None or chip_result == []:
+            return list(sols)
+        elif isinstance(chip_result, str):
+            return [chip_result]
+        elif isinstance(chip_result, int):
+            return [sols[chip_result]] if chip_result < len(sols) else []
+        elif isinstance(chip_result, list):
+            out = []
+            for item in chip_result:
+                if isinstance(item, str):
+                    out.append(item)
+                elif isinstance(item, int) and item < len(sols):
+                    out.append(sols[item])
+            return out if out else list(sols)
+        return list(sols)
+
+    def _build_solution_table(sol_key, all_sols_list):
+        sol_to_hazards = {}
+        for h in st.session_state.selected_nbs_hazards:
+            for s in nbs_db.get(h, {}).get(sol_key, []):
+                if s in all_sols_list:
+                    sol_to_hazards.setdefault(s, [])
+                    if h not in sol_to_hazards[s]:
+                        sol_to_hazards[s].append(h)
+        return [
+            {
+                "Include": True,
+                "NbS Solution": sol,
+                "Addressed Hazards": ", ".join(
+                    _hazard_icon(h) + " " + h for h in hazards
+                ),
+            }
+            for sol, hazards in sorted(sol_to_hazards.items())
+        ]
+
+    if st.session_state.selected_nbs_hazards and dynamic_nbs_list:
+        st.markdown("##### ✅ Primary NbS Solutions")
+        st.caption(
+            "All solutions recommended for your active hazards, deduplicated. "
+            "Uncheck **Include** to remove a solution from the NbS summary."
+        )
+
+        primary_rows = _build_solution_table("Yes", dynamic_nbs_list)
+
+        if "nbs_table_excluded" not in st.session_state:
+            st.session_state.nbs_table_excluded = set()
+        current_primary_sols = {r["NbS Solution"] for r in primary_rows}
+        st.session_state.nbs_table_excluded &= current_primary_sols
+        for row in primary_rows:
+            row["Include"] = row["NbS Solution"] not in st.session_state.nbs_table_excluded
+
+        edited_primary = st.data_editor(
+            pd.DataFrame(primary_rows),
+            column_config={
+                "Include": st.column_config.CheckboxColumn("Include", width="small"),
+                "NbS Solution": st.column_config.TextColumn("NbS Solution", width="medium", disabled=True),
+                "Addressed Hazards": st.column_config.TextColumn("Addressed Hazards", width="large", disabled=True),
+            },
+            hide_index=True,
+            use_container_width=True,
+            key="primary_nbs_table",
+        )
+
+        st.session_state.nbs_table_excluded = {
+            row["NbS Solution"]
+            for _, row in edited_primary.iterrows()
+            if not row["Include"]
+        }
+        approved_nbs = sorted(
+            edited_primary.loc[edited_primary["Include"], "NbS Solution"].tolist()
+        )
+        n_inc, n_tot = len(approved_nbs), len(primary_rows)
+        st.markdown(
+            f"<div style='background:#e8f5e9;border-left:4px solid #43a047;padding:8px 14px;"
+            f"border-radius:6px;margin-top:4px;color:#1b5e20;'>"
+            f"<strong>✅ {n_inc} / {n_tot} solution(s) included</strong></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        approved_nbs = []
+
+    if approved_nbs != st.session_state.approved_nbs_methods:
+        st.session_state.approved_nbs_methods = approved_nbs
+
+    dynamic_supportive_list = set()
+    if st.session_state.selected_nbs_hazards:
+        for h in st.session_state.selected_nbs_hazards:
+            if h in nbs_db:
+                dynamic_supportive_list.update(nbs_db[h].get("Supportive", []))
+    dynamic_supportive_list = sorted(list(dynamic_supportive_list))
+
+    if "approved_supportive_methods" not in st.session_state:
+        st.session_state.approved_supportive_methods = dynamic_supportive_list
+    if "prev_dynamic_supportive" not in st.session_state or st.session_state.prev_dynamic_supportive != dynamic_supportive_list:
+        st.session_state.prev_dynamic_supportive = dynamic_supportive_list
+        st.session_state.approved_supportive_methods = dynamic_supportive_list
+    if st.session_state.selected_nbs_hazards and dynamic_supportive_list:
+        show_supportive = st.toggle("🔄 Configure Supportive NbS Solutions", value=False, help="Toggle to view and edit supportive Nature-based Solutions.")
+        
+        supportive_rows = _build_solution_table("Supportive", dynamic_supportive_list)
+
+        if "nbs_supp_table_excluded" not in st.session_state:
+            st.session_state.nbs_supp_table_excluded = set()
+            
+        current_supp_sols = {r["NbS Solution"] for r in supportive_rows}
+        st.session_state.nbs_supp_table_excluded &= current_supp_sols
+        
+        for row in supportive_rows:
+            row["Include"] = row["NbS Solution"] not in st.session_state.nbs_supp_table_excluded
+        if show_supportive:
+            st.markdown("##### 🔄 Supportive NbS Solutions")
+            st.caption(
+                "Supportive solutions complement primary NbS measures, deduplicated across all active hazards. "
+                "Uncheck **Include** to exclude a solution from the mapping summary."
+            )
+
+            edited_supportive = st.data_editor(
+                pd.DataFrame(supportive_rows),
+                column_config={
+                    "Include": st.column_config.CheckboxColumn("Include", width="small"),
+                    "NbS Solution": st.column_config.TextColumn("NbS Solution", width="medium", disabled=True),
+                    "Addressed Hazards": st.column_config.TextColumn("Addressed Hazards", width="large", disabled=True),
+                },
+                hide_index=True,
+                use_container_width=True,
+                key="supportive_nbs_table",
+            )
+
+            st.session_state.nbs_supp_table_excluded = {
+                row["NbS Solution"]
+                for _, row in edited_supportive.iterrows()
+                if not row["Include"]
+            }
+            
+            approved_supportive = sorted(
+                edited_supportive.loc[edited_supportive["Include"], "NbS Solution"].tolist()
+            )
+            
+            n_inc_s, n_tot_s = len(approved_supportive), len(supportive_rows)
+            st.markdown(
+                f"<div style='background:#e3f2fd;border-left:4px solid #1e88e5;padding:8px 14px;"
+                f"border-radius:6px;margin-top:4px;color:#0d47a1;'>"
+                f"<strong>🔄 {n_inc_s} / {n_tot_s} supportive solution(s) included</strong></div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+        else:
+            approved_supportive = sorted([
+                row["NbS Solution"] for row in supportive_rows 
+                if row["Include"]
+            ])
+    else:
+        approved_supportive = []
+
+
+    if approved_supportive != st.session_state.approved_supportive_methods:
+        st.session_state.approved_supportive_methods = approved_supportive
+
+    if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
         st.markdown("#### NbS Implementation Mapping Summary")
         summary_display_df = st.session_state.calculated_results.copy()
+        
         if 'Possible Hazards' not in summary_display_df.columns and 'saved_data' in st.session_state:
             summary_display_df['Possible Hazards'] = st.session_state.saved_data.loc[summary_display_df.index, 'Possible Hazards']
             
+        primary_sol_col = []
+        supportive_sol_col = []
+        
+        for _, row in summary_display_df.iterrows():
+            hazards_item = row.get('Possible Hazards', [])
+            if isinstance(hazards_item, str):
+                current_hazards = [h for h in all_hazards_for_selector if h in hazards_item]
+            else:
+                current_hazards = [h for h in (hazards_item if isinstance(hazards_item, list) else []) if h in all_hazards_for_selector]
+                
+            p_sols, s_sols = set(), set()
+            for h in current_hazards:
+                h_strip = h.strip()
+                if h_strip in nbs_db:
+                    db_yes  = nbs_db[h_strip].get("Yes", [])
+                    db_supp = nbs_db[h_strip].get("Supportive", [])
+                    if h_strip in st.session_state.selected_nbs_hazards:
+                        valid_primary = [sol for sol in db_yes if sol in approved_nbs]
+                        valid_supportive = [sol for sol in db_supp if sol in approved_supportive]
+                    else:
+                        valid_primary = db_yes
+                        valid_supportive = db_supp
+                        
+                    p_sols.update(valid_primary)
+                    s_sols.update(valid_supportive)
+                    
+            primary_sol_col.append(", ".join(sorted(list(p_sols))))
+            supportive_sol_col.append(", ".join(sorted(list(s_sols))))
+
+        summary_display_df["Primary Solutions"] = primary_sol_col
+        summary_display_df["Supportive Solutions"] = supportive_sol_col
+        
+        st.session_state.calculated_results["Primary Solutions"] = primary_sol_col
+        st.session_state.calculated_results["Supportive Solutions"] = supportive_sol_col
+        
         available_cols = summary_display_df.columns.tolist()
         required_cols = ["Infrastructure", "Asset", "Impact model", "Possible Hazards", "Primary Solutions", "Supportive Solutions"]
         cols_to_show = [c for c in required_cols if c in available_cols]
         
         st.dataframe(summary_display_df[cols_to_show], use_container_width=True, hide_index=True)
 
-    if st.session_state.selected_nbs_hazards:
-        st.markdown("### Initial Recommended Solutions")
-        nbs_data_source = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
-        
-        for hazard in st.session_state.selected_nbs_hazards:
-            with st.expander(f"**{hazard}**", expanded=False):
-                if hazard in nbs_data_source:
-                    rec_data = nbs_data_source[hazard]
-                    c_yes, c_supp = st.columns(2)
-                    with c_yes:
-                        st.markdown("#### ✅ Primary Solutions")
-                        for item in rec_data.get("Yes", []):
-                            st.success(f"- {item}")
-                    with c_supp:
-                        st.markdown("#### 🤝 Supportive Solutions")
-                        for item in rec_data.get("Supportive", []):
-                            st.warning(f"- {item}")
-                else:
-                    st.info(f"No specific database entries for {hazard}.")
+
+
     st.divider()
     st.markdown("#### Step 7.2: Filtration of the Recommended NbS Solutions")
     st.info("Filter and refine NbS selection by integrating Site-Specific Feasibility (SSF), Socio-Economic acceptance (SEI), and Hazard Impact Attenuation (HIA).")
     if 'ssf_lookup' not in st.session_state:
         st.session_state.ssf_lookup = {
-            "Terracing (slope shaping, reduction of slope inclination)": {"Slope instability": {"Explanation": "Terracing improves slope stability.", "Value": 100}, "Limited vegetation and low quality of soil": {"Explanation": "Harder to shape in shallow/poor soils.", "Value": 50}, "Limited access for implementation": {"Explanation": "Requires machinery and work space, the personnel to reach the area and be able to carry the material up to there. All hinders the implementation and maintenance.", "Value": 0}, "Cold temperatures": {"Explanation": "Requires periodic upkeep, there should be monitoring to double check the condition over the cold period.", "Value": 0}, "Limited water availability": {"Explanation": "Soil compaction more difficult when dry.", "Value": 50}, "Lack of connection to major services": {"Explanation": "Machinery delivery required.", "Value": 50}, "Space Constraints": {"Explanation": "Needs substantial bench width.", "Value": 0}, "Exposure to soil, water and/or air pollution": {"Explanation": "Sediment transported by runoff is a factor that may weaken terrace edges.", "Value": 50}, "Limitations due to high population density": {"Explanation": "Remote area.", "Value": 100}},
+            "Terracing (slope shaping - reduction of slope inclination)": {"Slope instability": {"Explanation": "Terracing improves slope stability.", "Value": 100}, "Limited vegetation and low quality of soil": {"Explanation": "Harder to shape in shallow/poor soils.", "Value": 50}, "Limited access for implementation": {"Explanation": "Requires machinery and work space, the personnel to reach the area and be able to carry the material up to there. All hinders the implementation and maintenance.", "Value": 0}, "Cold temperatures": {"Explanation": "Requires periodic upkeep, there should be monitoring to double check the condition over the cold period.", "Value": 0}, "Limited water availability": {"Explanation": "Soil compaction more difficult when dry.", "Value": 50}, "Lack of connection to major services": {"Explanation": "Machinery delivery required.", "Value": 50}, "Space Constraints": {"Explanation": "Needs substantial bench width.", "Value": 0}, "Exposure to soil, water and/or air pollution": {"Explanation": "Sediment transported by runoff is a factor that may weaken terrace edges.", "Value": 50}, "Limitations due to high population density": {"Explanation": "Remote area.", "Value": 100}},
             "Earth dams and barriers (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 50}, "Limitations due to high population density": {"Value": 100}},
             "Avalanche mounds": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 100}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 100}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 0}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
             "3-D steel grids (vegetated)": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 0}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 50}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}},
@@ -3055,40 +3270,6 @@ elif selected_step == 2:
             "Bioswales": {"Slope instability": {"Value": 100}, "Limited vegetation and low quality of soil": {"Value": 50}, "Limited access for implementation": {"Value": 100}, "Cold temperatures": {"Value": 50}, "Limited water availability": {"Value": 100}, "Lack of connection to major services": {"Value": 50}, "Space Constraints": {"Value": 100}, "Exposure to soil, water and/or air pollution": {"Value": 100}, "Limitations due to high population density": {"Value": 100}}
         }
 
-    nbs_effectiveness_scores = {
-        'Terracing (slope shaping, reduction of slope inclination)': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 3.5, 'Snow drift': 3.5, 'Snow creep & slide': 3.5}, 
-        'Vegetated earth dams and barriers (transversal)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 3.0, 'Small Rockfall (Diameter <25cm)': 3.0, 'Large Rockfall (Diameter >25-100 cm)': 3.0, 'Landslides < 2 m depth': 3.0, 'Landslides 2-10 m depth': 3.0, 'Landslides > 10 m depths': 3.0, 'Mud or Earth flow': 3.0, 'Soil slope deformation & Soil creep': 3.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
-        'Afforestation and reforestation': {'Extreme high temperatures (Heatwave)': 3.5, 'Extreme cold temperatures (Coldwave, cold snap)': 3.5, 'Drought': 3.5, 'Wildfire (Forest fire or Bush fire)': 3.5, 'Desertification': 3.5, 'Storms & strong winds': 4.0, 'Hail': 4.0, 'Aeolian erosion': 4.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
-        'Protection forest management': {'Extreme high temperatures (Heatwave)': 3.5, 'Extreme cold temperatures (Coldwave, cold snap)': 3.5, 'Drought': 3.5, 'Wildfire (Forest fire or Bush fire)': 3.5, 'Desertification': 3.5, 'Storms & strong winds': 4.0, 'Hail': 4.0, 'Aeolian erosion': 4.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 4.0, 'Small Rockfall (Diameter <25cm)': 4.0, 'Large Rockfall (Diameter >25-100 cm)': 4.0, 'Landslides < 2 m depth': 4.0, 'Landslides 2-10 m depth': 4.0, 'Landslides > 10 m depths': 4.0, 'Mud or Earth flow': 4.0, 'Soil slope deformation & Soil creep': 4.0, 'Snow avalanches': 5.0, 'Snow drift': 5.0, 'Snow creep & slide': 5.0}, 
-        'Buffer vegetation strips and coppice management': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 2.5, 'Snow drift': 2.5, 'Snow creep & slide': 2.5}, 
-        'Firebreaks and firestrips': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Fire-resistant tree species & plants': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Riparian buffer zones': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 2.5, 'Snow drift': 2.5, 'Snow creep & slide': 2.5}, 
-        'Floodplain restoration': {'Extreme high temperatures (Heatwave)': 2.5, 'Extreme cold temperatures (Coldwave, cold snap)': 2.5, 'Drought': 2.5, 'Wildfire (Forest fire or Bush fire)': 2.5, 'Desertification': 2.5, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Channel widening': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Bioswales': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Vegetated levees, dikes, and flood protection dams (longitudinal)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Water retention basins and ponds (storage ponds)': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Wetland conservation and restoration': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Salt marsh restoration': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 4.5, 'Fluvial flood': 4.5, 'Coastal flood (e.g. storm surge)': 4.5, 'Impact floods and Tsunami': 4.5, 'Fluvial sediment transport': 4.5, 'Stream bank & bed erosion': 4.5, 'Sheet erosion & rill erosion': 4.5, 'Gully erosion': 4.5, 'Coastal and shoreline erosion (includes freshwater environments)': 4.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Dune restoration and coastal vegetation': {'Extreme high temperatures (Heatwave)': 1.5, 'Extreme cold temperatures (Coldwave, cold snap)': 1.5, 'Drought': 1.5, 'Wildfire (Forest fire or Bush fire)': 1.5, 'Desertification': 1.5, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Green corridors & tree rows': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 3.0, 'Fluvial flood': 3.0, 'Coastal flood (e.g. storm surge)': 3.0, 'Impact floods and Tsunami': 3.0, 'Fluvial sediment transport': 3.0, 'Stream bank & bed erosion': 3.0, 'Sheet erosion & rill erosion': 3.0, 'Gully erosion': 3.0, 'Coastal and shoreline erosion (includes freshwater environments)': 3.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 1.5, 'Snow drift': 1.5, 'Snow creep & slide': 1.5}, 
-        'Biodiverse hedgerows': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 1.5, 'Snow drift': 1.5, 'Snow creep & slide': 1.5}, 
-        'Vegetated buffer zones': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 3.5, 'Fluvial flood': 3.5, 'Coastal flood (e.g. storm surge)': 3.5, 'Impact floods and Tsunami': 3.5, 'Fluvial sediment transport': 3.5, 'Stream bank & bed erosion': 3.5, 'Sheet erosion & rill erosion': 3.5, 'Gully erosion': 3.5, 'Coastal and shoreline erosion (includes freshwater environments)': 3.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 3.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 1.5, 'Small Rockfall (Diameter <25cm)': 1.5, 'Large Rockfall (Diameter >25-100 cm)': 1.5, 'Landslides < 2 m depth': 1.5, 'Landslides 2-10 m depth': 1.5, 'Landslides > 10 m depths': 1.5, 'Mud or Earth flow': 1.5, 'Soil slope deformation & Soil creep': 1.5, 'Snow avalanches': 3.5, 'Snow drift': 3.5, 'Snow creep & slide': 3.5}, 
-        'Controlled grazing': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.0, 'Fluvial flood': 1.0, 'Coastal flood (e.g. storm surge)': 1.0, 'Impact floods and Tsunami': 1.0, 'Fluvial sediment transport': 1.0, 'Stream bank & bed erosion': 1.0, 'Sheet erosion & rill erosion': 1.0, 'Gully erosion': 1.0, 'Coastal and shoreline erosion (includes freshwater environments)': 1.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Fire-smart agriculture': {'Extreme high temperatures (Heatwave)': 1.0, 'Extreme cold temperatures (Coldwave, cold snap)': 1.0, 'Drought': 1.0, 'Wildfire (Forest fire or Bush fire)': 1.0, 'Desertification': 1.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 0.0, 'Fluvial flood': 0.0, 'Coastal flood (e.g. storm surge)': 0.0, 'Impact floods and Tsunami': 0.0, 'Fluvial sediment transport': 0.0, 'Stream bank & bed erosion': 0.0, 'Sheet erosion & rill erosion': 0.0, 'Gully erosion': 0.0, 'Coastal and shoreline erosion (includes freshwater environments)': 0.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Cover cropping': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Soil amendments (previously organic amendments)': {'Extreme high temperatures (Heatwave)': 2.0, 'Extreme cold temperatures (Coldwave, cold snap)': 2.0, 'Drought': 2.0, 'Wildfire (Forest fire or Bush fire)': 2.0, 'Desertification': 2.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Wattle fence (for water engineering)': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 4.0, 'Fluvial flood': 4.0, 'Coastal flood (e.g. storm surge)': 4.0, 'Impact floods and Tsunami': 4.0, 'Fluvial sediment transport': 4.0, 'Stream bank & bed erosion': 4.0, 'Sheet erosion & rill erosion': 4.0, 'Gully erosion': 4.0, 'Coastal and shoreline erosion (includes freshwater environments)': 4.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 4.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Vegetated riprap': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.5, 'Fluvial flood': 2.5, 'Coastal flood (e.g. storm surge)': 2.5, 'Impact floods and Tsunami': 2.5, 'Fluvial sediment transport': 2.5, 'Stream bank & bed erosion': 2.5, 'Sheet erosion & rill erosion': 2.5, 'Gully erosion': 2.5, 'Coastal and shoreline erosion (includes freshwater environments)': 2.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Vegetated log/stone barriers and live/rock check dams': {'Extreme high temperatures (Heatwave)': 0.0, 'Extreme cold temperatures (Coldwave, cold snap)': 0.0, 'Drought': 0.0, 'Wildfire (Forest fire or Bush fire)': 0.0, 'Desertification': 0.0, 'Storms & strong winds': 1.5, 'Hail': 1.5, 'Aeolian erosion': 1.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.5, 'Fluvial flood': 2.5, 'Coastal flood (e.g. storm surge)': 2.5, 'Impact floods and Tsunami': 2.5, 'Fluvial sediment transport': 2.5, 'Stream bank & bed erosion': 2.5, 'Sheet erosion & rill erosion': 2.5, 'Gully erosion': 2.5, 'Coastal and shoreline erosion (includes freshwater environments)': 2.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.5, 'Small Rockfall (Diameter <25cm)': 0.5, 'Large Rockfall (Diameter >25-100 cm)': 0.5, 'Landslides < 2 m depth': 0.5, 'Landslides 2-10 m depth': 0.5, 'Landslides > 10 m depths': 0.5, 'Mud or Earth flow': 0.5, 'Soil slope deformation & Soil creep': 0.5, 'Snow avalanches': 1.0, 'Snow drift': 1.0, 'Snow creep & slide': 1.0}, 
-        'Open green spaces': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Green pavers': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 1.0, 'Hail': 1.0, 'Aeolian erosion': 1.0, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Vertical greenery': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 0.0, 'Hail': 0.0, 'Aeolian erosion': 0.0, 'Pluvial flood, heavy rainfall and surface runoff': 0.5, 'Fluvial flood': 0.5, 'Coastal flood (e.g. storm surge)': 0.5, 'Impact floods and Tsunami': 0.5, 'Fluvial sediment transport': 0.5, 'Stream bank & bed erosion': 0.5, 'Sheet erosion & rill erosion': 0.5, 'Gully erosion': 0.5, 'Coastal and shoreline erosion (includes freshwater environments)': 0.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 0.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Raingardens': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 3.5, 'Hail': 3.5, 'Aeolian erosion': 3.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Bio-retention cells': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 1.5, 'Fluvial flood': 1.5, 'Coastal flood (e.g. storm surge)': 1.5, 'Impact floods and Tsunami': 1.5, 'Fluvial sediment transport': 1.5, 'Stream bank & bed erosion': 1.5, 'Sheet erosion & rill erosion': 1.5, 'Gully erosion': 1.5, 'Coastal and shoreline erosion (includes freshwater environments)': 1.5, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 1.5, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}, 
-        'Infiltration trenches': {'Extreme high temperatures (Heatwave)': 3.0, 'Extreme cold temperatures (Coldwave, cold snap)': 3.0, 'Drought': 3.0, 'Wildfire (Forest fire or Bush fire)': 3.0, 'Desertification': 3.0, 'Storms & strong winds': 2.5, 'Hail': 2.5, 'Aeolian erosion': 2.5, 'Pluvial flood, heavy rainfall and surface runoff': 2.0, 'Fluvial flood': 2.0, 'Coastal flood (e.g. storm surge)': 2.0, 'Impact floods and Tsunami': 2.0, 'Fluvial sediment transport': 2.0, 'Stream bank & bed erosion': 2.0, 'Sheet erosion & rill erosion': 2.0, 'Gully erosion': 2.0, 'Coastal and shoreline erosion (includes freshwater environments)': 2.0, 'Debris flood (Volumetric Sediment Concentration 20-40%)': 2.0, 'Debris flow (Volumetric Sediment Concentration >40%)': 0.0, 'Small Rockfall (Diameter <25cm)': 0.0, 'Large Rockfall (Diameter >25-100 cm)': 0.0, 'Landslides < 2 m depth': 0.0, 'Landslides 2-10 m depth': 0.0, 'Landslides > 10 m depths': 0.0, 'Mud or Earth flow': 0.0, 'Soil slope deformation & Soil creep': 0.0, 'Snow avalanches': 0.0, 'Snow drift': 0.0, 'Snow creep & slide': 0.0}
-    }
 
     relevant_methods = set()
     if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
@@ -3161,13 +3342,22 @@ elif selected_step == 2:
                     val = st.select_slider(f"{f}", options=[1, 2, 3], value=1, help="1: Favorable, 2: Neutral, 3: Unfavorable")
                     sei_ratings[f] = 100 if val == 1 else (50 if val == 2 else 0)
 
-    # 4. FILTRATION CALCULATION
     st.session_state.filtered_nbs_pool = []
     low_perf_pool = []
     if 'calculated_results' in st.session_state and "Primary Solutions" in st.session_state.calculated_results.columns:
         unique_pairs = {}
-        for _, row in st.session_state.calculated_results.iterrows():
-            pri_score = row.get("PRI scores", 0) 
+        method_to_hazards = {}
+        for row_idx, row in st.session_state.calculated_results.iterrows():
+            raw_pri = row.get("PRI scores", 0)
+            try:
+                pri_score = float(raw_pri) if raw_pri is not None and str(raw_pri).strip() != "" else 0.0
+            except (ValueError, TypeError):
+                pri_score = 0.0
+            asset_val  = str(row.get("Asset",        "")).strip() or "—"
+            impact_val = str(row.get("Impact model", "")).strip() or "—"
+            infra_val  = str(row.get("Infrastructure","")).strip() or ""
+            row_label  = f"{asset_val} — {impact_val}"
+
             raw_hazards = row.get("Possible Hazards", [])
             if isinstance(raw_hazards, str):
                 val_clean = raw_hazards.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
@@ -3175,22 +3365,47 @@ elif selected_step == 2:
             elif isinstance(raw_hazards, list): hazards = raw_hazards
             else: hazards = []
             hazards = [h for h in hazards if h in all_hazards_for_selector]
-            raw_p_sols = str(row.get("Primary Solutions", ""))
-            p_sols = [s.strip() for s in raw_p_sols.split(',') if s.strip()]
+            all_sols_raw = []
+            p_raw = str(row.get("Primary Solutions", ""))
+            row_p_sols = [s.strip() for s in p_raw.split(',') if s.strip()] if p_raw and p_raw != "nan" else []
+            
+            s_raw = str(row.get("Supportive Solutions", ""))
+            row_s_sols = [s.strip() for s in s_raw.split(',') if s.strip()] if s_raw and s_raw != "nan" else []
+            
+            all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
+            
             for h in hazards:
-                for sol in p_sols:
+                for sol in all_sols:
                     pair_name = f"{sol} method for {h}"
-                    score = nbs_effectiveness_scores.get(sol, {}).get(h, "N/A")
-                    if score != "N/A" and isinstance(score, (int, float)):
-                        rpri = pri_score * (1.0 - (score / 5.0))
-                        eff_percent = (score / 5.0) * 100
-                        if pair_name not in unique_pairs or unique_pairs[pair_name].get("rpri", -1) < rpri:
-                            unique_pairs[pair_name] = {"rpri": rpri, "eff_percent": eff_percent, "original_pri": pri_score, "status": "scored"}
-                    else:
-                        if pair_name not in unique_pairs: unique_pairs[pair_name] = {"status": "unscored"}
+                    up_key    = (row_idx, pair_name)
+                    is_prim   = (sol in row_p_sols)
+                    
+                    if up_key not in unique_pairs:
+                        unique_pairs[up_key] = {
+                            "original_pri": pri_score,
+                            "status":       "scored",
+                            "pair_name":    pair_name,
+                            "method_only":  sol,
+                            "row_label":    row_label,
+                            "asset":        asset_val,
+                            "impact_model": impact_val,
+                            "infrastructure": infra_val,
+                            "is_primary":   is_prim
+                        }
+                    elif unique_pairs[up_key]["original_pri"] < pri_score:
+                        unique_pairs[up_key]["original_pri"] = pri_score
+                        if is_prim:
+                            unique_pairs[up_key]["is_primary"] = True
 
-        for name, data in unique_pairs.items():
-            method_base = name.split(" method for ")[0]
+                    if sol not in method_to_hazards:
+                        method_to_hazards[sol] = set()
+                    method_to_hazards[sol].add(h)
+
+        nbs_db = NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
+        for _, data in unique_pairs.items():
+            name        = data["pair_name"]
+            method_base = data["method_only"]
+
             m_ssf_data = st.session_state.ssf_lookup.get(method_base, {})
             ssf_scores = []
             for crit, active in site_conditions.items():
@@ -3200,20 +3415,45 @@ elif selected_step == 2:
                     ssf_scores.append(val)
                 else: ssf_scores.append(100)
             avg_ssf = sum(ssf_scores) / len(ssf_scores)
+
             avg_sei = sum(sei_ratings.values()) / len(sei_ratings)
-            avg_hia = data.get("eff_percent", 0) if data["status"] == "scored" else 0
+            relevant_hazards = method_to_hazards.get(method_base, set())
+            hia_scores = []
+            for haz_key in relevant_hazards:
+                haz_data  = nbs_db.get(haz_key, {})
+                yes_list  = haz_data.get("Yes", [])
+                supp_list = haz_data.get("Supportive", [])
+                if method_base in yes_list:
+                    hia_scores.append(100)
+                elif method_base in supp_list:
+                    hia_scores.append(50)
+                else:
+                    hia_scores.append(0)
+            avg_hia = sum(hia_scores) / len(hia_scores) if hia_scores else 0
+
             total_score = (avg_ssf + avg_sei + avg_hia) / 3
-            data.update({"name": name, "method_only": method_base, "ssf": avg_ssf, "sei": avg_sei, "hia": avg_hia, "total": total_score})
-            if total_score >= 50: st.session_state.filtered_nbs_pool.append(data)
+            if   total_score < 10: tech_eff = 1
+            elif total_score < 30: tech_eff = 2
+            elif total_score < 60: tech_eff = 3
+            elif total_score < 80: tech_eff = 4
+            else:                  tech_eff = 5
+
+            af         = 1.0 - tech_eff / 5.0
+            pri_score  = data.get("original_pri", 0)
+            rpri       = pri_score * af
+            eff_percent = total_score
+            data.update({"name": name, "method_only": method_base, "ssf": avg_ssf, "sei": avg_sei,
+                          "hia": avg_hia, "total": total_score, "tech_eff": tech_eff,
+                          "eff_percent": eff_percent, "rpri": rpri})
+            if total_score >= 30: st.session_state.filtered_nbs_pool.append(data)
             else: low_perf_pool.append(data)
 
         if not st.session_state.filtered_nbs_pool and unique_pairs:
-            st.warning("⚠️ No solutions strictly passed the 50% feasibility threshold. Showing all potential methods for your review.")
+            st.warning("⚠️ No solutions strictly passed the 30% feasibility threshold. Showing all potential methods for your review.")
             st.session_state.filtered_nbs_pool = list(unique_pairs.values())
         elif st.session_state.filtered_nbs_pool:
             st.success(f"Filtration complete: {len(st.session_state.filtered_nbs_pool)} solutions passed the feasibility threshold.")
 
-        # 5. VISUALS
         if st.session_state.filtered_nbs_pool:
             st.markdown("---")
             st.subheader("NbS Feasibility Spider Diagram")
@@ -3224,8 +3464,7 @@ elif selected_step == 2:
                 fig.add_trace(go.Scatterpolar(r=[r["ssf"], r["sei"], r["hia"], r["ssf"]], theta=['Site Feasibility (SSF)', 'Socio-Economic (SEI)', 'Hazard Attenuation (HIA)', 'Site Feasibility (SSF)'], fill='toself', name=r["name"]))
             fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True)
             st.plotly_chart(fig, use_container_width=True)
-            
-            # --- UPGRADE 2: PROGRESS BARS FOR SCORES ---
+
             with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
                 filt_config = {
                     "name": st.column_config.TextColumn("NbS Method"),
@@ -3243,70 +3482,359 @@ elif selected_step == 2:
 
             if low_perf_pool:
                 st.markdown("##### ⚠️ Threshold Analysis")
-                with st.expander(f"View {len(low_perf_pool)} methods below 50% threshold", expanded=False):
+                with st.expander(f"View {len(low_perf_pool)} methods below 30% threshold", expanded=False):
                     for item in low_perf_pool: st.warning(f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%).")
 
             st.divider()
-            st.markdown("#### 7.3. Final NbS Recommendation Strategy")
+            st.markdown("#### Final NbS Recommendation Strategy")
             rec_strategy = st.radio("Choose recommendation strategy for filtered solutions:", ["Ranking Based on Residual Potential Risk Index (RPRI)", "Ranking Based On Expert Opinion (Priority Ranking)"], horizontal=True, key="strategy_radio")
 
             if rec_strategy == "Ranking Based on Residual Potential Risk Index (RPRI)":
-                consolidated_rpri_dict = {}
-                for item in st.session_state.filtered_nbs_pool:
-                    method = item["method_only"]
-                    if method not in consolidated_rpri_dict or (item.get("rpri", 0) > consolidated_rpri_dict[method].get("rpri", 0)):
-                        consolidated_rpri_dict[method] = item
+                if st.button("🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"):
+                    st.session_state.rpri_results_ready = True
+                if st.session_state.get("rpri_results_ready", False):
+                    def get_dynamic_color(rpri_val, eff_percent, min_val, max_val):
+                        if eff_percent == 0.0: return "#d32f2f"
+                        if max_val == min_val: return "#1b5e20"
+                        norm = (rpri_val - min_val) / (max_val - min_val)
+                        if norm <= 0.14: return "#1b5e20"
+                        elif norm <= 0.28: return "#2e7d32"
+                        elif norm <= 0.42: return "#aed581"
+                        elif norm <= 0.57: return "#fff176"
+                        elif norm <= 0.71: return "#ffb74d"
+                        elif norm <= 0.85: return "#f57c00"
+                        else: return "#d32f2f"
+                    def render_rpri_ranking(pool, show_row_badge=False):
+                        """
+                        Consolidate pool by method_only (keep highest RPRI per method),
+                        then render the ranked cards.
+                        show_row_badge=True adds a small row label badge on each card
+                        (used in the All-Rows-Combined view so the user can see which
+                        row drove the displayed PRI value).
+                        """
+                        cons = {}
+                        for item in pool:
+                            if not item.get("is_primary", False):
+                                continue
+                            m = item["method_only"]
+                            if m not in cons or item.get("rpri", 0) > cons[m].get("rpri", 0):
+                                cons[m] = item
 
-                scored_sorted = sorted([i for i in consolidated_rpri_dict.values() if i["status"] == "scored"], key=lambda x: (x["eff_percent"] == 0, x["rpri"]))
-                unscored_items = [i for i in consolidated_rpri_dict.values() if i["status"] == "unscored"]
-                
-                def get_color_for_rpri(rpri_val, eff_percent):
-                    if eff_percent == 0.0: return "#d32f2f"
-                    if rpri_val <= 0.25: return "#1b5e20"
-                    elif rpri_val <= 0.50: return "#2e7d32"
-                    elif rpri_val <= 0.75: return "#66bb6a"
-                    elif rpri_val <= 1.00: return "#aed581"
-                    elif rpri_val <= 1.50: return "#fff176"
-                    elif rpri_val <= 2.00: return "#ffb74d"   
-                    elif rpri_val <= 3.00: return "#f57c00"
-                    else: return "#d32f2f"
+                        scored = sorted(
+                            [i for i in cons.values() if i["status"] == "scored"],
+                            key=lambda x: (x["eff_percent"] == 0, x["rpri"])
+                        )
+                        unscored = [i for i in cons.values() if i["status"] == "unscored"]
 
-                st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
-                for rank, item in enumerate(scored_sorted, 1):
-                    bg = get_color_for_rpri(item['rpri'], item['eff_percent'])
-                    tx = "white" if (item['eff_percent'] == 0.0 or item['rpri'] <= 0.50 or item['rpri'] > 3.0) else "black"
-                    with st.container(border=True):
-                        col_rank, col_details = st.columns([1, 4])
-                        with col_rank:
-                            badge_color = "#28a745" if item['rpri'] < 1 else "#ffc107"
-                            st.markdown(f"""
+                        if not scored and not unscored:
+                            st.info("No primary solutions found for this selection.")
+                            return
+
+                        valid_vals = [i["rpri"] for i in scored if i["eff_percent"] > 0]
+                        mn, mx = (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
+
+                        for rank, item in enumerate(scored, 1):
+                            bg   = get_dynamic_color(item["rpri"], item["eff_percent"], mn, mx)
+                            tc   = "black" if bg in ["#fff176", "#ffb74d", "#aed581"] else "white"
+                            af_val    = 1.0 - item["tech_eff"] / 5.0
+                            pri_val   = item.get("original_pri", 0.0)
+                            rpri_val  = item.get("rpri", 0.0)
+                            delta_val = pri_val - rpri_val
+                            row_badge_html = ""
+                            if show_row_badge:
+                                lbl = item.get("row_label", "")
+                                if lbl:
+                                    row_badge_html = (
+                                        f'<span style="background:#e3f2fd;color:#1565c0;'
+                                        f'border-radius:4px;padding:1px 6px;font-size:0.78em;'
+                                        f'font-weight:normal;margin-left:6px;">{lbl}</span>'
+                                    )
+                            st.markdown(
+                                f"""
                                 <div style="
-                                    background-color: {badge_color}; 
-                                    color: white; 
-                                    border-radius: 50%; 
-                                    width: 40px; 
-                                    height: 40px; 
-                                    display: flex; 
-                                    align-items: center; 
-                                    justify-content: center; 
-                                    font-weight: bold; 
-                                    font-size: 18px;
-                                    margin-top: 5px;">
+                                    background:#ffffff;
+                                    border:1.5px solid #dee2e6;
+                                    border-left:5px solid {bg};
+                                    border-radius:8px;
+                                    padding:12px 16px;
+                                    margin-bottom:10px;
+                                    display:flex;
+                                    align-items:center;
+                                    gap:16px;
+                                    box-shadow:0 1px 4px rgba(0,0,0,0.07);
+                                ">
+                                  <div style="
+                                    background:{bg};color:{tc};
+                                    border-radius:50%;min-width:40px;height:40px;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-weight:bold;font-size:18px;flex-shrink:0;">
                                     {rank}
+                                  </div>
+                                  <div style="flex:1;color:#212529;">
+                                    <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
+                                      {item['method_only']}{row_badge_html}
+                                    </div>
+                                    <div style="font-size:0.9em;margin-bottom:2px;">
+                                      🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
+                                      <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp;
+                                      <b>Δ RPRI:</b> {delta_val:.2f}
+                                    </div>
+                                    <div style="font-size:0.82em;color:#555;">
+                                      Technical Efficiency: {item['tech_eff']} / 5
+                                      (Total Feasibility: {item['eff_percent']:.1f}%) &nbsp;|&nbsp;
+                                      AF: {af_val:.2f}
+                                    </div>
+                                  </div>
                                 </div>
-                                """, unsafe_allow_html=True)
-                        with col_details:
-                            st.markdown(f"**{item['method_only']}**")
-                            st.caption(f"Residual PRI: {item['rpri']:.2f} | Efficiency: {item['eff_percent']:.0f}%")
-                if unscored_items:
-                    with st.expander("Solutions with unavailable technical efficiency values", expanded=False):
-                        for item in unscored_items: st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #ddd; color: black;"><h6 style="margin:0;">- {item["name"]}</h6><p style="margin:0; font-size: 0.9em; color: #555;"><i>Technical efficiency values are not available for this method.</i></p></div>', unsafe_allow_html=True)
+                                """,
+                                unsafe_allow_html=True,
+                            )
+
+                        if unscored:
+                            with st.expander("Solutions with unavailable technical efficiency values", expanded=False):
+                                for item in unscored:
+                                    st.markdown(
+                                        f'<div style="background-color:#f0f2f6;padding:10px;'
+                                        f'border-radius:6px;margin-bottom:8px;border:1px solid #ddd;color:black;">'
+                                        f'<h6 style="margin:0;">- {item["name"]}</h6>'
+                                        f'<p style="margin:0;font-size:0.9em;color:#555;"><i>'
+                                        f'Technical efficiency values are not available for this method.'
+                                        f'</i></p></div>',
+                                        unsafe_allow_html=True
+                                    )
+                    st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
+                    seen_labels = []
+                    for item in st.session_state.filtered_nbs_pool:
+                        lbl = item.get("row_label", "")
+                        if lbl and item.get("is_primary", False) and lbl not in seen_labels:
+                            seen_labels.append(lbl)
+
+                    ALL_LABEL = "🌐 All Rows Combined"
+                    view_options = [ALL_LABEL] + seen_labels
+
+                    st.info(
+                        "Use the selector below to view the RPRI ranking for a specific "
+                        "Impact Model / Asset row from the Implementation Mapping Summary, "
+                        "or select **All Rows Combined** to see the overall ranking "
+                        "(each method shown once at its highest RPRI across all rows).",
+                        icon="ℹ️"
+                    )
+
+                    selected_view = st.selectbox(
+                        "📋 View ranking for:",
+                        view_options,
+                        key="rpri_view_selector"
+                    )
+
+                    if selected_view == ALL_LABEL:
+                        render_rpri_ranking(
+                            st.session_state.filtered_nbs_pool,
+                            show_row_badge=True
+                        )
+                    else:
+                        row_pool = [
+                            item for item in st.session_state.filtered_nbs_pool
+                            if item.get("row_label") == selected_view
+                        ]
+                        if row_pool:
+                            infra = row_pool[0].get("infrastructure", "")
+                            asset = row_pool[0].get("asset", "")
+                            imp   = row_pool[0].get("impact_model", "")
+                            parts = [p for p in [infra, asset, imp] if p and p != "—"]
+                            st.markdown(
+                                f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;'
+                                f'padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;">'
+                                f'<strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
+                                unsafe_allow_html=True
+                            )
+                        render_rpri_ranking(row_pool, show_row_badge=False)
+                    st.divider()
+                    st.markdown("##### 🗺️ Cross-Row RPRI Heatmap")
+                    st.caption(
+                        "Each cell shows the RPRI value for a given NbS method (row) "
+                        "across every Impact Model / Asset row (column). Blank cells mean "
+                        "the method does not apply to that row. "
+                        "Green = low residual risk · Red = high residual risk."
+                    )
+                    hm_data = {}
+                    hm_all_labels = []
+                    for _, _cr_row in st.session_state.calculated_results.iterrows():
+                        _a  = str(_cr_row.get("Asset",        "")).strip() or "—"
+                        _im = str(_cr_row.get("Impact model", "")).strip() or "—"
+                        _lbl = f"{_a} — {_im}"
+                        if _lbl and _lbl not in hm_all_labels:
+                            hm_all_labels.append(_lbl)
+
+                    for item in st.session_state.filtered_nbs_pool:
+                        m      = item.get("method_only", "")
+                        lbl    = item.get("row_label", "")
+                        rv     = item.get("rpri", None)
+                        st_val = item.get("status", "")
+                        if not m or not lbl or st_val != "scored" or rv is None:
+                            continue
+                        if not item.get("is_primary", False):
+                            continue
+                        if m not in hm_data:
+                            hm_data[m] = {}
+                        if lbl not in hm_data[m] or rv > hm_data[m][lbl]:
+                            hm_data[m][lbl] = rv
+
+                    if len(hm_data) == 0 and st.session_state.filtered_nbs_pool:
+                        fallback_label = "All Assets"
+                        for item in st.session_state.filtered_nbs_pool:
+                            m  = item.get("method_only", item.get("name", "").split(" method for ")[0])
+                            rv = item.get("rpri", None)
+                            st_val = item.get("status", "scored")
+                            if not m or st_val != "scored" or rv is None:
+                                continue
+                            if not item.get("is_primary", False):
+                                continue
+                            if m not in hm_data:
+                                hm_data[m] = {}
+                            if fallback_label not in hm_data[m] or rv > hm_data[m][fallback_label]:
+                                hm_data[m][fallback_label] = rv
+                        if hm_data and not hm_all_labels:
+                            hm_all_labels = [fallback_label]
+                    hm_col_base = hm_all_labels if hm_all_labels else seen_labels
+
+                    if len(hm_data) >= 1 and len(hm_col_base) >= 1:
+                        def _mean_rpri(method):
+                            vals = list(hm_data[method].values())
+                            return sum(vals) / len(vals) if vals else 0
+
+                        sorted_methods = sorted(hm_data.keys(), key=_mean_rpri)
+                        ALL_COL_LABEL  = "🌐 All Rows Combined"
+                        col_labels     = hm_col_base + [ALL_COL_LABEL]
+                        row_labels     = sorted_methods
+                        z_matrix       = []
+                        text_matrix    = []
+
+                        for method in row_labels:
+                            z_row     = []
+                            t_row     = []
+                            row_vals  = []
+                            for lbl in hm_col_base:
+                                val = hm_data[method].get(lbl, None)
+                                z_row.append(val if val is not None else np.nan)
+                                t_row.append(f"{val:.2f}" if val is not None else "—")
+                                if val is not None:
+                                    row_vals.append(val)
+                            if row_vals:
+                                agg_val = sum(row_vals) / len(row_vals)
+                                z_row.append(agg_val)
+                                t_row.append(f"{agg_val:.2f}")
+                            else:
+                                z_row.append(np.nan)
+                                t_row.append("—")
+                            z_matrix.append(z_row)
+                            text_matrix.append(t_row)
+
+                        z_min = 0
+                        z_max = 5
+                        def _short(label, max_len=28):
+                            return label if len(label) <= max_len else label[:max_len - 1] + "…"
+                        short_col_labels = [_short(l) for l in col_labels]
+                        fig_height = max(300, 36 + 30 * len(row_labels))
+                        def _rpri_cell_color(val):
+                            """Return fill colour for a cell given its RPRI value (0–5)."""
+                            if val is None or (isinstance(val, float) and np.isnan(val)):
+                                return "#f0f0f0"
+                            stops = [
+                                (0.00, (27,  94,  32)),
+                                (0.14, (46, 125,  50)),
+                                (0.28, (174,213,129)),
+                                (0.50, (255,241,118)),
+                                (0.72, (255,183, 77)),
+                                (0.86, (245,124,  0)),
+                                (1.00, (211, 47,  47)),
+                            ]
+                            t = max(0.0, min(1.0, val / 5.0))
+                            for i in range(len(stops) - 1):
+                                t0, c0 = stops[i]
+                                t1, c1 = stops[i + 1]
+                                if t0 <= t <= t1:
+                                    r = (t - t0) / (t1 - t0)
+                                    rgb = tuple(int(c0[j] + r * (c1[j] - c0[j])) for j in range(3))
+                                    return f"rgb{rgb}"
+                            return f"rgb{stops[-1][1]}"
+
+                        def _font_color(val):
+                            """White text on dark cells, black on light ones."""
+                            if val is None or (isinstance(val, float) and np.isnan(val)):
+                                return "#888888"
+                            return "white" if val >= 3.5 or val <= 0.7 else "black"
+
+                        tbl_cell_values  = [row_labels]
+                        tbl_fill_colors  = [["#1565c0"] * len(row_labels)]
+                        tbl_font_colors  = [["white"] * len(row_labels)]
+
+                        for ci, col_lbl in enumerate(short_col_labels):
+                            col_vals   = [z_matrix[ri][ci]   for ri in range(len(row_labels))]
+                            col_texts  = [text_matrix[ri][ci] for ri in range(len(row_labels))]
+                            tbl_cell_values.append(col_texts)
+                            tbl_fill_colors.append([_rpri_cell_color(v) for v in col_vals])
+                            tbl_font_colors.append([_font_color(v)      for v in col_vals])
+
+                        hm_fig = go.Figure(go.Table(
+                            columnwidth=[220] + [90] * len(short_col_labels),
+                            header=dict(
+                                values=["<b>NbS Method</b>"] + [f"<b>{l}</b>" for l in short_col_labels],
+                                fill_color="#1565c0",
+                                font=dict(color="white", size=11),
+                                align=["left"] + ["center"] * len(short_col_labels),
+                                height=36,
+                                line=dict(color="white", width=1),
+                            ),
+                            cells=dict(
+                                values=tbl_cell_values,
+                                fill_color=tbl_fill_colors,
+                                font=dict(color=tbl_font_colors, size=11),
+                                align=["left"] + ["center"] * len(short_col_labels),
+                                height=28,
+                                line=dict(color="white", width=1),
+                            ),
+                        ))
+
+                        hm_fig.update_layout(
+                            height=fig_height,
+                            margin=dict(l=0, r=0, t=10, b=10),
+                            paper_bgcolor="white",
+                        )
+
+                        st.plotly_chart(hm_fig, use_container_width=True)
+                        st.markdown(
+                            """
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;
+                                        margin-top:4px;font-size:0.82em;align-items:center;">
+                              <span style="background:#1b5e20;color:white;padding:2px 8px;
+                                           border-radius:4px;">Very low RPRI</span>
+                              <span style="background:#aed581;color:black;padding:2px 8px;
+                                           border-radius:4px;">Low–medium</span>
+                              <span style="background:#fff176;color:black;padding:2px 8px;
+                                           border-radius:4px;">Medium</span>
+                              <span style="background:#ffb74d;color:black;padding:2px 8px;
+                                           border-radius:4px;">Medium–high</span>
+                              <span style="background:#d32f2f;color:white;padding:2px 8px;
+                                           border-radius:4px;">High RPRI</span>
+                              <span style="background:#f0f0f0;color:#888;padding:2px 8px;
+                                           border-radius:4px;">— Not applicable</span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+
+                    else:
+                        st.warning(
+                            "⚠️ Heatmap could not render. Open the diagnostics expander above "
+                            "to see what data is available. Ensure the RPRI ranking has been "
+                            "calculated and that primary solutions are assigned.",
+                        )
 
             else:
+                st.session_state.rpri_results_ready = False
                 if 'nbs_eval_df_primary' not in st.session_state: st.session_state.nbs_eval_df_primary = pd.DataFrame()
                 if 'nbs_eval_df_supportive' not in st.session_state: st.session_state.nbs_eval_df_supportive = pd.DataFrame()
                 
-                # --- UPGRADE 3: ALIGNED CONTROL PANEL ---
                 with st.container(border=True):
                     colA, colB, colC = st.columns([1, 1, 1])
                     with colA: 
@@ -3337,7 +3865,7 @@ elif selected_step == 2:
                     st.rerun()
 
                 if 'nbs_primary_options' in st.session_state and st.session_state.nbs_primary_options:
-                    col_left, col_center, col_right = st.columns([1, 8, 1])
+                    col_left, col_center, col_right = st.columns([3, 8, 3])
                     
                     with col_center:
                         sel_p = sac.transfer(
@@ -3394,3 +3922,4 @@ elif selected_step == 2:
                                 st.markdown(f'<div style="background-color: {cmap.get(res["Score"], "#fff")}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;"><h4 style="margin:0;">#{rank}: {res["Context"]}</h4><p style="margin:0;">Expert Score: <b>{res["Score"]}</b></p></div>', unsafe_allow_html=True)
     else: 
         st.warning("Please run Step 7.1 first.")
+    
