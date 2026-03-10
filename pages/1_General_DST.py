@@ -2905,6 +2905,11 @@ elif selected_step == 2:
                     extracted_hazards.update(current_hazards)
                 
                 st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
+                # Clear the sac.transfer widget's cached key so it re-initialises
+                # with the new `index` on the next render (fixes deployed-env bug
+                # where Streamlit restores the old keyed widget state and ignores `index`)
+                if "hazard_transfer_logic" in st.session_state:
+                    del st.session_state["hazard_transfer_logic"]
                 st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
                 st.rerun()
             else:
@@ -2929,11 +2934,6 @@ elif selected_step == 2:
             width="100%",
             key="hazard_transfer_logic"
         )
-
-    if selected_hazards is not None:
-        valid_hazards = [h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector]
-        if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
-            st.session_state.selected_nbs_hazards = sorted(valid_hazards)
 
     if selected_hazards is not None:
         valid_hazards = [h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector]
@@ -3922,4 +3922,3 @@ elif selected_step == 2:
     else: 
         st.warning("Please run Step 7.1 first.")
     
-
