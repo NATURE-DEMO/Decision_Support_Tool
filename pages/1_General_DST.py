@@ -2101,7 +2101,20 @@ elif selected_step == 2:
                 new_asset = st.text_input("Specific Asset Name", placeholder="e.g., Steel Rail Track", key="manual_asset_in")
                 indicator_names = list(climate_indicators.values())
                 new_indicator_name = st.selectbox("Select Climate Indicator", indicator_names, key="manual_ind_sel")
-                
+            
+            all_hazards_list = [
+                "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)", "Drought", 
+                "Wildfire (Forest fire or Bush fire)", "Desertification", "Storms & strong winds", "Hail", 
+                "Aeolian erosion", "Pluvial flood, heavy rainfall and surface runoff", "Fluvial flood", 
+                "Coastal flood (e.g. storm surge)", "Impact floods and Tsunami", "Fluvial sediment transport", 
+                "Stream bank & bed erosion", "Sheet erosion & rill erosion", "Gully erosion", 
+                "Coastal and shoreline erosion (includes freshwater environments)", 
+                "Debris flood (Volumetric Sediment Concentration 20-40%)", "Debris flow (Volumetric Sediment Concentration >40%)", 
+                "Small Rockfall (Diameter <25cm)", "Large Rockfall (Diameter >25-100 cm)", "Landslides < 2 m depth", 
+                "Landslides 2-10 m depth", "Landslides > 10 m depths", "Mud or Earth flow", 
+                "Soil slope deformation & Soil creep", "Snow avalanches", "Snow drift", "Snow creep & slide"
+            ]
+            new_hazards = st.multiselect("Select Possible Hazards", options=all_hazards_list, key="manual_haz_sel")
             if st.button("Confirm and Add to Table", type="primary", use_container_width=True):
                 if new_impact.strip() and new_asset.strip():
                     new_dict_key = [k for k, v in climate_indicators.items() if v == new_indicator_name][0]
@@ -2115,7 +2128,7 @@ elif selected_step == 2:
                         'Type of impact': 'Custom',
                         'Consequences': 'Custom',
                         'Proposed climate Indicator': new_indicator_name,
-                        'Possible Hazards': []
+                        'Possible Hazards': new_hazards
                     }
                     
                     st.session_state.saved_data = pd.concat([st.session_state.saved_data, pd.DataFrame([new_row])], ignore_index=True)
