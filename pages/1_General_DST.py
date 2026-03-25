@@ -1680,9 +1680,6 @@ if selected_step == 0:
     map_object = build_base_map(center_lat_map, center_lon_map,
                                 st.session_state["map_zoom"])
 
-    # Use returned_objects to limit what st_folium returns on each render,
-    # reducing unnecessary re-renders. No st.rerun() is called on button
-    # click — Streamlit re-renders naturally, keeping the map component alive.
     output = st_folium(
         map_object,
         height=600,
@@ -1710,8 +1707,6 @@ if selected_step == 0:
             else:
                 st.session_state["extract_clicked"] = True
                 st.session_state["extracted_data"] = None
-                # No st.rerun() — letting Streamlit re-render naturally
-                # keeps st_folium alive and prevents the map from disappearing
 
     with reset_col:
         if st.button("Reset Polygon", help="Clear the current drawn polygon.", key="reset_poly_btn"):
@@ -1748,10 +1743,6 @@ if selected_step == 0:
                     st.write("🗺️ Analyzing climate map data...")
                     _, center_koppen_code = generate_koppen_map_plot(
                         center_lat, center_lon)
-
-                    # Filter elements to only those matching the user-selected
-                    # infrastructure types before passing to the AI, so the
-                    # report only discusses what was actually requested.
                     filtered_elements = []
                     seen_ids = set()
                     for infra in selected_infras:
@@ -1768,8 +1759,6 @@ if selected_step == 0:
                                         filtered_elements.append(element)
                                         seen_ids.add(eid)
                                         break
-                    # Save selected infras to session state so the report
-                    # display section can reference them after rerun.
                     st.session_state["selected_infras_for_report"] = selected_infras
 
                     context_report = ""
@@ -1934,7 +1923,6 @@ elif selected_step == 1:
             ]
         )
     with col_scope2:
-        # We now use the climate_drivers list instead of the hazards list
         selected_hazard_type = st.selectbox(
             "Select Climate Driver",
             options=climate_drivers
@@ -3111,8 +3099,6 @@ elif selected_step == 2:
                     extracted_hazards.update(current_hazards)
                 
                 st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
-                
-                # Force widget re-render
                 st.session_state.hazard_transfer_key = st.session_state.get("hazard_transfer_key", 0) + 1
                 
                 st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
@@ -3340,9 +3326,6 @@ elif selected_step == 2:
 
     if approved_supportive != st.session_state.approved_supportive_methods:
         st.session_state.approved_supportive_methods = approved_supportive
-
-    # This list is populated inside the summary block and used directly by the
-    # SEI dropdown below — no session state involved, so it is always fresh.
     _sei_dropdown_options = []
 
     if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
@@ -3386,8 +3369,6 @@ elif selected_step == 2:
         
         st.session_state.calculated_results["Primary Solutions"] = primary_sol_col
         st.session_state.calculated_results["Supportive Solutions"] = supportive_sol_col
-
-        # Populate the local variable with unique solutions from the summary table.
         _sei_dropdown_options = sorted(set(
             sol.strip()
             for cols in (primary_sol_col, supportive_sol_col)
