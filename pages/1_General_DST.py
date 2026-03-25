@@ -741,7 +741,7 @@ def generate_context_report(center_lat, center_lon, area_sq_km, elements,
             )
             return response.text
         except APIError as e:
-            if e.code == 429: # Rate limit hit
+            if e.code == 429:
                 if attempt < max_retries - 1:
                     st.warning(f"API Rate limit hit. Pausing for 45 seconds (Attempt {attempt + 1}/{max_retries})...")
                     time.sleep(45)
@@ -3064,6 +3064,9 @@ elif selected_step == 2:
     st.divider()
     st.subheader("7. Nature-based Solutions (NbS) Recommendations")
     st.markdown("#### Step 7.1: Potential Hazards Selection")
+    approved_nbs = st.session_state.get('approved_nbs_methods', [])
+    approved_supportive = st.session_state.get('approved_supportive_methods', [])
+    show_supportive = False
     all_hazards_for_selector = [
         "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)", "Drought", 
         "Wildfire (Forest fire or Bush fire)", "Desertification", "Storms & strong winds", "Hail", 
@@ -3081,6 +3084,9 @@ elif selected_step == 2:
         st.session_state.selected_nbs_hazards = []
 
     if st.button("Automatic Extraction from PRI Table", type="primary"):
+        approved_nbs = st.session_state.get('approved_nbs_methods', [])
+        approved_supportive = st.session_state.get('approved_supportive_methods', [])
+        show_supportive = False
         if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
             extracted_hazards = set()
             df_nbs = st.session_state.calculated_results.copy()
@@ -3099,6 +3105,8 @@ elif selected_step == 2:
                     extracted_hazards.update(current_hazards)
                 
                 st.session_state.selected_nbs_hazards = sorted(list(extracted_hazards))
+                
+                # Force widget re-render
                 st.session_state.hazard_transfer_key = st.session_state.get("hazard_transfer_key", 0) + 1
                 
                 st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
@@ -3220,7 +3228,6 @@ elif selected_step == 2:
         st.session_state.nbs_table_excluded &= current_primary_sols
         for row in primary_rows:
             row["Include"] = row["NbS Solution"] not in st.session_state.nbs_table_excluded
-
         edited_primary = st.data_editor(
             pd.DataFrame(primary_rows),
             column_config={
@@ -3233,28 +3240,26 @@ elif selected_step == 2:
             key="primary_nbs_table",
         )
 
-        st.session_state.nbs_table_excluded = {
-            row["NbS Solution"]
-            for _, row in edited_primary.iterrows()
-            if not row["Include"]
-        }
-        approved_nbs = sorted(
-            edited_primary.loc[edited_primary["Include"], "NbS Solution"].tolist()
-        )
-        n_inc, n_tot = len(approved_nbs), len(primary_rows)
+        if st.button("Save Primary NbS Selections", type="primary"):
+            st.session_state.nbs_table_excluded = {
+                row["NbS Solution"]
+                for _, row in edited_primary.iterrows()
+                if not row["Include"]
+            }
+            approved_nbs = sorted(
+                edited_primary.loc[edited_primary["Include"], "NbS Solution"].tolist()
+            )
+            st.session_state.approved_nbs_methods = approved_nbs
+            st.toast("Primary selections saved!", icon="✅")
+            st.rerun()
+        current_inc = len(edited_primary[edited_primary["Include"]])
         st.markdown(
-            f"<div style='background:#e8f5e9;border-left:4px solid #43a047;padding:8px 14px;"
+            f"<div style='background:#f1f8e9;border-left:4px solid #43a047;padding:8px 14px;"
             f"border-radius:6px;margin-top:4px;color:#1b5e20;'>"
-            f"<strong>✅ {n_inc} / {n_tot} solution(s) included</strong></div>",
+            f"<strong>Selection: {current_inc} / {len(primary_rows)} (Unsaved changes will not appear in summary)</strong></div>",
             unsafe_allow_html=True,
         )
         st.markdown("<br>", unsafe_allow_html=True)
-    else:
-        approved_nbs = []
-
-    if approved_nbs != st.session_state.approved_nbs_methods:
-        st.session_state.approved_nbs_methods = approved_nbs
-
     dynamic_supportive_list = set()
     if st.session_state.selected_nbs_hazards:
         for h in st.session_state.selected_nbs_hazards:
@@ -3298,38 +3303,35 @@ elif selected_step == 2:
                 use_container_width=True,
                 key="supportive_nbs_table",
             )
+            if st.button("Save Supportive NbS Selections", type="primary"):
+                st.session_state.nbs_supp_table_excluded = {
+                    row["NbS Solution"]
+                    for _, row in edited_supportive.iterrows()
+                    if not row["Include"]
+                }
+                approved_supportive = sorted(
+                    edited_supportive.loc[edited_supportive["Include"], "NbS Solution"].tolist()
+                )
+                st.session_state.approved_supportive_methods = approved_supportive
+                st.toast("Supportive selections saved!", icon="✅")
+                st.rerun()
 
-            st.session_state.nbs_supp_table_excluded = {
-                row["NbS Solution"]
-                for _, row in edited_supportive.iterrows()
-                if not row["Include"]
-            }
-            
-            approved_supportive = sorted(
-                edited_supportive.loc[edited_supportive["Include"], "NbS Solution"].tolist()
-            )
-            
-            n_inc_s, n_tot_s = len(approved_supportive), len(supportive_rows)
+            current_inc_s = len(edited_supportive[edited_supportive["Include"]])
             st.markdown(
                 f"<div style='background:#e3f2fd;border-left:4px solid #1e88e5;padding:8px 14px;"
                 f"border-radius:6px;margin-top:4px;color:#0d47a1;'>"
-                f"<strong>🔄 {n_inc_s} / {n_tot_s} supportive solution(s) included</strong></div>",
+                f"<strong>Selection: {current_inc_s} / {len(supportive_rows)} (Unsaved changes will not appear in summary)</strong></div>",
                 unsafe_allow_html=True,
             )
             st.markdown("<br>", unsafe_allow_html=True)
             
-        else:
-            approved_supportive = []
-    else:
-        approved_supportive = []
 
-
-    if approved_supportive != st.session_state.approved_supportive_methods:
-        st.session_state.approved_supportive_methods = approved_supportive
     _sei_dropdown_options = []
 
     if 'calculated_results' in st.session_state and not st.session_state.calculated_results.empty:
         st.markdown("#### NbS Implementation Mapping Summary")
+        approved_nbs_set = set(st.session_state.get('approved_nbs_methods', []))
+        approved_supportive_set = set(st.session_state.get('approved_supportive_methods', [])) if show_supportive else set()
         summary_display_df = st.session_state.calculated_results.copy()
         
         if 'Possible Hazards' not in summary_display_df.columns and 'saved_data' in st.session_state:
@@ -3352,8 +3354,8 @@ elif selected_step == 2:
                     db_yes  = nbs_db[h_strip].get("Yes", [])
                     db_supp = nbs_db[h_strip].get("Supportive", [])
                     if h_strip in st.session_state.selected_nbs_hazards:
-                        valid_primary = [sol for sol in db_yes if sol in approved_nbs]
-                        valid_supportive = [sol for sol in db_supp if sol in approved_supportive]
+                        valid_primary = [sol for sol in db_yes if sol in approved_nbs_set]
+                        valid_supportive = [sol for sol in db_supp if sol in approved_supportive_set]
                     else:
                         valid_primary = []
                         valid_supportive = []
@@ -3392,28 +3394,38 @@ elif selected_step == 2:
     if 'calculated_results' in st.session_state:
         df = st.session_state.calculated_results
         extracted_sols = set()
-        for col in ["Primary Solutions", "Supportive Solutions"]:
-            if col in df.columns:
-                for val in df[col].dropna():
-                    for sol in str(val).split(','):
-                        sol_clean = sol.strip()
-                        if sol_clean:
-                            extracted_sols.add(sol_clean)
-        
+        extracted_sols.update(st.session_state.get('approved_nbs_methods', []))
+        if show_supportive:
+            extracted_sols.update(st.session_state.get('approved_supportive_methods', []))
         _sei_dropdown_options = sorted(list(extracted_sols))
 
     if 'sei_lookup' not in st.session_state:
         st.session_state.sei_lookup = {}
+    if 'site_conditions_lookup' not in st.session_state:
+        st.session_state.site_conditions_lookup = {}
     sei_factors_list = ["Community Engagement", "Cultural Preferences", "Workforce Availability", "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints"]
-    
+    ssf_labels = {
+        "Slope instability": "Unstable/Steep Slopes",
+        "Limited vegetation and low quality of soil": "Poor Soil/Low Vegetation",
+        "Limited access for implementation": "Difficult Site Access",
+        "Cold temperatures": "Cold Temperatures / Frost Risk",
+        "Limited water availability": "Water Scarcity",
+        "Lack of connection to major services": "No Infrastructure/Services Access",
+        "Space Constraints": "Very Limited Space",
+        "Exposure to soil, water and/or air pollution": "Polluted Soil/Water/Air",
+        "Limitations due to high population density": "Urban/Densely Populated Area"
+    }
     if _sei_dropdown_options:
         relevant_methods = _sei_dropdown_options
         selected_nbs_for_sei = st.selectbox(
-            "Select an NbS Solution to configure SEI factors:",
+            "Select an NbS Solution to configure SSF and SEI factors:",
             relevant_methods
         )
         if selected_nbs_for_sei not in st.session_state.sei_lookup:
             st.session_state.sei_lookup[selected_nbs_for_sei] = {f: 1 for f in sei_factors_list}
+        if selected_nbs_for_sei not in st.session_state.site_conditions_lookup:
+            st.session_state.site_conditions_lookup[selected_nbs_for_sei] = {k: False for k in ssf_labels.keys()}
+            st.session_state.site_conditions_lookup[selected_nbs_for_sei]["Slope instability"] = True 
     else:
         selected_nbs_for_sei = None
         relevant_methods = []
@@ -3541,17 +3553,14 @@ elif selected_step == 2:
         with col_input1:
             with st.container(border=True):
                 st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
-                site_conditions = {
-                    "Slope instability": st.toggle("Unstable/Steep Slopes", value=True),
-                    "Limited vegetation and low quality of soil": st.toggle("Poor Soil/Low Vegetation"),
-                    "Limited access for implementation": st.toggle("Difficult Site Access"),
-                    "Cold temperatures": st.toggle("Cold Temperatures / Frost Risk"),
-                    "Limited water availability": st.toggle("Water Scarcity"),
-                    "Lack of connection to major services": st.toggle("No Infrastructure/Services Access"),
-                    "Space Constraints": st.toggle("Very Limited Space"),
-                    "Exposure to soil, water and/or air pollution": st.toggle("Polluted Soil/Water/Air"),
-                    "Limitations due to high population density": st.toggle("Urban/Densely Populated Area")
-                }
+                if selected_nbs_for_sei:
+                    st.caption(f"Configuring SSF conditions for: **{selected_nbs_for_sei}**")
+                    for crit, label in ssf_labels.items():
+                        current_val = st.session_state.site_conditions_lookup[selected_nbs_for_sei].get(crit, False)
+                        val = st.toggle(label, value=current_val, key=f"ssf_cond_{selected_nbs_for_sei}_{crit}")
+                        st.session_state.site_conditions_lookup[selected_nbs_for_sei][crit] = val
+                else:
+                    st.info("Select an NbS solution from the dropdown above to configure SSF conditions.")
         with col_input2:
             with st.container(border=True):
                 st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
@@ -3597,8 +3606,7 @@ elif selected_step == 2:
             p_raw = str(row.get("Primary Solutions", ""))
             row_p_sols = [s.strip() for s in p_raw.split(',') if s.strip() and s.strip() in st.session_state.get('approved_nbs_methods', [])]
             s_raw = str(row.get("Supportive Solutions", ""))
-            row_s_sols = [s.strip() for s in s_raw.split(',') if s.strip() and s.strip() in st.session_state.get('approved_supportive_methods', [])]
-            
+            row_s_sols = [s.strip() for s in s_raw.split(',') if s.strip() and show_supportive and s.strip() in st.session_state.get('approved_supportive_methods', [])]
             all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
             
             for h in hazards:
@@ -3634,14 +3642,19 @@ elif selected_step == 2:
             method_base = data["method_only"]
 
             m_ssf_data = st.session_state.ssf_lookup.get(method_base, {})
+            method_site_conditions = st.session_state.site_conditions_lookup.get(method_base, {})
             ssf_scores = []
-            for crit, active in site_conditions.items():
+            
+            for crit in ssf_labels.keys():
+                active = method_site_conditions.get(crit, False)
                 if active:
                     c_info = m_ssf_data.get(crit, {})
                     val = c_info.get("Value", 100) if isinstance(c_info, dict) else 100
                     ssf_scores.append(val)
-                else: ssf_scores.append(100)
-            avg_ssf = sum(ssf_scores) / len(ssf_scores)
+                else: 
+                    ssf_scores.append(100)
+                    
+            avg_ssf = sum(ssf_scores) / len(ssf_scores) if ssf_scores else 100
             method_sei_vals = st.session_state.sei_lookup.get(method_base, {f: 1 for f in sei_factors_list})
             sei_scores = [100 if v == 1 else (50 if v == 2 else 0) for v in method_sei_vals.values()]
             avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
@@ -3676,10 +3689,13 @@ elif selected_step == 2:
             if total_score >= 30: st.session_state.filtered_nbs_pool.append(data)
             else: low_perf_pool.append(data)
 
-        if not st.session_state.filtered_nbs_pool and unique_pairs:
-            st.warning("⚠️ No solutions strictly passed the 30% feasibility threshold. Showing all potential methods for your review.")
-            st.session_state.filtered_nbs_pool = list(unique_pairs.values())
-        elif st.session_state.filtered_nbs_pool:
+        if not st.session_state.filtered_nbs_pool:
+            if not unique_pairs:
+                st.info("💡 **Strategy Setup:** Please click the **'Save'** buttons in the Step 7.1 tables above to generate the ranking and residual risk analysis.")
+            else:
+                st.warning("⚠️ No solutions strictly passed the 30% feasibility threshold. Showing all potential methods for your review.")
+                st.session_state.filtered_nbs_pool = list(unique_pairs.values())
+        else:
             st.success(f"Filtration complete: {len(st.session_state.filtered_nbs_pool)} solutions passed the feasibility threshold.")
 
         if st.session_state.filtered_nbs_pool:
@@ -4086,9 +4102,11 @@ elif selected_step == 2:
                             for sol in [x.strip() for x in s_raw.split(',')]:
                                 if sol:
                                     m_ssf = st.session_state.ssf_lookup.get(sol, {})
-                                    s_scores = [m_ssf.get(c,{}).get("Value",100) if site_conditions[c] else 100 for c in site_conditions]
-                                    avg_s = (sum(s_scores)/len(s_scores) + sum(sei_ratings.values())/len(sei_ratings))/2
-                                    if avg_s >= 50 or not st.session_state.filtered_nbs_pool: supp_set.add(f"{sol} for {row.get('Asset','Asset')}")
+                                    method_conds = st.session_state.site_conditions_lookup.get(sol, {})
+                                    s_scores = [m_ssf.get(c,{}).get("Value",100) if method_conds.get(c, False) else 100 for c in ssf_labels.keys()]
+                                    m_sei = st.session_state.sei_lookup.get(sol, {f: 1 for f in sei_factors_list})
+                                    sei_scores = [100 if v == 1 else (50 if v == 2 else 0) for v in m_sei.values()]
+                                    avg_s = (sum(s_scores)/len(s_scores) + sum(sei_scores)/len(sei_scores))/2
                     st.session_state.nbs_supportive_options = sorted(list(supp_set))
                     st.rerun()
 
