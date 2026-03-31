@@ -23,6 +23,7 @@ import plotly.express as px
 import streamlit_antd_components as sac
 
 from modules.impact_models import get_all_impact_data
+from modules.nbs import NbS_list
 
 GEMINI_MODEL_VERSION = "gemini-2.5-flash-lite"
 
@@ -35,12 +36,7 @@ AI_DISCLAIMER_TEXT = (
     "The project does not bear responsibility for actions taken solely on the basis of AI-generated content."
 )
 
-AI_LIMITATIONS_TEXT = (
-    "- AI-generated content may occasionally contain inaccuracies or omissions.\n"
-    "- The AI does not possess domain expertise and may misinterpret ambiguous or incomplete data.\n"
-    "- This system is not designed for real-time operational decision-making or emergency response "
-    "without expert validation."
-)
+AI_LIMITATIONS_TEXT = "- AI-generated content may occasionally contain inaccuracies or omissions.\n- The AI does not possess domain expertise and may misinterpret ambiguous or incomplete data.\n- This system is not designed for real-time operational decision-making or emergency response without expert validation."
 
 
 def render_ai_header(report_title: str):
@@ -64,8 +60,7 @@ def render_ai_footer():
     with st.expander("⚠️ AI Limitations & Responsible Use", expanded=False):
         st.markdown(AI_LIMITATIONS_TEXT)
     st.info(
-        "📣 **Feedback:** Found an inaccuracy or misleading interpretation? "
-        "Please report it to the project team via the dedicated feedback channel so we can improve the AI component."
+        "📣 **Feedback:** Found an inaccuracy or misleading interpretation? Please report it to the project team via the dedicated feedback channel so we can improve the AI component."
     )
 
 
@@ -272,1735 +267,6 @@ climate_drivers = [
     "Reduced atmosferic humidity",
 ]
 
-NbS_list = {
-    "Extreme high temperatures (Heatwave)": {
-        "Yes": [
-            "Bio-retention cells",
-            "Bioswales",
-            "Green pavers",
-            "Green roofs",
-            "Infiltration trenches",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Vegetated log/stone barriers and live/rock check dams",
-            "Vegetated riprap",
-            "Vertical greenery",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-        ],
-        "Supportive": [
-            "3D steel grids (vegetated)",
-            "Agroforestry",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wooden log fences",
-        ],
-    },
-    "Extreme cold temperatures (Coldwave, cold snap)": {
-        "Yes": [
-            "Bio-retention cells",
-            "Bioswales",
-            "Green pavers",
-            "Green roofs",
-            "Littoral/intertidal forests and shrublands",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Vertical greenery",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Brush mattress",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wooden log fences",
-        ],
-    },
-    "Drought": {
-        "Yes": [
-            "Bio-retention cells",
-            "Bioswales",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Managed aquifer recharge",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Soil amendments",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-        ],
-        "Supportive": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Brush mattress",
-            "Channel widening",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Green pavers",
-            "Live fascines",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Wildfire": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Buffer vegetation strips and coppice management",
-            "Channel widening",
-            "Conservation tillage",
-            "Constructed wetlands",
-            "Contour trenching",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Meadow and grassland restoration",
-            "Meandering channel planform",
-            "Reinforced soil and earth packs (vegetated)",
-            "Sand dune stabilisation",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Brush mattress",
-            "Controlled grazing",
-            "Dune restoration and coastal vegetation",
-            "Firebreaks and firestrips",
-            "Live fascines",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Soil amendments",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-    },
-    "Desertification": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Soil amendments",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green pavers",
-            "Green roofs",
-            "Littoral/intertidal forests and shrublands",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Storms and strong winds": {
-        "Yes": [
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Green pavers",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control meshes",
-        ],
-        "Supportive": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Channel widening",
-            "Fire-resistant tree species and plants",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-    },
-    "Hail": {
-        "Yes": [
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated cribwall (layer-based design)",
-        ],
-        "Supportive": [
-            "3D steel grids (vegetated)",
-            "Avalanche mounds",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Managed aquifer recharge",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-    },
-    "Aeolian erosion": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Channel widening",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Managed aquifer recharge",
-            "Meadow and grassland restoration",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-        ],
-        "Supportive": [
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Firebreaks and firestrips",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Groynes (vegetated)",
-            "Infiltration trenches",
-            "Littoral/intertidal forests and shrublands",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-    },
-    "Pluvial flood, heavy rainfall and surface runoff": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Infiltration trenches",
-            "Managed aquifer recharge",
-            "Mulching",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Urban forests",
-            "Vegetated log/stone barriers and live/rock check dams",
-            "Vegetated riprap",
-            "Vertical greenery",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Avalanche mounds",
-            "Channel widening",
-            "Controlled grazing",
-            "Green pavers",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Horticulture",
-            "Hydro and mulch seeding",
-            "Littoral/intertidal forests and shrublands",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Meadow and grassland restoration",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wooden log fences",
-        ],
-    },
-    "Fluvial flood": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Horticulture",
-            "Hydro and mulch seeding",
-            "Infiltration trenches",
-            "Littoral/intertidal forests and shrublands",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Mulching",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Urban forests",
-            "Vegetated log/stone barriers and live/rock check dams",
-            "Vegetated riprap",
-            "Vegetated cribwall (layer-based design)",
-            "Vertical greenery",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Channel widening",
-            "Green pavers",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Meadow and grassland restoration",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sod (turves)",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-        ],
-    },
-    "Coastal flood": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Green corridors and tree rows",
-            "Green pavers",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live fascines",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Floodplain restoration",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Meadow and grassland restoration",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Soil amendments",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-    },
-    "Impact floods and tsunami": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Firebreaks and firestrips",
-            "Fire-smart agriculture",
-            "Infiltration trenches",
-            "Live fascines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Sand dune stabilisation",
-            "Sod (turves)",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Channel widening",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Salt marsh restoration",
-            "Seagrass bed restoration",
-            "Sills",
-            "Soil amendments",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Fluvial sediment transport": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Buffer vegetation strips and coppice management",
-            "Controlled grazing",
-            "Firebreaks and firestrips",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Channel widening",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-        ],
-    },
-    "Stream bank and bed erosion": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green pavers",
-            "Green roofs",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Channel widening",
-            "Conservation tillage",
-            "Constructed wetlands",
-            "Contour trenching",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Groynes (vegetated)",
-            "Horticulture",
-            "Hydro and mulch seeding",
-            "Infiltration trenches",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meandering channel planform",
-            "Root wad",
-        ],
-    },
-    "Sheet erosion and rill erosion": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-resistant tree species and plants",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Mulching",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Channel widening",
-            "Green pavers",
-            "Littoral/intertidal forests and shrublands",
-            "Meadow and grassland restoration",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-        ],
-    },
-    "Gully erosion": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-resistant tree species and plants",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live layered techniques",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Root wad",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Channel widening",
-            "Firebreaks and firestrips",
-            "Green pavers",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Seagrass bed restoration",
-            "Vegetated drainage systems",
-        ],
-    },
-    "Coastal and shoreline erosion": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Brush mattress",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green pavers",
-            "Littoral/intertidal forests and shrublands",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Seagrass bed restoration",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Debris flood (Vol. Sediment Conc. 20–40%)": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Channel widening",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Vegetated flood protection dams, dikes and levees",
-            "Vegetated log/stone barriers and live/rock check dams",
-            "Vegetated riprap",
-            "Vertical greenery",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-        ],
-        "Supportive": [
-            "Avalanche mounds",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Firebreaks and firestrips",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated biodegradable erosion control meshes",
-            "Wooden log fences",
-        ],
-    },
-    "Debris flow (Vol. Sediment Conc. >40%)": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-        ],
-        "Supportive": [
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Firebreaks and firestrips",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Small rockfall (diameter < 25 cm)": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Large rockfall (diameter > 25–100 cm)": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Biodiverse hedgerows",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Seagrass bed restoration",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Landslides < 2 m depth": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Biodiverse hedgerows",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Seagrass bed restoration",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Landslides 2–10 m depth": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Biodiverse hedgerows",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Seagrass bed restoration",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Landslides > 10 m depth": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Bio-retention cells",
-            "Bioswales",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Brush mattress",
-            "Controlled grazing",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Fire-resistant tree species and plants",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Seagrass bed restoration",
-            "Sills",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Mud or earth flow": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Soil slope deformation and soil creep": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Snow avalanches": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Biodiverse hedgerows",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Snow drift": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Avalanche mounds",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Biodiverse hedgerows",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-    "Snow creep and slide": {
-        "Yes": [
-            "3D steel grids (vegetated)",
-            "Afforestation and reforestation",
-            "Agroforestry",
-            "Bio-retention cells",
-            "Bioswales",
-            "Brush mattress",
-            "Controlled grazing",
-            "Fire-resistant tree species and plants",
-            "Live fascines",
-            "Live fencing (for slope engineering)",
-            "Live slope grids or contour logs",
-            "Live staking",
-            "Living shorelines",
-            "Managed aquifer recharge",
-            "Reinforced soil and earth packs (vegetated)",
-            "Retention forest",
-            "Riparian buffer zones",
-            "Salt marsh restoration",
-            "Sand dune stabilisation",
-            "Seagrass bed restoration",
-            "Sills",
-            "Sod (turves)",
-            "Soil amendments",
-            "Urban forests",
-            "Vegetated biodegradable erosion control mats and blankets",
-            "Vegetated biodegradable erosion control meshes",
-            "Vegetated buffer zones",
-            "Vegetated cribwall (fascine-based design)",
-            "Vegetated cribwall (layer-based design)",
-            "Vegetated flood protection dams, dikes and levees",
-        ],
-        "Supportive": [
-            "Avalanche mounds",
-            "Biodiverse hedgerows",
-            "Coral reef conservation and restoration",
-            "Cover cropping",
-            "Dune restoration and coastal vegetation",
-            "Earth dams and barriers (vegetated)",
-            "Fire-smart agriculture",
-            "Floodplain restoration",
-            "Green corridors and tree rows",
-            "Green roofs",
-            "Groynes (vegetated)",
-            "Littoral/intertidal forests and shrublands",
-            "Live layered techniques",
-            "Live palisades and live weirs",
-            "Meadow and grassland restoration",
-            "Mulching",
-            "Open green spaces",
-            "Prescribed burning",
-            "Protection forest management",
-            "Rain gardens",
-            "Root wad",
-            "Terracing (slope shaping, reduction of slope inclination)",
-            "Tree revetment (tree spurs)",
-            "Vegetated drainage systems",
-            "Water retention basins and ponds (storage ponds)",
-            "Water retention, harvesting and cisterns",
-            "Wattle fence (for water engineering)",
-            "Wetland conservation and restoration",
-            "Wildfire-forest management",
-            "Wooden log fences",
-        ],
-    },
-}
-
 
 def calculate_exposure(rev, cap, r_l, r_h, c_l, c_h):
     """Calculates Exposure Index based on user-defined thresholds."""
@@ -2085,9 +351,7 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     )
 
     try:
-        cx.add_basemap(
-            ax, crs="EPSG:4326", source=cx.providers.OpenTopoMap, alpha=0.8, zorder=1
-        )
+        cx.add_basemap(ax, crs="EPSG:4326", source=cx.providers.OpenTopoMap, alpha=0.8, zorder=1)
     except Exception:
         pass
 
@@ -2104,9 +368,7 @@ def generate_koppen_map_plot(lat, lon, zoom_range=1.0):
     return fig, koppen_code
 
 
-def generate_context_report(
-    center_lat, center_lon, area_sq_km, elements, selected_infras=None
-):
+def generate_context_report(center_lat, center_lon, area_sq_km, elements, selected_infras=None):
     """Generate AI context report for the selected infrastructure types only.
 
     ``elements`` must already be filtered to the user-selected infra categories
@@ -2136,9 +398,7 @@ def generate_context_report(
     extracted_infrastructure_list = "\n".join(
         [
             f"- {k}: {v} items"
-            for k, v in sorted(
-                infra_counts.items(), key=lambda item: item[1], reverse=True
-            )
+            for k, v in sorted(infra_counts.items(), key=lambda item: item[1], reverse=True)
         ]
     )
     if not extracted_infrastructure_list:
@@ -2146,9 +406,7 @@ def generate_context_report(
             "- No specific infrastructure elements found for the selected types."
         )
 
-    selected_types_str = (
-        ", ".join(selected_infras) if selected_infras else "all available types"
-    )
+    selected_types_str = ", ".join(selected_infras) if selected_infras else "all available types"
 
     detailed_elements = []
     for element in elements:
@@ -2221,14 +479,10 @@ def generate_context_report(
                     time.sleep(45)
                     continue
                 else:
-                    return (
-                        "Gemini API Error: Rate limit exceeded. Please try again later."
-                    )
+                    return "Gemini API Error: Rate limit exceeded. Please try again later."
             return f"Gemini API Error (Context Report): {e.message}."
         except Exception as e:
-            st.error(
-                f"An unexpected error occurred during context report generation: {e}"
-            )
+            st.error(f"An unexpected error occurred during context report generation: {e}")
             return "An unexpected error occurred during context report generation."
 
 
@@ -2282,17 +536,11 @@ def generate_koppen_interpretation(koppen_code):
                     time.sleep(45)
                     continue
                 else:
-                    return (
-                        "Gemini API Error: Rate limit exceeded. Please try again later."
-                    )
+                    return "Gemini API Error: Rate limit exceeded. Please try again later."
             return f"Gemini API Error (Köppen Interpretation): {e}."
         except Exception as e:
-            st.error(
-                f"An unexpected error occurred during Köppen interpretation generation: {e}"
-            )
-            return (
-                "An unexpected error occurred during Köppen interpretation generation."
-            )
+            st.error(f"An unexpected error occurred during Köppen interpretation generation: {e}")
+            return "An unexpected error occurred during Köppen interpretation generation."
 
 
 def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: dict):
@@ -2323,9 +571,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
         "it does not alter the environmental risk profile of the asset."
     )
 
-    scenario_desc = "\n".join(
-        [f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()]
-    )
+    scenario_desc = "\n".join([f"- **{abbr}**: {desc}" for abbr, desc in scenarios.items()])
     kpi_list = "\n".join([f"- {k}" for k in kpis])
 
     system_instruction = (
@@ -2386,9 +632,7 @@ def generate_risk_interpretation(df_risks: pd.DataFrame, kpis: list, scenarios: 
                     time.sleep(45)
                     continue
                 else:
-                    return (
-                        "Gemini API Error: Rate limit exceeded. Please try again later."
-                    )
+                    return "Gemini API Error: Rate limit exceeded. Please try again later."
             return f"Gemini API Error (Risk Interpretation): {e.message}."
         except Exception as e:
             return f"An error occurred: {e}"
@@ -2557,9 +801,7 @@ def build_folium_map_object(center, zoom, polygon_data, drawing_key):
         control=True,
     ).add_to(m)
 
-    draw = folium.plugins.Draw(
-        export=False, draw_options={"polygon": True, "rectangle": True}
-    )
+    draw = folium.plugins.Draw(export=False, draw_options={"polygon": True, "rectangle": True})
     draw.add_to(m)
     folium.LayerControl().add_to(m)
 
@@ -2575,9 +817,7 @@ def build_base_map(center_lat, center_lon, zoom):
     """Lightweight static base map for the extraction tab.
     Does not embed the polygon in the HTML, avoiding the st_folium
     re-render / map-disappearing issue when session state changes."""
-    m = folium.Map(
-        location=[center_lat, center_lon], zoom_start=zoom, tiles="CartoDB positron"
-    )
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom, tiles="CartoDB positron")
     folium.raster_layers.TileLayer(
         tiles="https://tiles.arcgis.com/tiles/SDXw0l5jQ3C1QO7x/arcgis/rest/services/Koeppen_Geiger_Climate_Classification_2020/MapServer/tile/{z}/{y}/{x}",
         attr="Köppen-Geiger / Esri",
@@ -2586,9 +826,7 @@ def build_base_map(center_lat, center_lon, zoom):
         opacity=0.6,
         control=True,
     ).add_to(m)
-    draw = folium.plugins.Draw(
-        export=False, draw_options={"polygon": True, "rectangle": True}
-    )
+    draw = folium.plugins.Draw(export=False, draw_options={"polygon": True, "rectangle": True})
     draw.add_to(m)
     folium.LayerControl().add_to(m)
     return m
@@ -2659,9 +897,7 @@ def make_overpass_request(query, max_retries=2):
                     st.error("⚠️ Overpass API Error: Server timeout (504).")
                     return response
             else:
-                st.error(
-                    f"⚠️ Overpass API Error: HTTP Status Code {response.status_code}"
-                )
+                st.error(f"⚠️ Overpass API Error: HTTP Status Code {response.status_code}")
                 return response
         except requests.exceptions.Timeout:
             if attempt < max_retries:
@@ -2712,9 +948,7 @@ def create_radar_chart_plotly(kpis_df: pd.DataFrame, selected_series: list, titl
             continue
         vals_loop = vals + [vals[0]]
         cats_loop = categories + [categories[0]]
-        fig.add_trace(
-            go.Scatterpolar(r=vals_loop, theta=cats_loop, fill="toself", name=col)
-        )
+        fig.add_trace(go.Scatterpolar(r=vals_loop, theta=cats_loop, fill="toself", name=col))
     fig.update_layout(
         polar=dict(radialaxis=dict(range=[1, 5], tickvals=[1, 2, 3, 4, 5])),
         title=title,
@@ -2755,12 +989,8 @@ def create_risk_heatmap_plotly(
     )
 
     fig.update_layout(
-        xaxis=dict(
-            tickvals=list(range(1, 6)), tickmode="array", showgrid=True, zeroline=False
-        ),
-        yaxis=dict(
-            tickvals=list(range(1, 6)), tickmode="array", showgrid=True, zeroline=False
-        ),
+        xaxis=dict(tickvals=list(range(1, 6)), tickmode="array", showgrid=True, zeroline=False),
+        yaxis=dict(tickvals=list(range(1, 6)), tickmode="array", showgrid=True, zeroline=False),
         height=480,
         coloraxis_showscale=False,
     )
@@ -2800,15 +1030,11 @@ if "extracted_data" not in st.session_state:
 
 initial_data = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
 if "risk_matrix_data" not in st.session_state:
-    st.session_state["risk_matrix_data"] = pd.DataFrame(
-        initial_data, index=kpis
-    ).to_dict()
+    st.session_state["risk_matrix_data"] = pd.DataFrame(initial_data, index=kpis).to_dict()
 
 initial_loss_data = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
 if "loss_matrix_data" not in st.session_state:
-    st.session_state["loss_matrix_data"] = pd.DataFrame(
-        initial_loss_data, index=kpis
-    ).to_dict()
+    st.session_state["loss_matrix_data"] = pd.DataFrame(initial_loss_data, index=kpis).to_dict()
 
 if "interpretation_report" not in st.session_state:
     st.session_state["interpretation_report"] = ""
@@ -2860,9 +1086,7 @@ if GEMINI_API_KEY:
         st.error(f"Error initializing Gemini client: {e}")
         st.session_state["gemini_client"] = None
 else:
-    st.warning(
-        "⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key."
-    )
+    st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key.")
     st.session_state["gemini_client"] = None
 
 st.set_page_config(
@@ -3196,9 +1420,7 @@ if selected_step == 0:
     )
 
     if len(selected_infras) > 5:
-        st.warning(
-            "⚠️ Selecting many infrastructure types may cause timeouts for large areas."
-        )
+        st.warning("⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
 
     st.header("Search Location and Draw Polygon")
     search_col, _ = st.columns([3, 1])
@@ -3220,9 +1442,7 @@ if selected_step == 0:
 
     center_lat_map = st.session_state["map_center"][0]
     center_lon_map = st.session_state["map_center"][1]
-    map_object = build_base_map(
-        center_lat_map, center_lon_map, st.session_state["map_zoom"]
-    )
+    map_object = build_base_map(center_lat_map, center_lon_map, st.session_state["map_zoom"])
 
     output = st_folium(
         map_object,
@@ -3290,14 +1510,10 @@ if selected_step == 0:
                     elements = data.get("elements", [])
 
                     if not elements:
-                        st.warning(
-                            "No data found in the selected area for the chosen types."
-                        )
+                        st.warning("No data found in the selected area for the chosen types.")
 
                     st.write("🗺️ Analyzing climate map data...")
-                    _, center_koppen_code = generate_koppen_map_plot(
-                        center_lat, center_lon
-                    )
+                    _, center_koppen_code = generate_koppen_map_plot(center_lat, center_lon)
                     filtered_elements = []
                     seen_ids = set()
                     for infra in selected_infras:
@@ -3330,13 +1546,9 @@ if selected_step == 0:
                     koppen_report = ""
                     if st.session_state.get("gemini_client"):
                         st.write("🌡️ Generating Köppen Climate Interpretation...")
-                        koppen_report = generate_koppen_interpretation(
-                            center_koppen_code
-                        )
+                        koppen_report = generate_koppen_interpretation(center_koppen_code)
 
-                    status.update(
-                        label="Extraction Complete!", state="complete", expanded=False
-                    )
+                    status.update(label="Extraction Complete!", state="complete", expanded=False)
 
                 st.session_state["extracted_data"] = {
                     "elements": elements,
@@ -3358,9 +1570,7 @@ if selected_step == 0:
         if st.session_state["extracted_data"]:
             elements = st.session_state["extracted_data"].get("elements", [])
             area_sq_km = st.session_state["extracted_data"].get("area_sq_km", 0)
-            context_report = st.session_state["extracted_data"].get(
-                "context_report", ""
-            )
+            context_report = st.session_state["extracted_data"].get("context_report", "")
             koppen_report = st.session_state["extracted_data"].get("koppen_report", "")
             center_lat = st.session_state["extracted_data"].get("center_lat")
             center_lon = st.session_state["extracted_data"].get("center_lon")
@@ -3387,9 +1597,7 @@ if selected_step == 0:
                         for element in elements:
                             tags = element.get("tags", {})
                             for filter_str in infra_options[infra]:
-                                match = re.search(
-                                    r'\["(.+?)"(?:="(.+?)")?\]', filter_str
-                                )
+                                match = re.search(r'\["(.+?)"(?:="(.+?)")?\]', filter_str)
                                 if match:
                                     k, v = match.groups()
                                     if k in tags and (v is None or tags[k] == v):
@@ -3401,11 +1609,7 @@ if selected_step == 0:
                             st.subheader(f"{infra} ({len(infra_elements)} items)")
                             st.dataframe(
                                 infra_df[
-                                    [
-                                        c
-                                        for c in infra_df.columns
-                                        if not c.startswith("geometry")
-                                    ]
+                                    [c for c in infra_df.columns if not c.startswith("geometry")]
                                 ].head(15)
                             )
 
@@ -3459,9 +1663,7 @@ if selected_step == 0:
                     "The Climate Interpretation Report failed to generate or the AI feature is disabled."
                 )
 
-            with st.expander(
-                "View Extracted Infrastructure Data Tables (OpenStreetMap Raw Data)"
-            ):
+            with st.expander("View Extracted Infrastructure Data Tables (OpenStreetMap Raw Data)"):
                 st.info(
                     "The raw OpenStreetMap data tables are shown inside the **'View Raw Infrastructure Data Fed to AI'** expander above, directly beneath the Context Report."
                 )
@@ -3470,9 +1672,7 @@ if selected_step == 0:
 elif selected_step == 1:
     st.header("Perceived Risks Assessment")
     st.subheader("1. Scope Definition")
-    st.info(
-        "Define the location, infrastructure, and hazard for this specific assessment."
-    )
+    st.info("Define the location, infrastructure, and hazard for this specific assessment.")
 
     has_lvl0_polygon = st.session_state.get("last_polygon") is not None
     use_previous_poly = st.checkbox(
@@ -3494,13 +1694,9 @@ elif selected_step == 1:
 
     if use_previous_poly and has_lvl0_polygon:
         with st.expander("🗺️ View / Edit Polygon", expanded=False):
-            lvl1_map_output = st_folium(
-                m_lvl1, height=400, width=1200, key="lvl1_map_editor"
-            )
+            lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
     else:
-        lvl1_map_output = st_folium(
-            m_lvl1, height=400, width=1200, key="lvl1_map_editor"
-        )
+        lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
 
     if lvl1_map_output and lvl1_map_output.get("last_active_drawing"):
         drawing = lvl1_map_output["last_active_drawing"]
@@ -3527,9 +1723,7 @@ elif selected_step == 1:
             ],
         )
     with col_scope2:
-        selected_hazard_type = st.selectbox(
-            "Select Climate Driver", options=climate_drivers
-        )
+        selected_hazard_type = st.selectbox("Select Climate Driver", options=climate_drivers)
 
     st.markdown("---")
 
@@ -3542,9 +1736,7 @@ elif selected_step == 1:
         "Please provide integers between **1 (best/lowest)** and **5 (worst/highest)** for each cell."
     )
 
-    matrix_tab, scenario_key_tab = st.tabs(
-        ["Input Matrices (1-5)", "Scenario & KPI Definitions"]
-    )
+    matrix_tab, scenario_key_tab = st.tabs(["Input Matrices (1-5)", "Scenario & KPI Definitions"])
 
     with scenario_key_tab:
         st.markdown("### Key Performance Indicators (KPIs)")
@@ -3570,9 +1762,7 @@ elif selected_step == 1:
 
     with matrix_tab:
         column_config = {
-            "KPI / Indicator": st.column_config.TextColumn(
-                "KPI / Indicator", disabled=True
-            )
+            "KPI / Indicator": st.column_config.TextColumn("KPI / Indicator", disabled=True)
         }
 
         for key, desc in scenarios.items():
@@ -3627,9 +1817,7 @@ elif selected_step == 1:
         if submit_loss:
             if "CI" in df_loss.columns:
                 ci_column_original = df_loss["CI"].copy()
-                reconstructed_df_loss = loss_edited_df_display.assign(
-                    CI=ci_column_original
-                )
+                reconstructed_df_loss = loss_edited_df_display.assign(CI=ci_column_original)
                 st.session_state["loss_matrix_data"] = reconstructed_df_loss.to_dict()
             else:
                 st.session_state["loss_matrix_data"] = loss_edited_df_display.to_dict()
@@ -3671,9 +1859,7 @@ elif selected_step == 1:
                         title="Risk Radar - Risk Ratings (X)",
                     )
                     if radar_fig is None:
-                        st.error(
-                            "Unable to generate radar figure. Check your input format."
-                        )
+                        st.error("Unable to generate radar figure. Check your input format.")
                     else:
                         st.plotly_chart(radar_fig, use_container_width=True)
                 except Exception as e:
@@ -3689,38 +1875,22 @@ elif selected_step == 1:
         scenarios_to_plot = ["CI_H", "CI_HG", "CI_HN", "CI_HNG"]
         plot_cols = st.columns(2)
 
-        all_risk_values_flat = pd.DataFrame(
-            st.session_state["risk_matrix_data"]
-        ).values.flatten()
-        risk_values_series = pd.Series(
-            pd.to_numeric(all_risk_values_flat, errors="coerce")
-        )
-        valid_risk_input = all(
-            risk_values_series.between(1, 5, inclusive="both").fillna(False)
-        )
+        all_risk_values_flat = pd.DataFrame(st.session_state["risk_matrix_data"]).values.flatten()
+        risk_values_series = pd.Series(pd.to_numeric(all_risk_values_flat, errors="coerce"))
+        valid_risk_input = all(risk_values_series.between(1, 5, inclusive="both").fillna(False))
 
-        all_loss_values_flat = pd.DataFrame(
-            st.session_state["loss_matrix_data"]
-        ).values.flatten()
-        loss_values_series = pd.Series(
-            pd.to_numeric(all_loss_values_flat, errors="coerce")
-        )
-        valid_loss_input = all(
-            loss_values_series.between(1, 5, inclusive="both").fillna(False)
-        )
+        all_loss_values_flat = pd.DataFrame(st.session_state["loss_matrix_data"]).values.flatten()
+        loss_values_series = pd.Series(pd.to_numeric(all_loss_values_flat, errors="coerce"))
+        valid_loss_input = all(loss_values_series.between(1, 5, inclusive="both").fillna(False))
 
         if not valid_risk_input or not valid_loss_input:
             st.warning(
                 "Please ensure all cells in both tables contain valid integers between 1 and 5 to generate the matrix plots."
             )
         else:
-            df_for_plot_loss = pd.DataFrame(
-                st.session_state["loss_matrix_data"], index=kpis
-            )
+            df_for_plot_loss = pd.DataFrame(st.session_state["loss_matrix_data"], index=kpis)
 
-            df_for_plot_risk = pd.DataFrame(
-                st.session_state["risk_matrix_data"], index=kpis
-            )
+            df_for_plot_risk = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
 
             for i, scenario in enumerate(scenarios_to_plot):
                 try:
@@ -3731,9 +1901,7 @@ elif selected_step == 1:
                         st.plotly_chart(fig, use_container_width=True)
                 except Exception as e:
                     with plot_cols[i % 2]:
-                        st.error(
-                            f"Failed to generate plot for scenario {scenario}: {e}"
-                        )
+                        st.error(f"Failed to generate plot for scenario {scenario}: {e}")
 
         st.markdown("---")
         with st.expander("Interpretation"):
@@ -3750,9 +1918,7 @@ elif selected_step == 1:
                         st.stop()
 
                     try:
-                        current_df = pd.DataFrame(
-                            st.session_state["risk_matrix_data"], index=kpis
-                        )
+                        current_df = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
                     except (KeyError, ValueError) as e:
                         st.error(
                             f"Error reading risk matrix data: {e}. Ensure 'kpis' and 'risk_matrix_data' are correctly structured."
@@ -3767,9 +1933,7 @@ elif selected_step == 1:
                                 current_df, kpis, scenarios
                             )
 
-                        st.session_state["interpretation_report"] = (
-                            interpretation_report
-                        )
+                        st.session_state["interpretation_report"] = interpretation_report
 
                         st.subheader("Risk Matrix Interpretation Report")
                         if interpretation_report:
@@ -3785,9 +1949,7 @@ elif selected_step == 1:
                             st.markdown(interpretation_report)
                             render_ai_footer()
                         else:
-                            st.warning(
-                                "The Risk Matrix Interpretation Report failed to generate."
-                            )
+                            st.warning("The Risk Matrix Interpretation Report failed to generate.")
 
                 if st.session_state["interpretation_report"]:
                     st.subheader("Risk Matrix Interpretation Report")
@@ -3836,27 +1998,17 @@ elif selected_step == 2:
         st.warning("No infrastructure definitions found.")
     else:
         with col_f1:
-            unique_infrastructures = sorted(
-                df_lvl2_base[infrastructure_col].unique().tolist()
-            )
-            selected_infrastructures = st.multiselect(
-                "Infrastructure", unique_infrastructures
-            )
+            unique_infrastructures = sorted(df_lvl2_base[infrastructure_col].unique().tolist())
+            selected_infrastructures = st.multiselect("Infrastructure", unique_infrastructures)
             df_filtered_infra = (
-                df_lvl2_base[
-                    df_lvl2_base[infrastructure_col].isin(selected_infrastructures)
-                ]
+                df_lvl2_base[df_lvl2_base[infrastructure_col].isin(selected_infrastructures)]
                 if selected_infrastructures
                 else df_lvl2_base
             )
 
         with col_f2:
-            unique_climate_drivers = sorted(
-                df_filtered_infra[climate_driver_col].unique().tolist()
-            )
-            selected_climate_drivers = st.multiselect(
-                "Climate Driver", unique_climate_drivers
-            )
+            unique_climate_drivers = sorted(df_filtered_infra[climate_driver_col].unique().tolist())
+            selected_climate_drivers = st.multiselect("Climate Driver", unique_climate_drivers)
             df_filtered_driver = (
                 df_filtered_infra[
                     df_filtered_infra[climate_driver_col].isin(selected_climate_drivers)
@@ -3869,16 +2021,12 @@ elif selected_step == 2:
             unique_types = sorted(df_filtered_driver[type_impact_col].unique().tolist())
             selected_types = st.multiselect("Type of Impact", unique_types)
             final_filtered_df = (
-                df_filtered_driver[
-                    df_filtered_driver[type_impact_col].isin(selected_types)
-                ]
+                df_filtered_driver[df_filtered_driver[type_impact_col].isin(selected_types)]
                 if selected_types
                 else df_filtered_driver
             )
 
-        if st.button(
-            "Add filtered items to Table", type="primary", use_container_width=True
-        ):
+        if st.button("Add filtered items to Table", type="primary", use_container_width=True):
             if not final_filtered_df.empty:
                 st.session_state.saved_data = pd.concat(
                     [st.session_state.saved_data, final_filtered_df], ignore_index=True
@@ -4006,14 +2154,10 @@ elif selected_step == 2:
                 options=all_hazards_list,
                 key="manual_haz_sel",
             )
-            if st.button(
-                "Confirm and Add to Table", type="primary", use_container_width=True
-            ):
+            if st.button("Confirm and Add to Table", type="primary", use_container_width=True):
                 if new_impact.strip() and new_asset.strip():
                     new_dict_key = [
-                        k
-                        for k, v in climate_indicators.items()
-                        if v == new_indicator_name
+                        k for k, v in climate_indicators.items() if v == new_indicator_name
                     ][0]
 
                     new_row = {
@@ -4050,9 +2194,7 @@ elif selected_step == 2:
         )
 
         with btn_col2:
-            if st.button(
-                "❌ Remove Selected", type="secondary", use_container_width=True
-            ):
+            if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
                 selected_indices = selection_event.selection.rows
                 if selected_indices:
                     st.session_state.saved_data = st.session_state.saved_data.drop(
@@ -4062,9 +2204,7 @@ elif selected_step == 2:
                 else:
                     st.warning("Select rows to remove.")
     else:
-        st.info(
-            "Table is empty. Use filters above or add a custom impact model to populate items."
-        )
+        st.info("Table is empty. Use filters above or add a custom impact model to populate items.")
 
     st.divider()
     st.subheader("3. Hazard Variation Analysis")
@@ -4099,14 +2239,10 @@ elif selected_step == 2:
         input_disabled = True
     else:
         default_lat = (
-            st.session_state["map_center"][0]
-            if st.session_state["map_center"]
-            else 50.7764
+            st.session_state["map_center"][0] if st.session_state["map_center"] else 50.7764
         )
         default_lon = (
-            st.session_state["map_center"][1]
-            if st.session_state["map_center"]
-            else 6.0839
+            st.session_state["map_center"][1] if st.session_state["map_center"] else 6.0839
         )
         input_disabled = False
 
@@ -4143,9 +2279,7 @@ elif selected_step == 2:
         )
 
     st.markdown(" ")
-    if st.button(
-        "Calculate Hazard Variation & Level", type="primary", use_container_width=True
-    ):
+    if st.button("Calculate Hazard Variation & Level", type="primary", use_container_width=True):
         if st.session_state.saved_data.empty:
             st.error("Please add items to the table first.")
         else:
@@ -4185,15 +2319,9 @@ elif selected_step == 2:
                         "lon": lon,
                     }
                     resp_sel = requests.post(URL, json=payload_sel, timeout=10)
-                    if (
-                        resp_sel.status_code == 200
-                        and resp_sel.json().get("status") == "success"
-                    ):
+                    if resp_sel.status_code == 200 and resp_sel.json().get("status") == "success":
                         val_selected = (
-                            resp_sel.json()
-                            .get("results", {})
-                            .get(api_term, {})
-                            .get("value")
+                            resp_sel.json().get("results", {}).get(api_term, {}).get("value")
                         )
 
                     payload_hist = {
@@ -4203,15 +2331,9 @@ elif selected_step == 2:
                         "lon": lon,
                     }
                     resp_hist = requests.post(URL, json=payload_hist, timeout=10)
-                    if (
-                        resp_hist.status_code == 200
-                        and resp_hist.json().get("status") == "success"
-                    ):
+                    if resp_hist.status_code == 200 and resp_hist.json().get("status") == "success":
                         val_historical = (
-                            resp_hist.json()
-                            .get("results", {})
-                            .get("historical", {})
-                            .get("value")
+                            resp_hist.json().get("results", {}).get("historical", {}).get("value")
                         )
                 except:
                     pass
@@ -4223,8 +2345,7 @@ elif selected_step == 2:
                             variation_val = 0.0 if val_selected == 0 else float("inf")
                         else:
                             variation_val = (
-                                abs((val_selected - val_historical) / val_historical)
-                                * 100
+                                abs((val_selected - val_historical) / val_historical) * 100
                             )
                         if variation_val == 0:
                             cached_idx, cached_lvl = 0, "No variation"
@@ -4295,9 +2416,7 @@ elif selected_step == 2:
             "🚨 Extreme": "Extreme",
         }
         if "Hazard Level" in display_df.columns:
-            display_df["Hazard Level"] = display_df["Hazard Level"].replace(
-                old_to_new_map
-            )
+            display_df["Hazard Level"] = display_df["Hazard Level"].replace(old_to_new_map)
 
         display_df["Hazard Index"] = pd.to_numeric(
             display_df["Hazard Index"], errors="coerce"
@@ -4352,20 +2471,13 @@ elif selected_step == 2:
                 new_index = temp_hazard_df.loc[i, "Hazard Index"]
 
                 if new_level != old_level:
-                    temp_hazard_df.at[i, "Hazard Index"] = LEVEL_TO_INDEX.get(
-                        new_level, 0
-                    )
+                    temp_hazard_df.at[i, "Hazard Index"] = LEVEL_TO_INDEX.get(new_level, 0)
                     updated = True
                 elif new_index != old_index:
-                    temp_hazard_df.at[i, "Hazard Level"] = INDEX_TO_LEVEL.get(
-                        new_index, "Low"
-                    )
+                    temp_hazard_df.at[i, "Hazard Level"] = INDEX_TO_LEVEL.get(new_index, "Low")
                     updated = True
 
-            if (
-                temp_hazard_df["Hazard Index"].max() > 5
-                or temp_hazard_df["Hazard Index"].min() < 0
-            ):
+            if temp_hazard_df["Hazard Index"].max() > 5 or temp_hazard_df["Hazard Index"].min() < 0:
                 st.error("Error: Hazard Index values must be between 0 and 5.")
             else:
                 st.session_state.calculated_results.update(temp_hazard_df)
@@ -4388,17 +2500,13 @@ elif selected_step == 2:
             help="Analyze the generated hazard table using Gemini.",
         ):
             with st.spinner("Generating Report from Hazard Table (Gemini)..."):
-                report_text = generate_hazard_report_gemini(
-                    st.session_state.calculated_results
-                )
+                report_text = generate_hazard_report_gemini(st.session_state.calculated_results)
                 st.session_state["hazard_report"] = report_text
 
         if st.session_state.get("hazard_report"):
             with st.expander("View Climate Hazard Report", expanded=True):
                 render_ai_header("Climate Hazard Report")
-                with st.expander(
-                    "📊 View Raw Data Fed to AI (Hazard Table)", expanded=False
-                ):
+                with st.expander("📊 View Raw Data Fed to AI (Hazard Table)", expanded=False):
                     tab_actual, tab_example = st.tabs(
                         ["📋 Actual Data", "📖 Example Used to Guide AI"]
                     )
@@ -4447,11 +2555,9 @@ elif selected_step == 2:
         if not st.session_state.calculated_results.empty:
             if "Asset" not in st.session_state.calculated_results.columns:
                 try:
-                    st.session_state.calculated_results["Asset"] = (
-                        st.session_state.saved_data.loc[
-                            st.session_state.calculated_results.index, "Asset"
-                        ]
-                    )
+                    st.session_state.calculated_results["Asset"] = st.session_state.saved_data.loc[
+                        st.session_state.calculated_results.index, "Asset"
+                    ]
                 except:
                     pass
             if "Asset" in st.session_state.calculated_results.columns:
@@ -4571,9 +2677,7 @@ elif selected_step == 2:
             """
             st.markdown(html_table, unsafe_allow_html=True)
 
-    if st.button(
-        "Calculate Exposure Indexes", type="primary", use_container_width=True
-    ):
+    if st.button("Calculate Exposure Indexes", type="primary", use_container_width=True):
         if economic_available and not edited_capex.empty:
             total_capex = edited_capex["CAPEX (M€/year)"].sum()
             exposure_val = calculate_exposure(
@@ -4631,15 +2735,11 @@ elif selected_step == 2:
     if not st.session_state.calculated_results.empty:
         if "Asset" not in st.session_state.calculated_results.columns:
             try:
-                st.session_state.calculated_results["Asset"] = (
-                    st.session_state.saved_data.loc[
-                        st.session_state.calculated_results.index, "Asset"
-                    ]
-                )
+                st.session_state.calculated_results["Asset"] = st.session_state.saved_data.loc[
+                    st.session_state.calculated_results.index, "Asset"
+                ]
             except Exception as e:
-                st.error(
-                    f"Error aligning asset data: {e}. Please try resetting the table."
-                )
+                st.error(f"Error aligning asset data: {e}. Please try resetting the table.")
 
         if "Sensitivity Index" not in st.session_state.calculated_results.columns:
             st.session_state.calculated_results["Sensitivity Index"] = 3
@@ -4684,9 +2784,7 @@ elif selected_step == 2:
 
         with st.container(border=True):
             st.markdown("#### 🛡️ Step 5.2: Adaptive Capacity Configuration")
-            ac_available = st.toggle(
-                "⚙️ Configure Adaptive Capacity for Assets", value=False
-            )
+            ac_available = st.toggle("⚙️ Configure Adaptive Capacity for Assets", value=False)
 
             asset_ac_params = {}
             unique_assets_list = st.session_state.calculated_results["Asset"].unique()
@@ -4750,16 +2848,10 @@ elif selected_step == 2:
                     s_lm = row["Maintenance"]
                     s_dt = row["Topology"]
                     v_lf = (
-                        10
-                        if s_lf == "Greenfield"
-                        else (-10 if s_lf == "High (> 25 years)" else 0)
+                        10 if s_lf == "Greenfield" else (-10 if s_lf == "High (> 25 years)" else 0)
                     )
                     v_lm = 10 if s_lm == "High" else (-10 if s_lm == "Low" else 0)
-                    v_dt = (
-                        10
-                        if s_dt == "Resilient"
-                        else (-10 if s_dt == "Not acceptable" else 0)
-                    )
+                    v_dt = 10 if s_dt == "Resilient" else (-10 if s_dt == "Not acceptable" else 0)
                     asset_ac_params[a] = {
                         "AC0": s_ac0,
                         "lf": v_lf,
@@ -4768,9 +2860,7 @@ elif selected_step == 2:
                     }
 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button(
-            "Calculate Vulnerability Index", type="primary", use_container_width=True
-        ):
+        if st.button("Calculate Vulnerability Index", type="primary", use_container_width=True):
             st.session_state.calculated_results["Sensitivity Index"] = temp_edited_df[
                 "Sensitivity Index"
             ]
@@ -4793,18 +2883,14 @@ elif selected_step == 2:
                 vuln_index = sensitivity_val * (1 - final_ac)
                 vulnerability_results.append(vuln_index)
 
-            st.session_state.calculated_results["Vulnerability Index"] = (
-                vulnerability_results
-            )
+            st.session_state.calculated_results["Vulnerability Index"] = vulnerability_results
             st.success("✅ Vulnerability Index calculated successfully!")
 
         if "Vulnerability Index" in st.session_state.calculated_results.columns:
             st.markdown("##### 📊 Vulnerability Results")
 
             final_col_config = {
-                "Sensitivity Index": st.column_config.NumberColumn(
-                    "Sensitivity", format="%d"
-                ),
+                "Sensitivity Index": st.column_config.NumberColumn("Sensitivity", format="%d"),
                 "Vulnerability Index": st.column_config.ProgressColumn(
                     "Vulnerability Index",
                     help="Calculated Vulnerability score based on Sensitivity and AC.",
@@ -4849,10 +2935,7 @@ elif selected_step == 2:
         ):
             df_base = st.session_state.calculated_results.copy()
 
-            if (
-                "Possible Hazards" not in df_base.columns
-                and "saved_data" in st.session_state
-            ):
+            if "Possible Hazards" not in df_base.columns and "saved_data" in st.session_state:
                 try:
                     df_base["Possible Hazards"] = st.session_state.saved_data.loc[
                         df_base.index, "Possible Hazards"
@@ -4882,21 +2965,13 @@ elif selected_step == 2:
 
                 for index, row in df_base.iterrows():
                     try:
-                        h = (
-                            float(row[hazard_col])
-                            if pd.notnull(row[hazard_col])
-                            else 0.0
-                        )
+                        h = float(row[hazard_col]) if pd.notnull(row[hazard_col]) else 0.0
                         v = (
                             float(row[vulnerability_col])
                             if pd.notnull(row[vulnerability_col])
                             else 0.0
                         )
-                        e = (
-                            float(row[exposure_col])
-                            if pd.notnull(row[exposure_col])
-                            else 0.0
-                        )
+                        e = float(row[exposure_col]) if pd.notnull(row[exposure_col]) else 0.0
                     except ValueError:
                         h, v, e = 0.0, 0.0, 0.0
 
@@ -4955,9 +3030,9 @@ elif selected_step == 2:
                     return ["None Identified"]
 
                 if "Possible Hazards" in df_pri_display.columns:
-                    df_pri_display["Possible Hazards"] = df_pri_display[
-                        "Possible Hazards"
-                    ].apply(lambda x: ", ".join(parse_and_match_hazards(x)))
+                    df_pri_display["Possible Hazards"] = df_pri_display["Possible Hazards"].apply(
+                        lambda x: ", ".join(parse_and_match_hazards(x))
+                    )
                 else:
                     df_pri_display["Possible Hazards"] = "None Identified"
 
@@ -5002,10 +3077,7 @@ elif selected_step == 2:
         else:
             st.warning("Please complete previous sections to generate data.")
 
-    if (
-        "pri_display_df" in st.session_state
-        and not st.session_state.pri_display_df.empty
-    ):
+    if "pri_display_df" in st.session_state and not st.session_state.pri_display_df.empty:
         final_config = {
             "Sensitivity Index": None,
             "Possible Hazards": None,
@@ -5051,26 +3123,18 @@ elif selected_step == 2:
             use_container_width=True,
         )
 
-        if st.button(
-            "Generate PRI Assessment Report", type="primary", use_container_width=True
-        ):
+        if st.button("Generate PRI Assessment Report", type="primary", use_container_width=True):
             if not st.session_state.get("gemini_client"):
                 st.error("Please provide a valid API Key to generate the report.")
             else:
-                with st.spinner(
-                    "Analyzing Risk Indices and writing report (Gemini)..."
-                ):
-                    pri_report_text = generate_pri_report_gemini(
-                        st.session_state.pri_display_df
-                    )
+                with st.spinner("Analyzing Risk Indices and writing report (Gemini)..."):
+                    pri_report_text = generate_pri_report_gemini(st.session_state.pri_display_df)
                     st.session_state["pri_report"] = pri_report_text
 
         if "pri_report" in st.session_state and st.session_state["pri_report"]:
             with st.expander("View PRI Assessment Report", expanded=True):
                 render_ai_header("Potential Risk Index (PRI) Assessment Report")
-                with st.expander(
-                    "📊 View Raw Data Fed to AI (PRI Table)", expanded=False
-                ):
+                with st.expander("📊 View Raw Data Fed to AI (PRI Table)", expanded=False):
                     tab_actual, tab_example = st.tabs(
                         ["📋 Actual Data", "📖 Example Used to Guide AI"]
                     )
@@ -5078,9 +3142,7 @@ elif selected_step == 2:
                         st.caption(
                             "This is the PRI data table that was provided to the AI model for analysis."
                         )
-                        st.dataframe(
-                            st.session_state.pri_display_df, use_container_width=True
-                        )
+                        st.dataframe(st.session_state.pri_display_df, use_container_width=True)
                     with tab_example:
                         st.caption(
                             "This is the example table and report text used as a reference to guide the AI's output style and structure."
@@ -5150,10 +3212,7 @@ elif selected_step == 2:
             extracted_hazards = set()
             df_nbs = st.session_state.calculated_results.copy()
 
-            if (
-                "Possible Hazards" not in df_nbs.columns
-                and "saved_data" in st.session_state
-            ):
+            if "Possible Hazards" not in df_nbs.columns and "saved_data" in st.session_state:
                 df_nbs["Possible Hazards"] = st.session_state.saved_data.loc[
                     df_nbs.index, "Possible Hazards"
                 ]
@@ -5162,15 +3221,11 @@ elif selected_step == 2:
                 for _, row in df_nbs.iterrows():
                     hazards_item = row.get("Possible Hazards", [])
                     if isinstance(hazards_item, str):
-                        current_hazards = [
-                            h for h in all_hazards_for_selector if h in hazards_item
-                        ]
+                        current_hazards = [h for h in all_hazards_for_selector if h in hazards_item]
                     else:
                         current_hazards = [
                             h
-                            for h in (
-                                hazards_item if isinstance(hazards_item, list) else []
-                            )
+                            for h in (hazards_item if isinstance(hazards_item, list) else [])
                             if h in all_hazards_for_selector
                         ]
 
@@ -5183,9 +3238,7 @@ elif selected_step == 2:
                     st.session_state.get("hazard_transfer_key", 0) + 1
                 )
 
-                st.success(
-                    f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards."
-                )
+                st.success(f"Extracted {len(st.session_state.selected_nbs_hazards)} hazards.")
                 st.rerun()
             else:
                 st.error("Could not find hazard data in the PRI table.")
@@ -5218,9 +3271,7 @@ elif selected_step == 2:
         )
     if selected_hazards is not None:
         valid_hazards = [
-            h
-            for h in selected_hazards
-            if isinstance(h, str) and h in all_hazards_for_selector
+            h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector
         ]
         if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
             st.session_state.selected_nbs_hazards = sorted(valid_hazards)
@@ -5315,9 +3366,7 @@ elif selected_step == 2:
             {
                 "Include": True,
                 "NbS Solution": sol,
-                "Addressed Hazards": ", ".join(
-                    _hazard_icon(h) + " " + h for h in hazards
-                ),
+                "Addressed Hazards": ", ".join(_hazard_icon(h) + " " + h for h in hazards),
             }
             for sol, hazards in sorted(sol_to_hazards.items())
         ]
@@ -5325,8 +3374,7 @@ elif selected_step == 2:
     if st.session_state.selected_nbs_hazards and dynamic_nbs_list:
         st.markdown("##### ✅ Primary NbS Solutions")
         st.caption(
-            "All solutions recommended for your active hazards, deduplicated. "
-            "Uncheck **Include** to remove a solution from the NbS summary."
+            "All solutions recommended for your active hazards, deduplicated. Uncheck **Include** to remove a solution from the NbS summary."
         )
 
         primary_rows = _build_solution_table("Yes", dynamic_nbs_list)
@@ -5336,9 +3384,7 @@ elif selected_step == 2:
         current_primary_sols = {r["NbS Solution"] for r in primary_rows}
         st.session_state.nbs_table_excluded &= current_primary_sols
         for row in primary_rows:
-            row["Include"] = (
-                row["NbS Solution"] not in st.session_state.nbs_table_excluded
-            )
+            row["Include"] = row["NbS Solution"] not in st.session_state.nbs_table_excluded
         edited_primary = st.data_editor(
             pd.DataFrame(primary_rows),
             column_config={
@@ -5357,9 +3403,7 @@ elif selected_step == 2:
 
         if st.button("Save Primary NbS Selections", type="primary"):
             st.session_state.nbs_table_excluded = {
-                row["NbS Solution"]
-                for _, row in edited_primary.iterrows()
-                if not row["Include"]
+                row["NbS Solution"] for _, row in edited_primary.iterrows() if not row["Include"]
             }
             approved_nbs = sorted(
                 edited_primary.loc[edited_primary["Include"], "NbS Solution"].tolist()
@@ -5369,9 +3413,7 @@ elif selected_step == 2:
             st.rerun()
         current_inc = len(edited_primary[edited_primary["Include"]])
         st.markdown(
-            f"<div style='background:#f1f8e9;border-left:4px solid #43a047;padding:8px 14px;"
-            f"border-radius:6px;margin-top:4px;color:#1b5e20;'>"
-            f"<strong>Selection: {current_inc} / {len(primary_rows)} (Unsaved changes will not appear in summary)</strong></div>",
+            f"<div style='background:#f1f8e9;border-left:4px solid #43a047;padding:8px 14px;border-radius:6px;margin-top:4px;color:#1b5e20;'><strong>Selection: {current_inc} / {len(primary_rows)} (Unsaved changes will not appear in summary)</strong></div>",
             unsafe_allow_html=True,
         )
         st.markdown("<br>", unsafe_allow_html=True)
@@ -5406,22 +3448,17 @@ elif selected_step == 2:
         st.session_state.nbs_supp_table_excluded &= current_supp_sols
 
         for row in supportive_rows:
-            row["Include"] = (
-                row["NbS Solution"] not in st.session_state.nbs_supp_table_excluded
-            )
+            row["Include"] = row["NbS Solution"] not in st.session_state.nbs_supp_table_excluded
         if show_supportive:
             st.markdown("##### 🔄 Supportive NbS Solutions")
             st.caption(
-                "Supportive solutions complement primary NbS measures, deduplicated across all active hazards. "
-                "Uncheck **Include** to exclude a solution from the mapping summary."
+                "Supportive solutions complement primary NbS measures, deduplicated across all active hazards. Uncheck **Include** to exclude a solution from the mapping summary."
             )
 
             edited_supportive = st.data_editor(
                 pd.DataFrame(supportive_rows),
                 column_config={
-                    "Include": st.column_config.CheckboxColumn(
-                        "Include", width="small"
-                    ),
+                    "Include": st.column_config.CheckboxColumn("Include", width="small"),
                     "NbS Solution": st.column_config.TextColumn(
                         "NbS Solution", width="medium", disabled=True
                     ),
@@ -5440,9 +3477,7 @@ elif selected_step == 2:
                     if not row["Include"]
                 }
                 approved_supportive = sorted(
-                    edited_supportive.loc[
-                        edited_supportive["Include"], "NbS Solution"
-                    ].tolist()
+                    edited_supportive.loc[edited_supportive["Include"], "NbS Solution"].tolist()
                 )
                 st.session_state.approved_supportive_methods = approved_supportive
                 st.toast("Supportive selections saved!", icon="✅")
@@ -5450,19 +3485,14 @@ elif selected_step == 2:
 
             current_inc_s = len(edited_supportive[edited_supportive["Include"]])
             st.markdown(
-                f"<div style='background:#e3f2fd;border-left:4px solid #1e88e5;padding:8px 14px;"
-                f"border-radius:6px;margin-top:4px;color:#0d47a1;'>"
-                f"<strong>Selection: {current_inc_s} / {len(supportive_rows)} (Unsaved changes will not appear in summary)</strong></div>",
+                f"<div style='background:#e3f2fd;border-left:4px solid #1e88e5;padding:8px 14px;border-radius:6px;margin-top:4px;color:#0d47a1;'><strong>Selection: {current_inc_s} / {len(supportive_rows)} (Unsaved changes will not appear in summary)</strong></div>",
                 unsafe_allow_html=True,
             )
             st.markdown("<br>", unsafe_allow_html=True)
 
     _sei_dropdown_options = []
 
-    if (
-        "calculated_results" in st.session_state
-        and not st.session_state.calculated_results.empty
-    ):
+    if "calculated_results" in st.session_state and not st.session_state.calculated_results.empty:
         st.markdown("#### NbS Implementation Mapping Summary")
         approved_nbs_set = set(st.session_state.get("approved_nbs_methods", []))
         approved_supportive_set = (
@@ -5486,9 +3516,7 @@ elif selected_step == 2:
         for _, row in summary_display_df.iterrows():
             hazards_item = row.get("Possible Hazards", [])
             if isinstance(hazards_item, str):
-                current_hazards = [
-                    h for h in all_hazards_for_selector if h in hazards_item
-                ]
+                current_hazards = [h for h in all_hazards_for_selector if h in hazards_item]
             else:
                 current_hazards = [
                     h
@@ -5503,9 +3531,7 @@ elif selected_step == 2:
                     db_yes = nbs_db[h_strip].get("Yes", [])
                     db_supp = nbs_db[h_strip].get("Supportive", [])
                     if h_strip in st.session_state.selected_nbs_hazards:
-                        valid_primary = [
-                            sol for sol in db_yes if sol in approved_nbs_set
-                        ]
+                        valid_primary = [sol for sol in db_yes if sol in approved_nbs_set]
                         valid_supportive = [
                             sol for sol in db_supp if sol in approved_supportive_set
                         ]
@@ -5545,9 +3571,7 @@ elif selected_step == 2:
         ]
         cols_to_show = [c for c in required_cols if c in available_cols]
 
-        st.dataframe(
-            summary_display_df[cols_to_show], use_container_width=True, hide_index=True
-        )
+        st.dataframe(summary_display_df[cols_to_show], use_container_width=True, hide_index=True)
 
     st.divider()
     st.markdown("#### Step 7.2: Filtration of the Recommended NbS Solutions")
@@ -5560,9 +3584,7 @@ elif selected_step == 2:
         extracted_sols = set()
         extracted_sols.update(st.session_state.get("approved_nbs_methods", []))
         if show_supportive:
-            extracted_sols.update(
-                st.session_state.get("approved_supportive_methods", [])
-            )
+            extracted_sols.update(st.session_state.get("approved_supportive_methods", []))
         _sei_dropdown_options = sorted(list(extracted_sols))
 
     if "sei_lookup" not in st.session_state:
@@ -5595,16 +3617,14 @@ elif selected_step == 2:
             "Select an NbS Solution to configure SSF and SEI factors:", relevant_methods
         )
         if selected_nbs_for_sei not in st.session_state.sei_lookup:
-            st.session_state.sei_lookup[selected_nbs_for_sei] = {
-                f: 1 for f in sei_factors_list
-            }
+            st.session_state.sei_lookup[selected_nbs_for_sei] = {f: 1 for f in sei_factors_list}
         if selected_nbs_for_sei not in st.session_state.site_conditions_lookup:
             st.session_state.site_conditions_lookup[selected_nbs_for_sei] = {
                 k: False for k in ssf_labels.keys()
             }
-            st.session_state.site_conditions_lookup[selected_nbs_for_sei][
-                "Slope instability"
-            ] = True
+            st.session_state.site_conditions_lookup[selected_nbs_for_sei]["Slope instability"] = (
+                True
+            )
     else:
         selected_nbs_for_sei = None
         relevant_methods = []
@@ -6486,11 +4506,7 @@ elif selected_step == 2:
                 row_dict = {"NbS Method": method}
                 for crit in ssf_criteria_list:
                     crit_data = st.session_state.ssf_lookup[method].get(crit, {})
-                    val = (
-                        crit_data.get("Value", 100)
-                        if isinstance(crit_data, dict)
-                        else 100
-                    )
+                    val = crit_data.get("Value", 100) if isinstance(crit_data, dict) else 100
                     row_dict[crit] = val_to_str.get(val, "Highly Feasible")
                 edit_data.append(row_dict)
         if edit_data:
@@ -6518,17 +4534,13 @@ elif selected_step == 2:
         else:
             st.info("No identified solutions found to edit. Please run Step 7.1 first.")
         st.divider()
-    with st.expander(
-        "⚙️ Configure Site Conditions & Socio-Economic Factors", expanded=True
-    ):
+    with st.expander("⚙️ Configure Site Conditions & Socio-Economic Factors", expanded=True):
         col_input1, col_input2 = st.columns(2)
         with col_input1:
             with st.container(border=True):
                 st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
                 if selected_nbs_for_sei:
-                    st.caption(
-                        f"Configuring SSF conditions for: **{selected_nbs_for_sei}**"
-                    )
+                    st.caption(f"Configuring SSF conditions for: **{selected_nbs_for_sei}**")
                     for crit, label in ssf_labels.items():
                         current_val = st.session_state.site_conditions_lookup[
                             selected_nbs_for_sei
@@ -6538,9 +4550,7 @@ elif selected_step == 2:
                             value=current_val,
                             key=f"ssf_cond_{selected_nbs_for_sei}_{crit}",
                         )
-                        st.session_state.site_conditions_lookup[selected_nbs_for_sei][
-                            crit
-                        ] = val
+                        st.session_state.site_conditions_lookup[selected_nbs_for_sei][crit] = val
                 else:
                     st.info(
                         "Select an NbS solution from the dropdown above to configure SSF conditions."
@@ -6549,13 +4559,9 @@ elif selected_step == 2:
             with st.container(border=True):
                 st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
                 if selected_nbs_for_sei:
-                    st.caption(
-                        f"Configuring SEI factors for: **{selected_nbs_for_sei}**"
-                    )
+                    st.caption(f"Configuring SEI factors for: **{selected_nbs_for_sei}**")
                     for f in sei_factors_list:
-                        current_val = st.session_state.sei_lookup[
-                            selected_nbs_for_sei
-                        ].get(f, 1)
+                        current_val = st.session_state.sei_lookup[selected_nbs_for_sei].get(f, 1)
                         val = st.select_slider(
                             f"{f}",
                             options=[1, 2, 3],
@@ -6581,9 +4587,7 @@ elif selected_step == 2:
             raw_pri = row.get("PRI scores", 0)
             try:
                 pri_score = (
-                    float(raw_pri)
-                    if raw_pri is not None and str(raw_pri).strip() != ""
-                    else 0.0
+                    float(raw_pri) if raw_pri is not None and str(raw_pri).strip() != "" else 0.0
                 )
             except (ValueError, TypeError):
                 pri_score = 0.0
@@ -6595,10 +4599,7 @@ elif selected_step == 2:
             raw_hazards = row.get("Possible Hazards", [])
             if isinstance(raw_hazards, str):
                 val_clean = (
-                    raw_hazards.replace("[", "")
-                    .replace("]", "")
-                    .replace("'", "")
-                    .replace('"', "")
+                    raw_hazards.replace("[", "").replace("]", "").replace("'", "").replace('"', "")
                 )
                 hazards = [h.strip() for h in val_clean.split(",") if h.strip()]
             elif isinstance(raw_hazards, list):
@@ -6611,8 +4612,7 @@ elif selected_step == 2:
             row_p_sols = [
                 s.strip()
                 for s in p_raw.split(",")
-                if s.strip()
-                and s.strip() in st.session_state.get("approved_nbs_methods", [])
+                if s.strip() and s.strip() in st.session_state.get("approved_nbs_methods", [])
             ]
             s_raw = str(row.get("Supportive Solutions", ""))
             row_s_sols = [
@@ -6654,18 +4654,14 @@ elif selected_step == 2:
         nbs_db = (
             NbS_list
             if isinstance(NbS_list, dict)
-            else (
-                NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {}
-            )
+            else (NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {})
         )
         for _, data in unique_pairs.items():
             name = data["pair_name"]
             method_base = data["method_only"]
 
             m_ssf_data = st.session_state.ssf_lookup.get(method_base, {})
-            method_site_conditions = st.session_state.site_conditions_lookup.get(
-                method_base, {}
-            )
+            method_site_conditions = st.session_state.site_conditions_lookup.get(method_base, {})
             ssf_scores = []
 
             for crit in ssf_labels.keys():
@@ -6682,8 +4678,7 @@ elif selected_step == 2:
                 method_base, {f: 1 for f in sei_factors_list}
             )
             sei_scores = [
-                100 if v == 1 else (50 if v == 2 else 0)
-                for v in method_sei_vals.values()
+                100 if v == 1 else (50 if v == 2 else 0) for v in method_sei_vals.values()
             ]
             avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
             relevant_hazards = method_to_hazards.get(method_base, set())
@@ -6777,9 +4772,7 @@ elif selected_step == 2:
             )
             st.plotly_chart(fig, use_container_width=True)
 
-            with st.expander(
-                "📊 View Full Site-Specific Filtration Summary", expanded=False
-            ):
+            with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
                 filt_config = {
                     "name": st.column_config.TextColumn("NbS Method"),
                     "ssf": st.column_config.ProgressColumn(
@@ -6826,9 +4819,7 @@ elif selected_step == 2:
             )
 
             if rec_strategy == "Ranking Based on Residual Potential Risk Index (RPRI)":
-                if st.button(
-                    "🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"
-                ):
+                if st.button("🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"):
                     st.session_state.rpri_results_ready = True
                 if st.session_state.get("rpri_results_ready", False):
 
@@ -6866,37 +4857,25 @@ elif selected_step == 2:
                             if not item.get("is_primary", False):
                                 continue
                             m = item["method_only"]
-                            if m not in cons or item.get("rpri", 0) > cons[m].get(
-                                "rpri", 0
-                            ):
+                            if m not in cons or item.get("rpri", 0) > cons[m].get("rpri", 0):
                                 cons[m] = item
 
                         scored = sorted(
                             [i for i in cons.values() if i["status"] == "scored"],
                             key=lambda x: (x["eff_percent"] == 0, x["rpri"]),
                         )
-                        unscored = [
-                            i for i in cons.values() if i["status"] == "unscored"
-                        ]
+                        unscored = [i for i in cons.values() if i["status"] == "unscored"]
 
                         if not scored and not unscored:
                             st.info("No primary solutions found for this selection.")
                             return
 
                         valid_vals = [i["rpri"] for i in scored if i["eff_percent"] > 0]
-                        mn, mx = (
-                            (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
-                        )
+                        mn, mx = (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
 
                         for rank, item in enumerate(scored, 1):
-                            bg = get_dynamic_color(
-                                item["rpri"], item["eff_percent"], mn, mx
-                            )
-                            tc = (
-                                "black"
-                                if bg in ["#fff176", "#ffb74d", "#aed581"]
-                                else "white"
-                            )
+                            bg = get_dynamic_color(item["rpri"], item["eff_percent"], mn, mx)
+                            tc = "black" if bg in ["#fff176", "#ffb74d", "#aed581"] else "white"
                             af_val = 1.0 - item["tech_eff"] / 5.0
                             pri_val = item.get("original_pri", 0.0)
                             rpri_val = item.get("rpri", 0.0)
@@ -6905,11 +4884,7 @@ elif selected_step == 2:
                             if show_row_badge:
                                 lbl = item.get("row_label", "")
                                 if lbl:
-                                    row_badge_html = (
-                                        f'<span style="background:#e3f2fd;color:#1565c0;'
-                                        f"border-radius:4px;padding:1px 6px;font-size:0.78em;"
-                                        f'font-weight:normal;margin-left:6px;">{lbl}</span>'
-                                    )
+                                    row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
                             st.markdown(
                                 f"""
                                 <div style="
@@ -6971,21 +4946,14 @@ elif selected_step == 2:
                     seen_labels = []
                     for item in st.session_state.filtered_nbs_pool:
                         lbl = item.get("row_label", "")
-                        if (
-                            lbl
-                            and item.get("is_primary", False)
-                            and lbl not in seen_labels
-                        ):
+                        if lbl and item.get("is_primary", False) and lbl not in seen_labels:
                             seen_labels.append(lbl)
 
                     ALL_LABEL = "🌐 All Rows Combined"
                     view_options = [ALL_LABEL] + seen_labels
 
                     st.info(
-                        "Use the selector below to view the RPRI ranking for a specific "
-                        "Impact Model / Asset row from the Implementation Mapping Summary, "
-                        "or select **All Rows Combined** to see the overall ranking "
-                        "(each method shown once at its highest RPRI across all rows).",
+                        "Use the selector below to view the RPRI ranking for a specific Impact Model / Asset row from the Implementation Mapping Summary, or select **All Rows Combined** to see the overall ranking (each method shown once at its highest RPRI across all rows).",
                         icon="ℹ️",
                     )
 
@@ -6994,9 +4962,7 @@ elif selected_step == 2:
                     )
 
                     if selected_view == ALL_LABEL:
-                        render_rpri_ranking(
-                            st.session_state.filtered_nbs_pool, show_row_badge=True
-                        )
+                        render_rpri_ranking(st.session_state.filtered_nbs_pool, show_row_badge=True)
                     else:
                         row_pool = [
                             item
@@ -7009,19 +4975,14 @@ elif selected_step == 2:
                             imp = row_pool[0].get("impact_model", "")
                             parts = [p for p in [infra, asset, imp] if p and p != "—"]
                             st.markdown(
-                                f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;'
-                                f'padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;">'
-                                f"<strong>Row:</strong> {' &nbsp;›&nbsp; '.join(parts)}</div>",
+                                f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;"><strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
                                 unsafe_allow_html=True,
                             )
                         render_rpri_ranking(row_pool, show_row_badge=False)
                     st.divider()
                     st.markdown("##### 🗺️ Cross-Row RPRI Heatmap")
                     st.caption(
-                        "Each cell shows the RPRI value for a given NbS method (row) "
-                        "across every Impact Model / Asset row (column). Blank cells mean "
-                        "the method does not apply to that row. "
-                        "Green = low residual risk · Red = high residual risk."
+                        "Each cell shows the RPRI value for a given NbS method (row) across every Impact Model / Asset row (column). Blank cells mean the method does not apply to that row. Green = low residual risk · Red = high residual risk."
                     )
                     hm_data = {}
                     hm_all_labels = []
@@ -7061,10 +5022,7 @@ elif selected_step == 2:
                                 continue
                             if m not in hm_data:
                                 hm_data[m] = {}
-                            if (
-                                fallback_label not in hm_data[m]
-                                or rv > hm_data[m][fallback_label]
-                            ):
+                            if fallback_label not in hm_data[m] or rv > hm_data[m][fallback_label]:
                                 hm_data[m][fallback_label] = rv
                         if hm_data and not hm_all_labels:
                             hm_all_labels = [fallback_label]
@@ -7107,20 +5065,14 @@ elif selected_step == 2:
                         z_max = 5
 
                         def _short(label, max_len=28):
-                            return (
-                                label
-                                if len(label) <= max_len
-                                else label[: max_len - 1] + "…"
-                            )
+                            return label if len(label) <= max_len else label[: max_len - 1] + "…"
 
                         short_col_labels = [_short(l) for l in col_labels]
                         fig_height = max(300, 36 + 30 * len(row_labels))
 
                         def _rpri_cell_color(val):
                             """Return fill colour for a cell given its RPRI value (0–5)."""
-                            if val is None or (
-                                isinstance(val, float) and np.isnan(val)
-                            ):
+                            if val is None or (isinstance(val, float) and np.isnan(val)):
                                 return "#f0f0f0"
                             stops = [
                                 (0.00, (27, 94, 32)),
@@ -7137,18 +5089,13 @@ elif selected_step == 2:
                                 t1, c1 = stops[i + 1]
                                 if t0 <= t <= t1:
                                     r = (t - t0) / (t1 - t0)
-                                    rgb = tuple(
-                                        int(c0[j] + r * (c1[j] - c0[j]))
-                                        for j in range(3)
-                                    )
+                                    rgb = tuple(int(c0[j] + r * (c1[j] - c0[j])) for j in range(3))
                                     return f"rgb{rgb}"
                             return f"rgb{stops[-1][1]}"
 
                         def _font_color(val):
                             """White text on dark cells, black on light ones."""
-                            if val is None or (
-                                isinstance(val, float) and np.isnan(val)
-                            ):
+                            if val is None or (isinstance(val, float) and np.isnan(val)):
                                 return "#888888"
                             return "white" if val >= 3.5 or val <= 0.7 else "black"
 
@@ -7157,16 +5104,10 @@ elif selected_step == 2:
                         tbl_font_colors = [["white"] * len(row_labels)]
 
                         for ci, col_lbl in enumerate(short_col_labels):
-                            col_vals = [
-                                z_matrix[ri][ci] for ri in range(len(row_labels))
-                            ]
-                            col_texts = [
-                                text_matrix[ri][ci] for ri in range(len(row_labels))
-                            ]
+                            col_vals = [z_matrix[ri][ci] for ri in range(len(row_labels))]
+                            col_texts = [text_matrix[ri][ci] for ri in range(len(row_labels))]
                             tbl_cell_values.append(col_texts)
-                            tbl_fill_colors.append(
-                                [_rpri_cell_color(v) for v in col_vals]
-                            )
+                            tbl_fill_colors.append([_rpri_cell_color(v) for v in col_vals])
                             tbl_font_colors.append([_font_color(v) for v in col_vals])
 
                         hm_fig = go.Figure(
@@ -7222,9 +5163,7 @@ elif selected_step == 2:
 
                     else:
                         st.warning(
-                            "⚠️ Heatmap could not render. Open the diagnostics expander above "
-                            "to see what data is available. Ensure the RPRI ranking has been "
-                            "calculated and that primary solutions are assigned.",
+                            "⚠️ Heatmap could not render. Open the diagnostics expander above to see what data is available. Ensure the RPRI ranking has been calculated and that primary solutions are assigned.",
                         )
 
             else:
@@ -7274,10 +5213,8 @@ elif selected_step == 2:
                             for sol in [x.strip() for x in s_raw.split(",")]:
                                 if sol:
                                     m_ssf = st.session_state.ssf_lookup.get(sol, {})
-                                    method_conds = (
-                                        st.session_state.site_conditions_lookup.get(
-                                            sol, {}
-                                        )
+                                    method_conds = st.session_state.site_conditions_lookup.get(
+                                        sol, {}
                                     )
                                     s_scores = [
                                         m_ssf.get(c, {}).get("Value", 100)
@@ -7362,9 +5299,7 @@ elif selected_step == 2:
 
                     ed_p = st.data_editor(
                         st.session_state.nbs_eval_df_primary,
-                        column_config=create_expert_config(
-                            st.session_state.nbs_eval_df_primary
-                        ),
+                        column_config=create_expert_config(st.session_state.nbs_eval_df_primary),
                         use_container_width=True,
                         key="ed_p_final",
                     )
@@ -7393,10 +5328,7 @@ elif selected_step == 2:
                         st.subheader("🏆 Primary NbS Expert Ranking")
                         for rank, res in enumerate(
                             sorted(
-                                [
-                                    {"Context": c, "Score": int(ed_p[c].min())}
-                                    for c in ed_p.columns
-                                ],
+                                [{"Context": c, "Score": int(ed_p[c].min())} for c in ed_p.columns],
                                 key=lambda x: x["Score"],
                             ),
                             1,

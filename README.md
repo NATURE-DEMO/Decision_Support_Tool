@@ -33,7 +33,8 @@ uv run streamlit run Home.py
 │   ├── 1_General_DST.py      # General DST
 │   └── 2_Specific_Site_DST_v2.py  # Demo sites
 ├── modules/
-│   └── impact_models/        # Impact models (YAML)
+│   ├── impact_models/          # Impact models (YAML)
+│   └── nbs/                   # Nature-Based Solutions registry
 └── tests/
 ```
 
