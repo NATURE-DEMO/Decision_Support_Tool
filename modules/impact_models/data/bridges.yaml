@@ -1,0 +1,214 @@
+infrastructure: Bridges
+impacts:
+- asset: Ancillary Assets (Signage, Gantries, Barriers)
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the auxiliary structures caused by high winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Hail
+- asset: Ancillary Assets (Signage, Gantries, Barriers)
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of the protective and auxiliary structures due to high winds.
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms & strong winds
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to heavy rains. '
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Storms & strong winds
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow avalanches
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to high temperatures.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to low temperatures.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations due to low temperatures.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow drift
+- asset: Bridge Deck & Pavement
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to high winds. '
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Desertification
+  - Snow drift
+- asset: Drainage Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to heavy rains.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Drainage Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance to clear and upgrade the drainage systems due to heavy rains.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Drainage Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to snow accumulation in the drainage systems. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Substructure & Foundations
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the bridge's foundations due to heavy rains.
+  recommended_climate_indicator: Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx5day_rp100
+  used_climate_indicator: 100-year return period of maximum 5-day precipitation (mm)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Fluvial flood
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+- asset: Substructure & Foundations
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance related to erosion control due to heavy rains. '
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Fluvial sediment transport
+  - Fluvial flood
+- asset: Substructure & Foundations
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to flooding caused by heavy rains. '
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Fluvial flood
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Stream bank & bed erosion
+- asset: Superstructure
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to damages on the bridge structure caused by extreme precipitations. '
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Storms & strong winds
+- asset: Superstructure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages on the bridge structure caused by snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Superstructure
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages caused by high temperatures.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Superstructure
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages caused by low temperatures.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Superstructure
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the bridge's structure due to high winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+- asset: Superstructure
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance to prevent long-term damage and need for enhanced monitoring due to high winds. '
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms & strong winds

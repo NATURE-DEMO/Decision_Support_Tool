@@ -1,0 +1,377 @@
+infrastructure: Railway
+impacts:
+- asset: Buildings
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased energy consumption due to temperature increase (stations)
+  recommended_climate_indicator: Cooling degree days?
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Drainage systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the drainage system due to increased precipitation
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Drainage systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of the drainage system due to increased precipitation
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Electrical facilities
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to thermal expansion of the catenary
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Electrical facilities
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations due to high temperatures affecting the power lines.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Electrical facilities
+  climate_driver: Changes in Temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive Capex due to lack of electrical contact between pantograph and catenary
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical facilities
+  climate_driver: Changes in Temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to lack of electrical contact between pantograph and catenary
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical facilities
+  climate_driver: Changes in Temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations due to lack of electrical contact between pantograph and catenary
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical facilities
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages on the catenary caused by snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical facilities
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintentance due to snow accumulation on the catenary elements.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical facilities
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive Capex due to damages on the catenary elements due to strong winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Hail
+- asset: Electrical facilities
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of the catenary elements due to high winds.
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms & strong winds
+- asset: Electrical facilities
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to power outages caused by high winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Snow drift
+- asset: Facilities, equipment and safety
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations due to high temperatures affecting the signaling and control systems.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Facilities, equipment and safety
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the signal and electrical systems caused by heavy rains.
+  recommended_climate_indicator: 'Return period of 100 years of maximum daily precipitation '
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Storms & strong winds
+- asset: Facilities, equipment and safety
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to signal and electrical systems malfunction due to heavy rains.
+  recommended_climate_indicator: 'Return period of 100 years of maximum daily precipitation '
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Storms & strong winds
+- asset: Facilities, equipment and safety
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintentance due to snow accumulation on trains and increased energy consumption. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Facilities, equipment and safety
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for ensuring system reliability due to snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Rail Track and Platform
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance on track rails due to buckling caused by high temperatures
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Rail Track and Platform
+  climate_driver: Changes in Temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to high temperatures.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Rail Track and Platform
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damage in the track bed due to acumulated sedimentation or flooding.
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+  - Fluvial flood
+- asset: Rail Track and Platform
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages on the ballast caused by changes in precipitation.
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Stream bank & bed erosion
+- asset: Rail Track and Platform
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for damage to the track bed (ballast) due to changes in precipitation
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Stream bank & bed erosion
+- asset: Rail Track and Platform
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to heavy rain
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Rail Track and Platform
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to damage to the track bed
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Stream bank & bed erosion
+  - Fluvial flood
+- asset: Rail Track and Platform
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to snow accumulation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Rail Track and Platform
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages caused by strong winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Hail
+- asset: Rail Track and Platform
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive Capex due to damages on the rail track and platform associated to strong winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Hail
+- asset: Rail Track and Platform
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to strong winds.
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms & strong winds
+  - Desertification
+- asset: Rail Track and Platform
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to strong winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Desertification
+  - Snow drift
+- asset: Rail Track and Platform
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to high winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms & strong winds
+  - Desertification
+  - Snow drift
+- asset: Slopes and embankments
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages caused by embankment failure due to changes in precipitation.
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Soil slope deformation & Soil creep
+  - Landslides < 2 m depth
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Slopes and embankments
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of slopes due to changes in precipitation.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Soil slope deformation & Soil creep
+  - Sheet erosion & rill erosion
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Slopes and embankments
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to embankment failure due to changes in precipitation.
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Soil slope deformation & Soil creep
+  - Landslides < 2 m depth
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Structures (excluding tunnels and bridges)
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenange of the steel elements due to changes in precipitation.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Structures (excluding tunnels and bridges)
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to snow accumulation on superstructure elements.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Structures (excluding tunnels and bridges)
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to snow accumulation on superstructure elements.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)

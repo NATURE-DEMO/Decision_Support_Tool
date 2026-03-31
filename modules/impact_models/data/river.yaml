@@ -1,0 +1,189 @@
+infrastructure: River training infrastructure
+impacts:
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in Temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to restoration works (planting new vegetation).
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in Temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of soil bioengineering works (living plants).
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX in the first few years after execution of soil bioengineering works when vegetation is not fully rooted yet.
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+  - Sheet erosion & rill erosion
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of soil bioengineering works (living plants).
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Drought
+  - Desertification
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in temperature (Low temperature)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX after frosty periods/years to replace frost-bitten vegetation.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Bioengineering & Vegetation
+  climate_driver: Change in temperature (Low temperature)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of soil bioengineering works (living plants).
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Concrete Revetments & Walls
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for protecting concrete surfaces in contact with river flow.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Fluvial flood
+- asset: Embankments & Levees
+  climate_driver: Change in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to hydraulic overloading and needed reconstruction works.
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Fluvial flood
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Stream bank & bed erosion
+- asset: Embankments & Levees
+  climate_driver: Change in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX in case of large structural damages to embankments and leeves.
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Fluvial flood
+  - Stream bank & bed erosion
+- asset: Embankments & Levees
+  climate_driver: Change in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX if channel shifts to the edge of the river corridor causing levees undermining.
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Fluvial flood
+- asset: Embankments & Levees
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance in case of excess bank collapses potentially leading to channel migration/shifting.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Landslides < 2 m depth
+  - Fluvial flood
+- asset: Embankments & Levees
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to hydraulic overloading and structural damage.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Fluvial flood
+  - Stream bank & bed erosion
+- asset: River Channel & Bed
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance in case of excessive scour.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Fluvial flood
+- asset: River Channel & Bed
+  climate_driver: Change in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance in case of excessive deposition lowering hydrualic conveyance.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Fluvial sediment transport
+  - Fluvial flood
+- asset: River Ecosystem & Amenity
+  climate_driver: Change in Temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Low degree of river space utilization, due to decreasing aesthetic value and reduced user benefits, and consequently a reduced level of ecosystem services provided by it
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: River Ecosystem & Amenity
+  climate_driver: Change in Temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Reduced benefits and reduced levels of ecosystem services.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: River Ecosystem & Amenity
+  climate_driver: Change in precipitation
+  type_of_impact: Operations
+  impact_model: Reduced benefits and reduced levels of ecosystem services.
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+- asset: River Ecosystem & Amenity
+  climate_driver: Change in precipitation
+  type_of_impact: Operations
+  impact_model: Reduced levels of ecosystem services.
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought, determined by the Standardized Precipitation Evaporation Index (SPEI)
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+- asset: River Ecosystem & Amenity
+  climate_driver: Change in temperature (Low temperature)
+  type_of_impact: Operations
+  impact_model: Reduced benefits and reduced levels of ecosystem services of living plants.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
