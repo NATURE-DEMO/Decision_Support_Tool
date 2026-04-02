@@ -1,0 +1,169 @@
+infrastructure: Road
+impacts:
+  - asset: Pavement
+    climate_driver: Changes in snow intensity
+    type_of_impact: Operations
+    impact_model: Stop of operations due to snow accumulation
+    recommended_climate_indicator: Winter months accumulated snow
+    dictionary_key: solidprcptot_winter
+    used_climate_indicator: Winter accumulated solid precipitation (mm)
+    possible_hazards:
+      - Snow drift
+      - Snow avalanches
+      - Extreme cold temperatures (Coldwave, cold snap)
+
+  - asset: Pavement
+    climate_driver: Changes in snow intensity
+    type_of_impact: Maintenance
+    impact_model: Increased maintenance due to snow accumulation
+    recommended_climate_indicator: Winter months accumulated snow
+    dictionary_key: solidprcptot_winter
+    used_climate_indicator: Winter accumulated solid precipitation (mm)
+    possible_hazards:
+      - Snow drift
+      - Snow avalanches
+      - Extreme cold temperatures (Coldwave, cold snap)
+
+  - asset: Pavement
+    climate_driver: Changes in precipitation
+    type_of_impact: Operations
+    impact_model: Stop of operations due to heavy rain
+    recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+    dictionary_key: rx1day_rp100
+    used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+      - Storms and strong winds
+
+  - asset: Pavement
+    climate_driver: Changes in precipitation
+    type_of_impact: Maintenance
+    impact_model: Increased pavement maintenance due to increase in precipitation
+    recommended_climate_indicator: Monthly mean precipitation
+    dictionary_key: prcptot_year
+    used_climate_indicator: Total annual precipitation (mm/year)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+
+  - asset: Pavement
+    climate_driver: Changes in precipitation
+    type_of_impact: Operations
+    impact_model: Stop of operations due to increase in precipitation
+    recommended_climate_indicator: Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+    dictionary_key: rx5day_rp100
+    used_climate_indicator: 100-year return period of maximum 5-day precipitation (mm)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+      - Fluvial flood
+
+  - asset: Pavement
+    climate_driver: Air surface temperature increase (High temperatures)
+    type_of_impact: Maintenance
+    impact_model: Increased pavement maintenance due to temperature increase
+    recommended_climate_indicator: Monthly mean temperature
+    dictionary_key: tg_year
+    used_climate_indicator: Annual mean temperature (°C)
+    possible_hazards:
+      - Extreme high temperatures (Heatwave)
+      - Drought
+
+  - asset: Pavement
+    climate_driver: Changes in Temperature (Low temperatures)
+    type_of_impact: Damages
+    impact_model: Reactive CAPEX due to damages associated to low temperatures.
+    recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+    dictionary_key: tn20
+    used_climate_indicator: Days per year with minimum temperature < -20°C
+    possible_hazards:
+      - Extreme cold temperatures (Coldwave, cold snap)
+      - Snow creep & slide
+
+  - asset: Pavement
+    climate_driver: Changes in Temperature (Low temperatures)
+    type_of_impact: Maintenance
+    impact_model: Increased maintenance due to low temperatures.
+    recommended_climate_indicator: Monthly mean temperature
+    dictionary_key: tg_year
+    used_climate_indicator: Annual mean temperature (°C)
+    possible_hazards:
+      - Extreme cold temperatures (Coldwave, cold snap)
+      - Snow creep & slide
+
+  - asset: Drainage Systems
+    climate_driver: Changes in precipitation
+    type_of_impact: Maintenance
+    impact_model: Increased maintenance of the drainage system due to increase in heavy precipitation
+    recommended_climate_indicator: Monthly mean precipitation
+    dictionary_key: prcptot_year
+    used_climate_indicator: Total annual precipitation (mm/year)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+      - Fluvial sediment transport
+
+  - asset: Drainage Systems
+    climate_driver: Changes in precipitation
+    type_of_impact: Damages
+    impact_model: Upgrading of the drainage system due to increase in heavy rain
+    recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+    dictionary_key: rx1day_rp100
+    used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+
+  - asset: Road Structure
+    climate_driver: Changes in precipitation
+    type_of_impact: Damages
+    impact_model: Reactive CAPEX due to damages on the road infrastructure caused by flash floods.
+    recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+    dictionary_key: rx1day_rp100
+    used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+      - Stream bank & bed erosion
+      - Debris flood (Volumetric Sediment Concentration 20-40%)
+
+  - asset: Road Structure
+    climate_driver: Changes in precipitation
+    type_of_impact: Damages
+    impact_model: Reactive CAPEX due to damages on the road caused by increased precipitations
+    recommended_climate_indicator: Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+    dictionary_key: rx5day_rp100
+    used_climate_indicator: 100-year return period of maximum 5-day precipitation (mm)
+    possible_hazards:
+      - Pluvial flood, heavy rainfall and surface runoff
+      - Stream bank & bed erosion
+
+  - asset: Slopes and Embankments
+    climate_driver: Changes in precipitation
+    type_of_impact: Maintenance
+    impact_model: Increased maintenance of slopes due to increase in precipitation
+    recommended_climate_indicator: Monthly mean precipitation
+    dictionary_key: prcptot_year
+    used_climate_indicator: Total annual precipitation (mm/year)
+    possible_hazards:
+      - Soil slope deformation & Soil creep
+      - Landslides < 2 m depth
+      - Sheet erosion & rill erosion
+
+  - asset: Road
+    climate_driver: Changes in wind intensity
+    type_of_impact: Operations
+    impact_model: Stop of operations due to strong winds
+    recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+    dictionary_key: sfcwind20
+    used_climate_indicator: Days per year with wind speed >= 20 m/s (storm-force)
+    possible_hazards:
+      - Storms and strong winds
+      - Desertification
+      - Snow drift
+
+  - asset: Roadside Equipment
+    climate_driver: Changes in wind intensity
+    type_of_impact: Damages
+    impact_model: Reactive CAPEX due to damages associated to strong winds
+    recommended_climate_indicator: Average number of days per year with daily mean wind speed >=20 km/h
+    dictionary_key: sfcwind20
+    used_climate_indicator: Days per year with wind speed >= 20 m/s (storm-force)
+    possible_hazards:
+      - Storms and strong winds
+      - Hail

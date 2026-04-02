@@ -1,0 +1,328 @@
+infrastructure: Tunnels
+impacts:
+- asset: Drainage Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance due to heavy rains to avoid the saturation of drainage systems. '
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Drainage Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to heavy rains.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Drainage Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to drainage systems saturation.
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Drainage Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance due to snow accumulation  to avoid the saturation of drainage systems. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Fluvial sediment transport
+- asset: Drainage Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to drainage systems saturation. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to the affection of tunnel equipments by heavy rains. '
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintentance due to snow accumulation. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to damages on the infrastructure equipments or assets due to snow collapse in the entrances/exits. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow avalanches
+  - Snow drift
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to snow accumulation on electrical and mechanical systems. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages and deterioration of tunnel's equipment.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to high temperatures.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages and deterioration of tunnel's equipment.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Electrical & Mechanical Systems
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintentance due to cold temperatures. '
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow creep & slide
+- asset: Pavements & Rail Tracks
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the pavements or rail tracks infrastructure inside the tunnel due to high temperatures.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C\nNumber of consecutive days with daily maximum temperature >40°C??
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Power & Communication Systems
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to damages in the power and communication systems connected to the tunnel. '
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms and strong winds
+  - Hail
+- asset: Power & Communication Systems
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to power and communication systems'' disruption due to high winds. '
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms and strong winds
+- asset: Tunnel Structure
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to damages associated to heavy rains. '
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Landslides < 2 m depth
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Tunnel Structure
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to landslides/debris affecting the tunnel entrances/exits.
+  recommended_climate_indicator: ' Daily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation'
+  dictionary_key: rx5day_rp100
+  used_climate_indicator: 100-year return period of maximum 5-day precipitation (mm)
+  possible_hazards:
+  - Landslides < 2 m depth
+  - Debris flow (Volumetric Sediment Concentration >40%)
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to snow collapse in the entrances or structures of the tunnel. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow avalanches
+  - Snow drift
+  - Snow creep & slide
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to structural damages caused by structural damages caused by additional snow loads on the infrastructure. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow creep & slide
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to snow accumulation  to avoid blockage of entrances and exits
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance due to snow accumulation to avoid additional snow loads to the tunnel''s structure. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow creep & slide
+  - Snow drift
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations due to snow accumulation causing blockage of entrances and exits
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Tunnel Structure
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to the closure of the tunnel caused by structural damages. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow creep & slide
+  - Snow avalanches
+- asset: Tunnel Structure
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the tunnel structure due to high temperatures.
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Tunnel Structure
+  climate_driver: Changes in wind intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages in the external structure or equipments of the tunnel due to high winds.
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Storms and strong winds
+  - Hail
+- asset: Tunnel Structure
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased maintenance due to high winds. '
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms and strong winds
+- asset: Tunnel Structure
+  climate_driver: Changes in wind intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to high winds. '
+  recommended_climate_indicator: Average number of days per year with daily mean wind speed  >=20 km/h
+  dictionary_key: sfcwind20
+  used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
+  possible_hazards:
+  - Desertification
+  - Snow drift
+  - Storms and strong winds
+- asset: Ventilation Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to snow accumulation  to avoid the malfunction of the ventilation systems.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Ventilation Systems
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to snow accumulation causing the overloading of the ventilation systems. '
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Ventilation Systems
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: 'Increased energy consumption to maintain safe temperatures. '
+  recommended_climate_indicator: Monthly mean temperature\nCooling degree days
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Ventilation Systems
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: 'Increased energy consumption to maintain safe temperatures. '
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Ventilation Systems
+  climate_driver: Changes in wind intensity
+  type_of_impact: Maintenance
+  impact_model: 'Increased energy consumption to maintain airflow balance. '
+  recommended_climate_indicator: Annual mean windspeed at 10 m
+  dictionary_key: sfcwind_year
+  used_climate_indicator: Annual mean wind speed (m/s)
+  possible_hazards:
+  - Storms and strong winds

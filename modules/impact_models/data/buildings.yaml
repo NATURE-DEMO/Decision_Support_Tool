@@ -1,0 +1,331 @@
+infrastructure: Buildings
+impacts:
+- asset: Structure & Exterior
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages on the roof structure caused by heavy
+    snow loads.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Structure & Exterior
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to interior ceiling repairs and roof waterproofing.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Structure & Exterior
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to replacement of torn elements
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Storms & strong winds
+- asset: Surrounding Site
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to necessary continuous snow removal operations.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Structure & Exterior
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to major structural reconstruction and safety barrier
+    installations.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow avalanches
+- asset: Building Systems
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to indoor water damage and pipe replacements.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Foundations & Basement
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to concrete replacement and foundation underpinning.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Building Systems
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Increased energy consumption to maintain safe indoor temperatures
+    and prevent structural freezing.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Structure & Exterior
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for facade patching and foundation waterproofing.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Structure & Exterior
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for interior wall treatments and dehumidification.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Structure & Exterior
+  climate_driver: Extreme wind
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to repair wind-induced damages
+  recommended_climate_indicator: Maximum wind speed
+  dictionary_key: sfcwind20
+  used_climate_indicator: Average number of days per year with daily mean wind speed
+    >=20 km/h
+  possible_hazards:
+  - Storms & strong winds
+- asset: Building Systems
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Increased OPEX due to the installation/use of active cooling and HVAC
+    systems.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Foundations & Basement
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to foundational underpinning and structural realignment.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Structure & Exterior
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for extensive rebuilding and installing fire-resistant
+    exterior materials.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Wildfire (Forest fire or Bush fire)
+- asset: Structure & Exterior
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for extensive rebuilding and installing fire-resistant
+    exterior materials.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Wildfire (Forest fire or Bush fire)
+- asset: Surrounding Site
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of perimeter drainage systems and emergency
+    pumping.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for water extraction, drying, interior structural repairs,
+    and replacing MEP systems.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for structural waterproofing, sump pump installation,
+    and mold remediation.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Structure & Exterior
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for major structural reconstruction, reinforced wall
+    installation, and window replacement.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+  - Fluvial flood
+- asset: Surrounding Site
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Increased OPEX for emergency heavy machinery clearing and debris removal
+    services.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Mud or Earth flow
+  - Debris flow (Volumetric Sediment Concentration >40%)
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for heavy mud extraction, sanitation, and replacement
+    of ground-level utilities.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Mud or Earth flow
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency structural shoring and foundation underpinning.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Soil slope deformation & Soil creep
+  - Landslides 2-10 m depth
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to reconstruct retaining walls and backfill lost structural
+    soil.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Gully erosion
+  - Landslides < 2 m depth
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for soil excavation around the building perimeter
+    and waterproofing.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Sheet erosion & rill erosion
+- asset: Foundations & Basement
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for extensive structural realignments, micro-piling,
+    and foundational stabilization.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Landslides > 10 m depths
+- asset: Surrounding Site
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Complete property write-off; Reactive CAPEX for potential relocation
+    or total site redevelopment.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Landslides > 10 m depths
+  - Debris flow (Volumetric Sediment Concentration >40%)
+- asset: Surrounding Site
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for driveway repaving and trench backfilling/compaction.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Gully erosion
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Building Systems
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for drainage system clearing and emergency water
+    pumping.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Structure & Exterior
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to repair fractured roofs and internal water damage.
+  recommended_climate_indicator: Winter months accumulated snow / Max daily precip
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Hail
+  - Snow drift
+- asset: Structure & Exterior
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for complete wall reconstruction and installation of
+    avalanche deflection barriers (wedges).
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow avalanches
+- asset: Structure & Exterior
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for structural protective solutions and repairs
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Small Rockfall (Diameter <25cm)
+  - Large Rockfall (Diameter >25-100 cm)
+- asset: Structure & Exterior
+  climate_driver: Increased solar intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to more frequent recoating, resealing, and
+    painting cycles.
+  recommended_climate_indicator: Solar intensity
+  dictionary_key: par_plant_level
+  used_climate_indicator: Solar radiation intensity at plant level
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)

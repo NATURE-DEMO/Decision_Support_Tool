@@ -1,0 +1,178 @@
+infrastructure: Dams
+impacts:
+- asset: Access Roads
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations of the road
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Snow avalanches
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Access Roads
+  climate_driver: Extreme temperature (low)
+  type_of_impact: Operations
+  impact_model: Delay in maintaning operations due to blockage of the road
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Snow drift
+- asset: Catchment Area & Slopes
+  climate_driver: Extreme precipitation
+  type_of_impact: Damages
+  impact_model: Increased maintenance due to landslide
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Landslides 2-10 m depth
+  - Mud or Earth flow
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Catchment Area & Slopes
+  climate_driver: Extreme precipitation
+  type_of_impact: Damages
+  impact_model: Increased mainenance cost due to rockflow
+  recommended_climate_indicator: Return period of 100 years of maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Small Rockfall (Diameter <25cm)
+  - Large Rockfall (Diameter >25-100 cm)
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Catchment Area & Slopes
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to erosion
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Sheet erosion & rill erosion
+  - Gully erosion
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Catchment Area & Slopes
+  climate_driver: Low precipitation
+  type_of_impact: Operations
+  impact_model: Greater potential for erosion
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought...
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+  - Aeolian erosion
+  - Desertification
+- asset: Catchment Area & Slopes
+  climate_driver: Reduced atmosferic humidity
+  type_of_impact: Operations
+  impact_model: Reduced protection for landslide and erosion
+  recommended_climate_indicator: '?'
+  dictionary_key: hurs40_days
+  used_climate_indicator: Days per year with relative humidity < 40%
+  possible_hazards:
+  - Drought
+  - Soil slope deformation & Soil creep
+  - Aeolian erosion
+- asset: Dam Structure
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: Increased water levels in the reservoir may cause damage to the dam
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Fluvial flood
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Operational Buildings
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance due to the blockage of the operational building
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter accumulated solid precipitation (mm)
+  possible_hazards:
+  - Snow drift
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Operational Buildings
+  climate_driver: Extreme temperature (low)
+  type_of_impact: Operations
+  impact_model: Delay in maintaning operations due to operational building
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Power Generation Equipment
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: Reduced Power Generation due to debris accumulation
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+  - Fluvial sediment transport
+- asset: Power Generation Equipment
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: 'Reduced Power Generation due to landslide and rockfall '
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Landslides 2-10 m depth
+  - Small Rockfall (Diameter <25cm)
+- asset: Power Generation Equipment
+  climate_driver: Extreme temperature (low)
+  type_of_impact: Operations
+  impact_model: 'Reduced Power Generation due to landslide and rockfall '
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Small Rockfall (Diameter <25cm)
+  - Snow creep & slide
+- asset: Reservoir Basin
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to extreme water conditions.
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Reservoir Basin
+  climate_driver: Extreme precipitation
+  type_of_impact: Operations
+  impact_model: Stop of operations due to sedimentation and reservoir capacity reduction
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Fluvial sediment transport
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Reservoir Basin
+  climate_driver: Extreme temperature (low)
+  type_of_impact: Operations
+  impact_model: 'Stop of operations due to ice formation '
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Days per year with minimum temperature < -20°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Spillways & Intakes
+  climate_driver: Extreme precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to spillway blockage causing damage to the dam structure.
+  recommended_climate_indicator: "Return period of 100 years of maximum daily precipitation \nDaily probability of three or more consecutive days exceeding the 90th percentile of daily mean precipitation"
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
+  possible_hazards:
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport

@@ -1,0 +1,254 @@
+infrastructure: green spaces
+impacts:
+- asset: Green Space Areas
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Operations
+  impact_model: low degree of green space utilization, due to decreasing aesthetic value and reduced user benefits...
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Operations
+  impact_model: low level of use of green space due to unsuitable conditions for citizens...
+  recommended_climate_indicator: 'Average number of days per year with daily maximum temperature >=40°C
+
+    Mean temperature at ground level over threshold?'
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Operations
+  impact_model: Increase in required time to generate specific benefits
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Operations
+  impact_model: Reduced benefits
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Operations
+  impact_model: low degree of use of green spaces due to their low attractiveness...
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Increased solar intensity
+  type_of_impact: Operations
+  impact_model: low level of use of green space due to unsuitable conditions for citizens...
+  recommended_climate_indicator: Solar radiation intensity at plant level
+  dictionary_key: par_plant_level
+  used_climate_indicator: Photosynthetically active radiation at plant level (μmol m⁻² s⁻¹)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Increased solar intensity
+  type_of_impact: Operations
+  impact_model: Reduced benefits
+  recommended_climate_indicator: Solar radiation intensity at plant level
+  dictionary_key: par_plant_level
+  used_climate_indicator: Photosynthetically active radiation at plant level (μmol m⁻² s⁻¹)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Green Space Areas
+  climate_driver: Low precipitation
+  type_of_impact: Operations
+  impact_model: low degree of green space utilization and consequently a reduced level of ecosystem services provided by it
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought...
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+  - Desertification
+- asset: Green Space Areas
+  climate_driver: Reduced atmosferic humidity
+  type_of_impact: Operations
+  impact_model: Reduced benefits
+  recommended_climate_indicator: Number of days with relative humidity under 40%
+  dictionary_key: hurs40_days
+  used_climate_indicator: Days per year with relative humidity < 40%
+  possible_hazards:
+  - Drought
+  - Extreme high temperatures (Heatwave)
+- asset: Irrigation & Water Systems
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with water supplies.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Irrigation & Water Systems
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with irrigation costs due to depletion in soil water resources.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Irrigation & Water Systems
+  climate_driver: Low precipitation
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with water supplies.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Drought
+  - Desertification
+- asset: Irrigation & Water Systems
+  climate_driver: Low precipitation
+  type_of_impact: Maintenance
+  impact_model: The increasing maintenance costs of irrigation systems due to deposits (limestone, iron, algae) from the water used for irrigation
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Drought
+  - Desertification
+- asset: Irrigation & Water Systems
+  climate_driver: Reduced atmosferic humidity
+  type_of_impact: Maintenance
+  impact_model: Increased irrigation costs to compensate for reduced soil water resources due to lack of water condensation.
+  recommended_climate_indicator: Number of days with relative humidity under 40%
+  dictionary_key: hurs40_days
+  used_climate_indicator: Days per year with relative humidity < 40%
+  possible_hazards:
+  - Drought
+  - Extreme high temperatures (Heatwave)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to restoration servicies
+  recommended_climate_indicator: Average number of days per year with daily maximum temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Days per year with maximum temperature ≥ 40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance with plants and materials.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chemicals tratements due to the decrease in the natural immunity of plants.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chemicals tretements due to ecolgical disruption.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Extreme heat (including heatwaves)
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chemical tretements due to ecolgical disruption.
+  recommended_climate_indicator: Monthly mean temperature
+  dictionary_key: tg_year
+  used_climate_indicator: Annual mean temperature (°C)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Increased solar intensity
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...
+  recommended_climate_indicator: Solar radiation intensity at plant level
+  dictionary_key: par_plant_level
+  used_climate_indicator: Photosynthetically active radiation at plant level (μmol m⁻² s⁻¹)
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Low precipitation
+  type_of_impact: Damages
+  impact_model: 'Reactive CAPEX due to green space restoration services by replacing dead plants '
+  recommended_climate_indicator: SPEI - The annual probability of experiencing  SEVERE short-term term drought...
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: Annual probability of severe drought (SPEI-3 ≤ -1.5)
+  possible_hazards:
+  - Drought
+  - Desertification
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Low precipitation
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chemicals tretements due to the decrease in the natural immunity of plants...
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Drought
+  - Desertification
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Low precipitation
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chelicals tretements due to ecolgical disruption.
+  recommended_climate_indicator: Monthly mean precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Total annual precipitation (mm/year)
+  possible_hazards:
+  - Drought
+  - Desertification
+  - Wildfire (Forest fire or Bush fire)
+- asset: Vegetation (Plants & Trees)
+  climate_driver: Reduced atmosferic humidity
+  type_of_impact: Maintenance
+  impact_model: Increase in maintenance costs with chelicals tretements due to ecolgical disruption.
+  recommended_climate_indicator: Number of days with relative humidity under 40%
+  dictionary_key: hurs40_days
+  used_climate_indicator: Days per year with relative humidity < 40%
+  possible_hazards:
+  - Drought
+  - Extreme high temperatures (Heatwave)
+  - Wildfire (Forest fire or Bush fire)

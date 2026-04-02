@@ -1,0 +1,34 @@
+[project]
+name = "decision-support-tool"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "contextily>=1.6.2",
+    "folium>=0.20.0",
+    "google-genai>=1.45.0",
+    "leafmap>=0.54.0",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "plotly>=6.3.1",
+    "rasterio>=1.4.3",
+    "requests>=2.32.5",
+    "shapely>=2.1.2",
+    "openpyxl>=3.1",
+    "streamlit>=1.50.0",
+    "streamlit-folium>=0.25.3",
+    "streamlit-antd-components>=0.3.2",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.15.8",
+    "mypy>=1.0.0",
+]
+
+[tool.ruff]
+line-length = 100

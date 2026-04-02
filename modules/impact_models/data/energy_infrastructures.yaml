@@ -1,0 +1,359 @@
+infrastructure: Energy Infrastructures
+impacts:
+- asset: Foundations & Structural Supports
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to repair or replace broken parts
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Delay in critical grid maintenance and restoration operations due
+    to impassable roads.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+- asset: Power Generation Assets
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations / reduced power generation due to snow shading
+    on PV array.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+- asset: Transmission & Distribution Networks
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for major structural reconstruction of towers and installation
+    of avalanche deflectors.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow avalanches
+- asset: Substations & Control Facilities
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to replacement of water-damaged electronics
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in snow intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance operations for manual and mechanical snow removal
+    to ensure safe facility operation.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+- asset: Power Generation Assets
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations / reduced power generation due to restricted water
+    flow from ice blockage.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Power Generation Assets
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations / reduced power generation due to automated shutdown
+    preventing structural damage.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Transmission & Distribution Networks
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency splicing of broken lines and reinforcement
+    of brittle steel members.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Substations & Control Facilities
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance to install or operate internal block heaters
+    and replace degraded fluids.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Foundations & Structural Supports
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to level foundations, re-pour concrete footings, and
+    realign structural mounts.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < -31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Soil slope deformation & Soil creep
+- asset: Power Generation Assets
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Increased internal energy consumption reducing the net energy output
+    to the grid.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < -31°C
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Substations & Control Facilities
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for replacing flooded parts and electronics.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Power Generation Assets
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to water extraction, drying, and replacing submerged
+    electrical generation equipment.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Foundations & Structural Supports
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for heavy reconstruction works
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Foundations & Structural Supports
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency structural and foundation reconstruction
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Landslides < 2 m depth
+  - Gully erosion
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Reduced power generation capability over time due to loss of active
+    storage volume in the reservoir.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Fluvial sediment transport
+  - Sheet erosion & rill erosion
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Transmission & Distribution Networks
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for massive route realignment, geotechnical stabilization,
+    and complete tower and plant rebuilds.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Landslides > 10 m depths
+  - Debris flow (Volumetric Sediment Concentration >40%)
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance of emergency pumping systems and trench draining.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Substations & Control Facilities
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to replace destroyed power electronics and elevate
+    mounting structures.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Site & Supporting Civil Works
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Increased OPEX for emergency heavy machinery clearing and debris removal
+    to restore access.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Mud or Earth flow
+  - Debris flow (Volumetric Sediment Concentration >40%)
+- asset: Transmission & Distribution Networks
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Reduced transmission capacity due to required line de-rating to prevent
+    extreme sagging.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Substations & Control Facilities
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Reduced power transmission capability due to thermal limits of grid
+    components.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Power Generation Assets
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Operations
+  impact_model: Reduced power generation output as panel voltage drops significantly
+    under high heat stress.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Foundations & Structural Supports
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for foundation stabilization, micro-piling, and realignment
+    of leaning towers.
+  recommended_climate_indicator: Annual average temperature
+  dictionary_key: tas
+  used_climate_indicator: Monthly mean temperature
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+  - Soil slope deformation & Soil creep
+- asset: Substations & Control Facilities
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased energy consumption and maintenance of HVAC systems to prevent
+    control systems failure.
+  recommended_climate_indicator: Cooling degree days
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Power Generation Assets
+  climate_driver: Extreme wind
+  type_of_impact: Operations
+  impact_model: Stop of operations / zero power generation during extreme wind events
+    to protect structural integrity.
+  recommended_climate_indicator: Maximum wind speed
+  dictionary_key: sfcwind20
+  used_climate_indicator: Average number of days per year with daily mean wind speed
+    >=20 km/h
+  possible_hazards:
+  - Storms & strong winds
+- asset: Transmission & Distribution Networks
+  climate_driver: Extreme wind
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency grid reconstruction and deployment of
+    temporary transmission bypasses.
+  recommended_climate_indicator: Maximum wind speed
+  dictionary_key: sfcwind20
+  used_climate_indicator: Average number of days per year with daily mean wind speed
+    >=20 km/h
+  possible_hazards:
+  - Storms & strong winds
+- asset: Power Generation Assets
+  climate_driver: Extreme wind
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance for premature component replacement and more
+    frequent mechanical servicing.
+  recommended_climate_indicator: Maximum wind speed
+  dictionary_key: sfcwind20
+  used_climate_indicator: Average number of days per year with daily mean wind speed
+    >=20 km/h
+  possible_hazards:
+  - Storms & strong winds
+- asset: Power Generation Assets
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Operations
+  impact_model: Stop of operations / reduced power generation due to lack of hydraulic
+    head and flow.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Drought
+- asset: Transmission & Distribution Networks
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for extensive rebuilding of the localized power grid
+    using fire-resistant materials.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Wildfire (Forest fire or Bush fire)
+- asset: Substations & Control Facilities
+  climate_driver: Increased solar intensity
+  type_of_impact: Maintenance
+  impact_model: Increased maintenance to inspect and replace prematurely aged and
+    cracked elastomeric materials.
+  recommended_climate_indicator: Solar intensity
+  dictionary_key: par_plant_level
+  used_climate_indicator: Solar radiation intensity at plant level
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)

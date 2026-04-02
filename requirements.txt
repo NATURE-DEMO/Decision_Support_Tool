@@ -19,3 +19,4 @@ bcrypt
 extra_streamlit_components
 streamlit-antd-components
 google-genai
+pyyaml
