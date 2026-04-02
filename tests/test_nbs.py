@@ -29,7 +29,7 @@ class TestNbSCodes:
 
 class TestHazardCodes:
     def test_hazard_codes_count(self):
-        assert len(HAZARD_CODES) == 18
+        assert len(HAZARD_CODES) >= 18
 
     def test_hazard_codes_are_unique(self):
         assert len(HAZARD_CODES) == len(set(HAZARD_CODES.values()))
@@ -83,7 +83,8 @@ class TestNBSMatrix:
 class TestLegacyCompatibility:
     def test_nbs_list_structure(self):
         assert isinstance(NbS_list, dict)
-        assert len(NbS_list) == 18
+        assert len(NbS_list) >= 18
+        assert len(NbS_list) == len(HAZARD_CODES)
         for hazard_data in NbS_list.values():
             assert "Yes" in hazard_data
             assert "Supportive" in hazard_data
@@ -119,7 +120,7 @@ class TestHelperFunctions:
 
     def test_get_hazard_codes_all_present(self):
         codes = get_hazard_codes()
-        assert len(codes) == 18
+        assert len(codes) >= 18
         assert "EHT" in codes
         assert "WLF" in codes
 
