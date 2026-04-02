@@ -144,7 +144,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Hail
 - asset: Power & Communication Systems
   climate_driver: Changes in wind intensity
@@ -154,7 +154,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Tunnel Structure
   climate_driver: Changes in precipitation
   type_of_impact: Damages
@@ -257,7 +257,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Hail
 - asset: Tunnel Structure
   climate_driver: Changes in wind intensity
@@ -267,7 +267,7 @@ impacts:
   dictionary_key: sfcwind_year
   used_climate_indicator: Annual mean wind speed (m/s)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Tunnel Structure
   climate_driver: Changes in wind intensity
   type_of_impact: Operations
@@ -278,7 +278,7 @@ impacts:
   possible_hazards:
   - Desertification
   - Snow drift
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Ventilation Systems
   climate_driver: Changes in snow intensity
   type_of_impact: Maintenance
@@ -325,4 +325,4 @@ impacts:
   dictionary_key: sfcwind_year
   used_climate_indicator: Annual mean wind speed (m/s)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds

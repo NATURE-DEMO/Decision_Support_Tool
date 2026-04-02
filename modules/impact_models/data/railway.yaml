@@ -106,7 +106,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Hail
 - asset: Electrical facilities
   climate_driver: Changes in wind intensity
@@ -116,7 +116,7 @@ impacts:
   dictionary_key: sfcwind_year
   used_climate_indicator: Annual mean wind speed (m/s)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Electrical facilities
   climate_driver: Changes in wind intensity
   type_of_impact: Operations
@@ -125,7 +125,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Snow drift
 - asset: Facilities, equipment and safety
   climate_driver: Changes in Temperature (High temperatures)
@@ -145,7 +145,7 @@ impacts:
   used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
   possible_hazards:
   - Pluvial flood, heavy rainfall and surface runoff
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Facilities, equipment and safety
   climate_driver: Changes in precipitation
   type_of_impact: Operations
@@ -155,7 +155,7 @@ impacts:
   used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
   possible_hazards:
   - Pluvial flood, heavy rainfall and surface runoff
-  - Storms & strong winds
+  - Storms and strong winds
 - asset: Facilities, equipment and safety
   climate_driver: Changes in snow intensity
   type_of_impact: Maintenance
@@ -267,7 +267,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Hail
 - asset: Rail Track and Platform
   climate_driver: Changes in wind intensity
@@ -277,7 +277,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Hail
 - asset: Rail Track and Platform
   climate_driver: Changes in wind intensity
@@ -287,7 +287,7 @@ impacts:
   dictionary_key: sfcwind_year
   used_climate_indicator: Annual mean wind speed (m/s)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Desertification
 - asset: Rail Track and Platform
   climate_driver: Changes in wind intensity
@@ -297,7 +297,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Desertification
   - Snow drift
 - asset: Rail Track and Platform
@@ -308,7 +308,7 @@ impacts:
   dictionary_key: sfcwind20
   used_climate_indicator: Days per year with wind speed ≥ 20 m/s (storm-force)
   possible_hazards:
-  - Storms & strong winds
+  - Storms and strong winds
   - Desertification
   - Snow drift
 - asset: Slopes and embankments

@@ -10,6 +10,7 @@ from modules.impact_models import (
     ALL_IMPACT_MODELS,
     YAML_TO_ROW,
 )
+from modules.nbs import get_hazard_name
 
 
 class TestDataLoading:
@@ -112,6 +113,46 @@ class TestDataIntegrity:
         for i, row in enumerate(data):
             assert row["Impact model"].strip(), f"Row {i}: Empty Impact model"
 
+    def test_no_empty_required_fields(self):
+        """Test that all required fields are non-empty."""
+        required_string_fields = [
+            "Asset",
+            "Climate driver",
+            "Impact model",
+            "Recommended climate Indicator",
+            "Dictionary Key",
+            "Used climate Indicator",
+        ]
+        data = get_all_impact_data()
+
+        for i, row in enumerate(data):
+            for field in required_string_fields:
+                value = row.get(field, "")
+                assert value and value.strip(), f"Row {i}: Empty field '{field}'"
+
+    def test_possible_hazards_is_list(self):
+        """Test that possible_hazards is a non-empty list."""
+        data = get_all_impact_data()
+
+        for i, row in enumerate(data):
+            hazards = row.get("Possible Hazards")
+            assert hazards is not None, f"Row {i}: Missing Possible Hazards"
+            assert isinstance(hazards, list), (
+                f"Row {i}: Possible Hazards must be a list, got {type(hazards)}"
+            )
+            assert len(hazards) > 0, f"Row {i}: Empty Possible Hazards list"
+
+    def test_dictionary_key_format(self):
+        """Test that dictionary_key follows clima-ind-viz format (snake_case)."""
+        data = get_all_impact_data()
+
+        for i, row in enumerate(data):
+            key = row.get("Dictionary Key", "")
+            assert key.islower() or "_" in key, (
+                f"Row {i}: Dictionary Key '{key}' should be snake_case"
+            )
+            assert " " not in key, f"Row {i}: Dictionary Key '{key}' should not contain spaces"
+
 
 class TestHelpers:
     def test_get_impact_data_for_infrastructure(self):
@@ -148,7 +189,5 @@ class TestYAMLKeys:
 
         for yaml_key in YAML_TO_ROW.keys():
             # Should be snake_case (lowercase with underscores)
-            assert yaml_key.islower() or "_" in yaml_key, (
-                f"Key '{yaml_key}' should be snake_case"
-            )
+            assert yaml_key.islower() or "_" in yaml_key, f"Key '{yaml_key}' should be snake_case"
             assert " " not in yaml_key, f"Key '{yaml_key}' should not contain spaces"

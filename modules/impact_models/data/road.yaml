@@ -33,7 +33,7 @@ impacts:
     used_climate_indicator: 100-year return period of maximum 1-day precipitation (mm)
     possible_hazards:
       - Pluvial flood, heavy rainfall and surface runoff
-      - Storms & strong winds
+      - Storms and strong winds
 
   - asset: Pavement
     climate_driver: Changes in precipitation
@@ -153,7 +153,7 @@ impacts:
     dictionary_key: sfcwind20
     used_climate_indicator: Days per year with wind speed >= 20 m/s (storm-force)
     possible_hazards:
-      - Storms & strong winds
+      - Storms and strong winds
       - Desertification
       - Snow drift
 
@@ -165,5 +165,5 @@ impacts:
     dictionary_key: sfcwind20
     used_climate_indicator: Days per year with wind speed >= 20 m/s (storm-force)
     possible_hazards:
-      - Storms & strong winds
+      - Storms and strong winds
       - Hail
