@@ -4,7 +4,17 @@
 NbS-Hazard matrix data.
 
 Maps climate hazards to applicable Nature-Based Solutions methods.
+
+References:
+    Kuschel, E.; Obriejetan, M.; Kuzmanić, T.; et al. (2025).
+    A Systematic Framework for Assessing the Temporally Variable Protective Capacity
+    of Nature-Based Solutions Against Natural Hazards. *Infrastructures*, 10(12), 318.
+    https://doi.org/10.3390/infrastructures10120318
+
+    Table: https://www.mdpi.com/2412-3811/10/12/318#table_body_display_infrastructures-10-00318-t0A3
 """
+
+NBS_REFERENCE = "Kuschel et al. (2025), https://doi.org/10.3390/infrastructures10120318"
 
 NBS_CODES = {
     "3DS": "3D steel grids (vegetated)",
