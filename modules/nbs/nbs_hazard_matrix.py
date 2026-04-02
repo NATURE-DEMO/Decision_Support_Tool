@@ -112,6 +112,17 @@ HAZARD_CODES = {
     "GUL": "Gully erosion",
     "CSE": "Coastal and shoreline erosion",
     "DFL": "Debris flood (Vol. Sediment Conc. 20–40%)",
+    "DFW": "Debris flow (Volumetric Sediment Concentration >40%)",
+    "SRF": "Small Rockfall (Diameter <25cm)",
+    "LRF": "Large Rockfall (Diameter >25-100 cm)",
+    "LS1": "Landslides < 2 m depth",
+    "LS2": "Landslides 2-10 m depth",
+    "LS3": "Landslides > 10 m depths",
+    "MEF": "Mud or Earth flow",
+    "SSD": "Soil slope deformation & Soil creep",
+    "SNA": "Snow avalanches",
+    "SND": "Snow drift",
+    "SCS": "Snow creep & slide"
 }
 
 NBS_MATRIX = {
@@ -133,6 +144,18 @@ NBS_MATRIX = {
     "GUL": ["3DS", "AFR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FRT", "FPR", "GCR", "LFC", "LFE", "LLT", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "RWD", "SMR", "SDS", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBZ", "VCF", "VCL", "VFD", "WRB", "WRC", "WFM", "WLF"],
     "CSE": ["3DS", "AVM", "BDH", "BRC", "BSW", "CGR", "FRT", "GCR", "GRF", "GRV", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VME", "VBZ", "VCF", "VCL", "VFD"],
     "DFL": ["3DS", "AFR", "AGR", "BDH", "BRC", "BSW", "BRM", "CHW", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RBZ", "RSP", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VBM", "VBZ", "VCF", "VCL", "VDS", "VFD", "VLB", "VRP", "VGR", "WRB", "WRC", "WTF", "WCR", "WFM"],
+    "DFW": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD", "WRB", "WRC"],
+    "SRF": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "LRF": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "LS1": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "LS2": ["3DS", "AFR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "LS3": ["3DS", "AFR", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SDT", "SAM", "URF", "VFD"],
+    "MEF": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "SSD": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
+    "SNA": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
+    "SND": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
+    "SCS": ["3DS", "AFR", "AGR", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"]
+    
 }
 
 NBS_MATRIX_SUPPORTIVE = {
@@ -154,6 +177,17 @@ NBS_MATRIX_SUPPORTIVE = {
     "GUL": ["AGR", "CHW", "FBF", "GPV", "GRF", "GRV", "LFS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SGR", "VBM", "VME", "VDS"],
     "CSE": ["AFR", "AGR", "BRM", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GPV", "LFS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SGR", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
     "DFL": ["AVM", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RTR", "SGR", "TER", "TRV"],
+    "DFW": ["BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WTF", "WCR", "WFM", "WLF"],
+    "SRF": ["BRM", "CGR", "CRC", "CVC", "DRC", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "LRF": ["BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "LS1": ["BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "LS2": ["AGR", "BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "LS3": ["AGR", "AVM", "BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "SLL", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "MEF": ["CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "SSD": ["CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "SNA": ["BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "SND": ["BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
+    "SCS": ["AVM", "BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"]
 }
 # fmt: on
 
