@@ -1,0 +1,215 @@
+infrastructure: Water Infrastructure
+impacts:
+- asset: Sources & Intakes
+  climate_driver: Changes in snow intensity
+  type_of_impact: Operations
+  impact_model: Stop of operations / service disruption due to inability to access
+    and clear vital intake screens.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Treatment Facilities
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX due to damages on facility roof structures caused by
+    heavy snow loads.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow drift
+  - Snow creep & slide
+- asset: Pipelines & Networks
+  climate_driver: Changes in snow intensity
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to replace destroyed pipes, hydrants, and exposed pipeline
+    sections.
+  recommended_climate_indicator: Winter months accumulated snow
+  dictionary_key: solidprcptot_winter
+  used_climate_indicator: Winter months accumulated snow
+  possible_hazards:
+  - Snow avalanches
+  - Snow creep & slide
+- asset: Pipelines & Networks
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency excavation and replacement of ruptured
+    water mains.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < - 31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Sources & Intakes
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Operations
+  impact_model: Stop of operations / reduced water production due to severe restriction
+    of raw water flow.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < - 31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+- asset: Pipelines & Networks
+  climate_driver: Changes in temperature (Low temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to reconstruct manholes and replace misaligned or cracked
+    sewer pipes.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature < - 31°C
+  dictionary_key: tn20
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    < - 31°C
+  possible_hazards:
+  - Extreme cold temperatures (Coldwave, cold snap)
+  - Soil slope deformation & Soil creep
+- asset: Treatment Facilities
+  climate_driver: Changes in precipitation
+  type_of_impact: Maintenance
+  impact_model: Increased OPEX to provide clean drinking water
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial sediment transport
+- asset: Treatment Facilities
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to replace flooded and or destroyed parts
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+  - Fluvial flood
+- asset: Pipelines & Networks
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Regulatory fines, environmental cleanup costs, and public health restrictions
+    due to untreated sewage discharge.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Treatment Facilities
+  climate_driver: Changes in precipitation
+  type_of_impact: Operations
+  impact_model: Increased energy and pumping OPEX to treat heavily diluted wastewater
+    at the treatment plant.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: prcptot_year
+  used_climate_indicator: Monthly mean precipitation
+  possible_hazards:
+  - Pluvial flood, heavy rainfall and surface runoff
+- asset: Sources & Intakes
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for major civil works to completely rebuild concrete
+    intake structures and diversion weirs.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Fluvial flood
+  - Debris flood (Volumetric Sediment Concentration 20-40%)
+- asset: Pipelines & Networks
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX for emergency pipeline bypassing, geotechnical stabilization,
+    and main replacement.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Landslides < 2 m depth
+  - Landslides 2-10 m depth
+  - Gully erosion
+- asset: Pipelines & Networks
+  climate_driver: Changes in precipitation
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to re-bury pipes, install rip-rap armoring, or perform
+    horizontal directional drilling for new lines.
+  recommended_climate_indicator: Maximum daily precipitation
+  dictionary_key: rx1day_rp100
+  used_climate_indicator: Return period of 100 years of maximum daily precipitation
+  possible_hazards:
+  - Stream bank & bed erosion
+  - Gully erosion
+- asset: Sources & Intakes
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Maintenance
+  impact_model: Increased OPEX for reservoir mixing (aeration) and advanced chemical
+    treatment to remove taste/odor compounds.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+  - Drought
+- asset: Pumping & Control Systems
+  climate_driver: Changes in temperature (High temperatures)
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX to replace heat-damaged control electronics and install
+    active cooling systems.
+  recommended_climate_indicator: Average number of days per year with daily maximum
+    temperature >=40°C
+  dictionary_key: tx40
+  used_climate_indicator: Average number of days per year with daily maximum temperature
+    >=40°C
+  possible_hazards:
+  - Extreme high temperatures (Heatwave)
+- asset: Sources & Intakes
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Operations
+  impact_model: Stop of operations / service disruption and reduced revenues due to
+    mandatory water rationing and supply failure.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Drought
+- asset: Sources & Intakes
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Operations
+  impact_model: Increased OPEX
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Drought
+- asset: Pipelines & Networks
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Damages
+  impact_model: Reactive CAPEX
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Drought
+  - Soil slope deformation & Soil creep
+- asset: Treatment Facilities
+  climate_driver: Low precipitation / Drought
+  type_of_impact: Maintenance
+  impact_model: Increased OPEX for advanced filtration and frequent settling basin
+    dredging to handle post-fire water quality degradation.
+  recommended_climate_indicator: Level of precipitations
+  dictionary_key: spei3_severe_prob
+  used_climate_indicator: SPEI - The annual probability of experiencing SEVERE short-term
+    drought
+  possible_hazards:
+  - Wildfire (Forest fire or Bush fire)
+  - Drought
