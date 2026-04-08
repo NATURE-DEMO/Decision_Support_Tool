@@ -2565,7 +2565,7 @@ elif selected_step == 1:
                     
     st.markdown("---")
     st.markdown("#### Suitability Index (SI) Results")
-    st.caption("The Suitability Index evaluates the overall feasibility of each active solution. SI = (((5-TE) × (5-IC) × (5-IT) × (5-EI) × (5-SA))^(1/5)) / 4")
+    st.caption("T Solutions are scored from 0 (Not Suitable) to 1 (Highly Suitable) based on the geometric mean of the criteria ratings. Use this to prioritize which NbS methods to implement.")
         
     si_results = []
     
@@ -5460,550 +5460,354 @@ elif selected_step == 2:
 
             st.divider()
             st.markdown("#### Final NbS Recommendation Strategy")
-            rec_strategy = st.radio(
-                "Choose recommendation strategy for filtered solutions:",
-                [
-                    "Ranking Based on Residual Potential Risk Index (RPRI)",
-                    "Ranking Based On Expert Opinion (Priority Ranking)",
-                ],
-                horizontal=True,
-                key="strategy_radio",
-            )
+            st.info("Ranking Based on Residual Potential Risk Index (RPRI)")
 
-            if rec_strategy == "Ranking Based on Residual Potential Risk Index (RPRI)":
-                if st.button("🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"):
-                    st.session_state.rpri_results_ready = True
-                if st.session_state.get("rpri_results_ready", False):
+            if st.button("🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"):
+                st.session_state.rpri_results_ready = True
+                
+            if st.session_state.get("rpri_results_ready", False):
 
-                    def get_dynamic_color(rpri_val, eff_percent, min_val, max_val):
-                        if eff_percent == 0.0:
-                            return "#d32f2f"
-                        if max_val == min_val:
-                            return "#1b5e20"
-                        norm = (rpri_val - min_val) / (max_val - min_val)
-                        if norm <= 0.14:
-                            return "#1b5e20"
-                        elif norm <= 0.28:
-                            return "#2e7d32"
-                        elif norm <= 0.42:
-                            return "#aed581"
-                        elif norm <= 0.57:
-                            return "#fff176"
-                        elif norm <= 0.71:
-                            return "#ffb74d"
-                        elif norm <= 0.85:
-                            return "#f57c00"
-                        else:
-                            return "#d32f2f"
-
-                    def render_rpri_ranking(pool, show_row_badge=False):
-                        """
-                        Consolidate pool by method_only (keep highest RPRI per method),
-                        then render the ranked cards.
-                        show_row_badge=True adds a small row label badge on each card
-                        (used in the All-Rows-Combined view so the user can see which
-                        row drove the displayed PRI value).
-                        """
-                        cons = {}
-                        for item in pool:
-                            if not item.get("is_primary", False):
-                                continue
-                            m = item["method_only"]
-                            if m not in cons or item.get("rpri", 0) > cons[m].get("rpri", 0):
-                                cons[m] = item
-
-                        scored = sorted(
-                            [i for i in cons.values() if i["status"] == "scored"],
-                            key=lambda x: (x["eff_percent"] == 0, x["rpri"]),
-                        )
-                        unscored = [i for i in cons.values() if i["status"] == "unscored"]
-
-                        if not scored and not unscored:
-                            st.info("No primary solutions found for this selection.")
-                            return
-
-                        valid_vals = [i["rpri"] for i in scored if i["eff_percent"] > 0]
-                        mn, mx = (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
-
-                        for rank, item in enumerate(scored, 1):
-                            bg = get_dynamic_color(item["rpri"], item["eff_percent"], mn, mx)
-                            tc = "black" if bg in ["#fff176", "#ffb74d", "#aed581"] else "white"
-                            af_val = 1.0 - item["tech_eff"] / 5.0
-                            pri_val = item.get("original_pri", 0.0)
-                            rpri_val = item.get("rpri", 0.0)
-                            delta_val = pri_val - rpri_val
-                            row_badge_html = ""
-                            if show_row_badge:
-                                lbl = item.get("row_label", "")
-                                if lbl:
-                                    row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
-                            st.markdown(
-                                f"""
-                                <div style="
-                                    background:#ffffff;
-                                    border:1.5px solid #dee2e6;
-                                    border-left:5px solid {bg};
-                                    border-radius:8px;
-                                    padding:12px 16px;
-                                    margin-bottom:10px;
-                                    display:flex;
-                                    align-items:center;
-                                    gap:16px;
-                                    box-shadow:0 1px 4px rgba(0,0,0,0.07);
-                                ">
-                                  <div style="
-                                    background:{bg};color:{tc};
-                                    border-radius:50%;min-width:40px;height:40px;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-weight:bold;font-size:18px;flex-shrink:0;">
-                                    {rank}
-                                  </div>
-                                  <div style="flex:1;color:#212529;">
-                                    <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
-                                      {item["method_only"]}{row_badge_html}
-                                    </div>
-                                    <div style="font-size:0.9em;margin-bottom:2px;">
-                                      🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
-                                      <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp;
-                                      <b>Δ RPRI:</b> {delta_val:.2f}
-                                    </div>
-                                    <div style="font-size:0.82em;color:#555;">
-                                      Technical Efficiency: {item["tech_eff"]} / 5
-                                      (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp;
-                                      AF: {af_val:.2f}
-                                    </div>
-                                  </div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-
-                        if unscored:
-                            with st.expander(
-                                "Solutions with unavailable technical efficiency values",
-                                expanded=False,
-                            ):
-                                for item in unscored:
-                                    st.markdown(
-                                        f'<div style="background-color:#f0f2f6;padding:10px;'
-                                        f'border-radius:6px;margin-bottom:8px;border:1px solid #ddd;color:black;">'
-                                        f'<h6 style="margin:0;">- {item["name"]}</h6>'
-                                        f'<p style="margin:0;font-size:0.9em;color:#555;"><i>'
-                                        f"Technical efficiency values are not available for this method."
-                                        f"</i></p></div>",
-                                        unsafe_allow_html=True,
-                                    )
-
-                    st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
-                    seen_labels = []
-                    for item in st.session_state.filtered_nbs_pool:
-                        lbl = item.get("row_label", "")
-                        if lbl and item.get("is_primary", False) and lbl not in seen_labels:
-                            seen_labels.append(lbl)
-
-                    ALL_LABEL = "🌐 All Rows Combined"
-                    view_options = [ALL_LABEL] + seen_labels
-
-                    st.info(
-                        "Use the selector below to view the RPRI ranking for a specific Impact Model / Asset row from the Implementation Mapping Summary, or select **All Rows Combined** to see the overall ranking (each method shown once at its highest RPRI across all rows).",
-                        icon="ℹ️",
-                    )
-
-                    selected_view = st.selectbox(
-                        "📋 View ranking for:", view_options, key="rpri_view_selector"
-                    )
-
-                    if selected_view == ALL_LABEL:
-                        render_rpri_ranking(st.session_state.filtered_nbs_pool, show_row_badge=True)
+                def get_dynamic_color(rpri_val, eff_percent, min_val, max_val):
+                    if eff_percent == 0.0:
+                        return "#d32f2f"
+                    if max_val == min_val:
+                        return "#1b5e20"
+                    norm = (rpri_val - min_val) / (max_val - min_val)
+                    if norm <= 0.14:
+                        return "#1b5e20"
+                    elif norm <= 0.28:
+                        return "#2e7d32"
+                    elif norm <= 0.42:
+                        return "#aed581"
+                    elif norm <= 0.57:
+                        return "#fff176"
+                    elif norm <= 0.71:
+                        return "#ffb74d"
+                    elif norm <= 0.85:
+                        return "#f57c00"
                     else:
-                        row_pool = [
-                            item
-                            for item in st.session_state.filtered_nbs_pool
-                            if item.get("row_label") == selected_view
-                        ]
-                        if row_pool:
-                            infra = row_pool[0].get("infrastructure", "")
-                            asset = row_pool[0].get("asset", "")
-                            imp = row_pool[0].get("impact_model", "")
-                            parts = [p for p in [infra, asset, imp] if p and p != "—"]
-                            st.markdown(
-                                f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;"><strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
-                                unsafe_allow_html=True,
-                            )
-                        render_rpri_ranking(row_pool, show_row_badge=False)
-                    st.divider()
-                    st.markdown("##### 🗺️ Cross-Row RPRI Heatmap")
-                    st.caption(
-                        "Each cell shows the RPRI value for a given NbS method (row) across every Impact Model / Asset row (column). Blank cells mean the method does not apply to that row. Green = low residual risk · Red = high residual risk."
-                    )
-                    hm_data = {}
-                    hm_all_labels = []
-                    for _, _cr_row in st.session_state.calculated_results.iterrows():
-                        _a = str(_cr_row.get("Asset", "")).strip() or "—"
-                        _im = str(_cr_row.get("Impact model", "")).strip() or "—"
-                        _lbl = f"{_a} — {_im}"
-                        if _lbl and _lbl not in hm_all_labels:
-                            hm_all_labels.append(_lbl)
+                        return "#d32f2f"
 
-                    for item in st.session_state.filtered_nbs_pool:
-                        m = item.get("method_only", "")
-                        lbl = item.get("row_label", "")
-                        rv = item.get("rpri", None)
-                        st_val = item.get("status", "")
-                        if not m or not lbl or st_val != "scored" or rv is None:
-                            continue
+                def render_rpri_ranking(pool, show_row_badge=False):
+                    """
+                    Consolidate pool by method_only (keep highest RPRI per method),
+                    then render the ranked cards.
+                    show_row_badge=True adds a small row label badge on each card
+                    (used in the All-Rows-Combined view so the user can see which
+                    row drove the displayed PRI value).
+                    """
+                    cons = {}
+                    for item in pool:
                         if not item.get("is_primary", False):
                             continue
-                        if m not in hm_data:
-                            hm_data[m] = {}
-                        if lbl not in hm_data[m] or rv > hm_data[m][lbl]:
-                            hm_data[m][lbl] = rv
+                        m = item["method_only"]
+                        if m not in cons or item.get("rpri", 0) > cons[m].get("rpri", 0):
+                            cons[m] = item
 
-                    if len(hm_data) == 0 and st.session_state.filtered_nbs_pool:
-                        fallback_label = "All Assets"
-                        for item in st.session_state.filtered_nbs_pool:
-                            m = item.get(
-                                "method_only",
-                                item.get("name", "").split(" method for ")[0],
-                            )
-                            rv = item.get("rpri", None)
-                            st_val = item.get("status", "scored")
-                            if not m or st_val != "scored" or rv is None:
-                                continue
-                            if not item.get("is_primary", False):
-                                continue
-                            if m not in hm_data:
-                                hm_data[m] = {}
-                            if fallback_label not in hm_data[m] or rv > hm_data[m][fallback_label]:
-                                hm_data[m][fallback_label] = rv
-                        if hm_data and not hm_all_labels:
-                            hm_all_labels = [fallback_label]
-                    hm_col_base = hm_all_labels if hm_all_labels else seen_labels
+                    scored = sorted(
+                        [i for i in cons.values() if i["status"] == "scored"],
+                        key=lambda x: (x["eff_percent"] == 0, x["rpri"]),
+                    )
+                    unscored = [i for i in cons.values() if i["status"] == "unscored"]
 
-                    if len(hm_data) >= 1 and len(hm_col_base) >= 1:
+                    if not scored and not unscored:
+                        st.info("No primary solutions found for this selection.")
+                        return
 
-                        def _mean_rpri(method):
-                            vals = list(hm_data[method].values())
-                            return sum(vals) / len(vals) if vals else 0
+                    valid_vals = [i["rpri"] for i in scored if i["eff_percent"] > 0]
+                    mn, mx = (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
 
-                        sorted_methods = sorted(hm_data.keys(), key=_mean_rpri)
-                        ALL_COL_LABEL = "🌐 All Rows Combined"
-                        col_labels = hm_col_base + [ALL_COL_LABEL]
-                        row_labels = sorted_methods
-                        z_matrix = []
-                        text_matrix = []
-
-                        for method in row_labels:
-                            z_row = []
-                            t_row = []
-                            row_vals = []
-                            for lbl in hm_col_base:
-                                val = hm_data[method].get(lbl, None)
-                                z_row.append(val if val is not None else np.nan)
-                                t_row.append(f"{val:.2f}" if val is not None else "—")
-                                if val is not None:
-                                    row_vals.append(val)
-                            if row_vals:
-                                agg_val = sum(row_vals) / len(row_vals)
-                                z_row.append(agg_val)
-                                t_row.append(f"{agg_val:.2f}")
-                            else:
-                                z_row.append(np.nan)
-                                t_row.append("—")
-                            z_matrix.append(z_row)
-                            text_matrix.append(t_row)
-
-                        z_min = 0
-                        z_max = 5
-
-                        def _short(label, max_len=28):
-                            return label if len(label) <= max_len else label[: max_len - 1] + "…"
-
-                        short_col_labels = [_short(l) for l in col_labels]
-                        fig_height = max(300, 36 + 30 * len(row_labels))
-
-                        def _rpri_cell_color(val):
-                            """Return fill colour for a cell given its RPRI value (0–5)."""
-                            if val is None or (isinstance(val, float) and np.isnan(val)):
-                                return "#f0f0f0"
-                            stops = [
-                                (0.00, (27, 94, 32)),
-                                (0.14, (46, 125, 50)),
-                                (0.28, (174, 213, 129)),
-                                (0.50, (255, 241, 118)),
-                                (0.72, (255, 183, 77)),
-                                (0.86, (245, 124, 0)),
-                                (1.00, (211, 47, 47)),
-                            ]
-                            t = max(0.0, min(1.0, val / 5.0))
-                            for i in range(len(stops) - 1):
-                                t0, c0 = stops[i]
-                                t1, c1 = stops[i + 1]
-                                if t0 <= t <= t1:
-                                    r = (t - t0) / (t1 - t0)
-                                    rgb = tuple(int(c0[j] + r * (c1[j] - c0[j])) for j in range(3))
-                                    return f"rgb{rgb}"
-                            return f"rgb{stops[-1][1]}"
-
-                        def _font_color(val):
-                            """White text on dark cells, black on light ones."""
-                            if val is None or (isinstance(val, float) and np.isnan(val)):
-                                return "#888888"
-                            return "white" if val >= 3.5 or val <= 0.7 else "black"
-
-                        tbl_cell_values = [row_labels]
-                        tbl_fill_colors = [["#1565c0"] * len(row_labels)]
-                        tbl_font_colors = [["white"] * len(row_labels)]
-
-                        for ci, col_lbl in enumerate(short_col_labels):
-                            col_vals = [z_matrix[ri][ci] for ri in range(len(row_labels))]
-                            col_texts = [text_matrix[ri][ci] for ri in range(len(row_labels))]
-                            tbl_cell_values.append(col_texts)
-                            tbl_fill_colors.append([_rpri_cell_color(v) for v in col_vals])
-                            tbl_font_colors.append([_font_color(v) for v in col_vals])
-
-                        hm_fig = go.Figure(
-                            go.Table(
-                                columnwidth=[220] + [90] * len(short_col_labels),
-                                header=dict(
-                                    values=["<b>NbS Method</b>"]
-                                    + [f"<b>{l}</b>" for l in short_col_labels],
-                                    fill_color="#1565c0",
-                                    font=dict(color="white", size=11),
-                                    align=["left"] + ["center"] * len(short_col_labels),
-                                    height=36,
-                                    line=dict(color="white", width=1),
-                                ),
-                                cells=dict(
-                                    values=tbl_cell_values,
-                                    fill_color=tbl_fill_colors,
-                                    font=dict(color=tbl_font_colors, size=11),
-                                    align=["left"] + ["center"] * len(short_col_labels),
-                                    height=28,
-                                    line=dict(color="white", width=1),
-                                ),
-                            )
-                        )
-
-                        hm_fig.update_layout(
-                            height=fig_height,
-                            margin=dict(l=0, r=0, t=10, b=10),
-                            paper_bgcolor="white",
-                        )
-
-                        st.plotly_chart(hm_fig, use_container_width=True)
+                    for rank, item in enumerate(scored, 1):
+                        bg = get_dynamic_color(item["rpri"], item["eff_percent"], mn, mx)
+                        tc = "black" if bg in ["#fff176", "#ffb74d", "#aed581"] else "white"
+                        af_val = 1.0 - item["tech_eff"] / 5.0
+                        pri_val = item.get("original_pri", 0.0)
+                        rpri_val = item.get("rpri", 0.0)
+                        delta_val = pri_val - rpri_val
+                        row_badge_html = ""
+                        if show_row_badge:
+                            lbl = item.get("row_label", "")
+                            if lbl:
+                                row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
                         st.markdown(
-                            """
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;
-                                        margin-top:4px;font-size:0.82em;align-items:center;">
-                              <span style="background:#1b5e20;color:white;padding:2px 8px;
-                                           border-radius:4px;">Very low RPRI</span>
-                              <span style="background:#aed581;color:black;padding:2px 8px;
-                                           border-radius:4px;">Low–medium</span>
-                              <span style="background:#fff176;color:black;padding:2px 8px;
-                                           border-radius:4px;">Medium</span>
-                              <span style="background:#ffb74d;color:black;padding:2px 8px;
-                                           border-radius:4px;">Medium–high</span>
-                              <span style="background:#d32f2f;color:white;padding:2px 8px;
-                                           border-radius:4px;">High RPRI</span>
-                              <span style="background:#f0f0f0;color:#888;padding:2px 8px;
-                                           border-radius:4px;">— Not applicable</span>
+                            f"""
+                            <div style="
+                                background:#ffffff;
+                                border:1.5px solid #dee2e6;
+                                border-left:5px solid {bg};
+                                border-radius:8px;
+                                padding:12px 16px;
+                                margin-bottom:10px;
+                                display:flex;
+                                align-items:center;
+                                gap:16px;
+                                box-shadow:0 1px 4px rgba(0,0,0,0.07);
+                            ">
+                              <div style="
+                                background:{bg};color:{tc};
+                                border-radius:50%;min-width:40px;height:40px;
+                                display:flex;align-items:center;justify-content:center;
+                                font-weight:bold;font-size:18px;flex-shrink:0;">
+                                {rank}
+                              </div>
+                              <div style="flex:1;color:#212529;">
+                                <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
+                                  {item["method_only"]}{row_badge_html}
+                                </div>
+                                <div style="font-size:0.9em;margin-bottom:2px;">
+                                  🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
+                                  <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp;
+                                  <b>Δ RPRI:</b> {delta_val:.2f}
+                                </div>
+                                <div style="font-size:0.82em;color:#555;">
+                                  Technical Efficiency: {item["tech_eff"]} / 5
+                                  (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp;
+                                  AF: {af_val:.2f}
+                                </div>
+                              </div>
                             </div>
                             """,
                             unsafe_allow_html=True,
                         )
 
-                    else:
-                        st.warning(
-                            "⚠️ Heatmap could not render. Open the diagnostics expander above to see what data is available. Ensure the RPRI ranking has been calculated and that primary solutions are assigned.",
-                        )
-
-            else:
-                st.session_state.rpri_results_ready = False
-                if "nbs_eval_df_primary" not in st.session_state:
-                    st.session_state.nbs_eval_df_primary = pd.DataFrame()
-                if "nbs_eval_df_supportive" not in st.session_state:
-                    st.session_state.nbs_eval_df_supportive = pd.DataFrame()
-
-                with st.container(border=True):
-                    colA, colB, colC = st.columns([1, 1, 1])
-                    with colA:
-                        extract_btn = st.button(
-                            "📥 Extract Feasible Solutions",
-                            use_container_width=True,
-                            key="extract_expert",
-                        )
-                    with colB:
-                        st.markdown(
-                            "<div style='text-align: center; margin-top: 5px;'>",
-                            unsafe_allow_html=True,
-                        )
-                        include_supp = st.toggle(
-                            "➕ Include Supportive Solutions",
-                            value=False,
-                            key="chk_supp_expert",
-                        )
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    with colC:
-                        if st.button(
-                            "🗑️ Reset Selections",
-                            use_container_width=True,
-                            type="secondary",
+                    if unscored:
+                        with st.expander(
+                            "Solutions with unavailable technical efficiency values",
+                            expanded=False,
                         ):
-                            st.session_state.nbs_eval_df_primary = pd.DataFrame()
-                            st.session_state.nbs_eval_df_supportive = pd.DataFrame()
-                            st.rerun()
-
-                if extract_btn:
-                    st.session_state.nbs_primary_options = sorted(
-                        [item["name"] for item in st.session_state.filtered_nbs_pool]
-                    )
-                    supp_set = set()
-                    for _, row in st.session_state.calculated_results.iterrows():
-                        s_raw = str(row.get("Supportive Solutions", ""))
-                        if s_raw and s_raw != "nan":
-                            for sol in [x.strip() for x in s_raw.split(",")]:
-                                if sol:
-                                    m_ssf = st.session_state.ssf_lookup.get(sol, {})
-                                    method_conds = st.session_state.site_conditions_lookup.get(
-                                        sol, {}
-                                    )
-                                    s_scores = [
-                                        m_ssf.get(c, {}).get("Value", 100)
-                                        if method_conds.get(c, False)
-                                        else 100
-                                        for c in ssf_labels.keys()
-                                    ]
-                                    m_sei = st.session_state.sei_lookup.get(
-                                        sol, {f: 1 for f in sei_factors_list}
-                                    )
-                                    sei_scores = [
-                                        100 if v == 1 else (50 if v == 2 else 0)
-                                        for v in m_sei.values()
-                                    ]
-                                    avg_s = (
-                                        sum(s_scores) / len(s_scores)
-                                        + sum(sei_scores) / len(sei_scores)
-                                    ) / 2
-                    st.session_state.nbs_supportive_options = sorted(list(supp_set))
-                    st.rerun()
-
-                if (
-                    "nbs_primary_options" in st.session_state
-                    and st.session_state.nbs_primary_options
-                ):
-                    col_left, col_center, col_right = st.columns([3, 8, 3])
-
-                    with col_center:
-                        sel_p = sac.transfer(
-                            items=st.session_state.nbs_primary_options,
-                            label="Primary Solutions (Maintain Hazard Context for Expert Evaluation)",
-                            titles=["Available", "Selected"],
-                            search=True,
-                            key="sac_p_expert",
-                            height=600,
-                            width="100%",
-                        )
-
-                        if include_supp and st.session_state.nbs_supportive_options:
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            sel_s = sac.transfer(
-                                items=st.session_state.nbs_supportive_options,
-                                label="Supportive Solutions",
-                                titles=["Available", "Selected"],
-                                search=True,
-                                key="sac_s_expert",
-                                height=600,
-                                width="100%",
-                            )
-
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("Initialize Evaluation Tables", type="primary"):
-                        kpi_rows = [
-                            "Safety, Reliability and Security (SRS)",
-                            "Availability and Maintainability (AM)",
-                            "Economy (EC)",
-                            "Environment (EV)",
-                            "Health and Politics (HP)",
-                        ]
-                        st.session_state.nbs_eval_df_primary = pd.DataFrame(
-                            {col: [3] * 5 for col in sel_p}, index=kpi_rows
-                        )
-                        if include_supp and sel_s:
-                            st.session_state.nbs_eval_df_supportive = pd.DataFrame(
-                                {col: [3] * 5 for col in sel_s}, index=kpi_rows
-                            )
-                        st.rerun()
-
-                if not st.session_state.nbs_eval_df_primary.empty:
-                    st.markdown("#### Expert Evaluation: CI(HN) Scores")
-                    st.caption(
-                        "Rate the expected resilience improvement for each KPI. **(1 = Best, 5 = Worst)**"
-                    )
-
-                    def create_expert_config(df_to_config):
-                        return {
-                            col: st.column_config.SelectboxColumn(
-                                col, options=[1, 2, 3, 4, 5], required=True
-                            )
-                            for col in df_to_config.columns
-                        }
-
-                    ed_p = st.data_editor(
-                        st.session_state.nbs_eval_df_primary,
-                        column_config=create_expert_config(st.session_state.nbs_eval_df_primary),
-                        use_container_width=True,
-                        key="ed_p_final",
-                    )
-
-                    if not st.session_state.nbs_eval_df_supportive.empty:
-                        st.markdown("##### Supportive Solutions Evaluation")
-                        ed_s = st.data_editor(
-                            st.session_state.nbs_eval_df_supportive,
-                            column_config=create_expert_config(
-                                st.session_state.nbs_eval_df_supportive
-                            ),
-                            use_container_width=True,
-                            key="ed_s_final",
-                        )
-                    else:
-                        ed_s = None
-
-                    if st.button("Validate and Rank"):
-                        cmap = {
-                            1: "#6dbf7a",
-                            2: "#a6d17b",
-                            3: "#ffeb84",
-                            4: "#f9a674",
-                            5: "#f76d6d",
-                        }
-                        st.subheader("🏆 Primary NbS Expert Ranking")
-                        for rank, res in enumerate(
-                            sorted(
-                                [{"Context": c, "Score": int(ed_p[c].min())} for c in ed_p.columns],
-                                key=lambda x: x["Score"],
-                            ),
-                            1,
-                        ):
-                            st.markdown(
-                                f'<div style="background-color: {cmap.get(res["Score"], "#fff")}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;"><h4 style="margin:0;">#{rank}: {res["Context"]}</h4><p style="margin:0;">Expert Score: <b>{res["Score"]}</b></p></div>',
-                                unsafe_allow_html=True,
-                            )
-                        if ed_s is not None:
-                            st.subheader("🏆 Supportive NbS Expert Ranking")
-                            for rank, res in enumerate(
-                                sorted(
-                                    [
-                                        {"Context": c, "Score": int(ed_s[c].min())}
-                                        for c in ed_s.columns
-                                    ],
-                                    key=lambda x: x["Score"],
-                                ),
-                                1,
-                            ):
+                            for item in unscored:
                                 st.markdown(
-                                    f'<div style="background-color: {cmap.get(res["Score"], "#fff")}; padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd; color: black;"><h4 style="margin:0;">#{rank}: {res["Context"]}</h4><p style="margin:0;">Expert Score: <b>{res["Score"]}</b></p></div>',
+                                    f'<div style="background-color:#f0f2f6;padding:10px;'
+                                    f'border-radius:6px;margin-bottom:8px;border:1px solid #ddd;color:black;">'
+                                    f'<h6 style="margin:0;">- {item["name"]}</h6>'
+                                    f'<p style="margin:0;font-size:0.9em;color:#555;"><i>'
+                                    f"Technical efficiency values are not available for this method."
+                                    f"</i></p></div>",
                                     unsafe_allow_html=True,
                                 )
+
+                st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
+                seen_labels = []
+                for item in st.session_state.filtered_nbs_pool:
+                    lbl = item.get("row_label", "")
+                    if lbl and item.get("is_primary", False) and lbl not in seen_labels:
+                        seen_labels.append(lbl)
+
+                ALL_LABEL = "🌐 All Rows Combined"
+                view_options = [ALL_LABEL] + seen_labels
+
+                st.info(
+                    "Use the selector below to view the RPRI ranking for a specific Impact Model / Asset row from the Implementation Mapping Summary, or select **All Rows Combined** to see the overall ranking (each method shown once at its highest RPRI across all rows).",
+                    icon="ℹ️",
+                )
+
+                selected_view = st.selectbox(
+                    "📋 View ranking for:", view_options, key="rpri_view_selector"
+                )
+
+                if selected_view == ALL_LABEL:
+                    render_rpri_ranking(st.session_state.filtered_nbs_pool, show_row_badge=True)
+                else:
+                    row_pool = [
+                        item
+                        for item in st.session_state.filtered_nbs_pool
+                        if item.get("row_label") == selected_view
+                    ]
+                    if row_pool:
+                        infra = row_pool[0].get("infrastructure", "")
+                        asset = row_pool[0].get("asset", "")
+                        imp = row_pool[0].get("impact_model", "")
+                        parts = [p for p in [infra, asset, imp] if p and p != "—"]
+                        st.markdown(
+                            f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;"><strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    render_rpri_ranking(row_pool, show_row_badge=False)
+                st.divider()
+                st.markdown("##### 🗺️ Cross-Row RPRI Heatmap")
+                st.caption(
+                    "Each cell shows the RPRI value for a given NbS method (row) across every Impact Model / Asset row (column). Blank cells mean the method does not apply to that row. Green = low residual risk · Red = high residual risk."
+                )
+                hm_data = {}
+                hm_all_labels = []
+                for _, _cr_row in st.session_state.calculated_results.iterrows():
+                    _a = str(_cr_row.get("Asset", "")).strip() or "—"
+                    _im = str(_cr_row.get("Impact model", "")).strip() or "—"
+                    _lbl = f"{_a} — {_im}"
+                    if _lbl and _lbl not in hm_all_labels:
+                        hm_all_labels.append(_lbl)
+
+                for item in st.session_state.filtered_nbs_pool:
+                    m = item.get("method_only", "")
+                    lbl = item.get("row_label", "")
+                    rv = item.get("rpri", None)
+                    st_val = item.get("status", "")
+                    if not m or not lbl or st_val != "scored" or rv is None:
+                        continue
+                    if not item.get("is_primary", False):
+                        continue
+                    if m not in hm_data:
+                        hm_data[m] = {}
+                    if lbl not in hm_data[m] or rv > hm_data[m][lbl]:
+                        hm_data[m][lbl] = rv
+
+                if len(hm_data) == 0 and st.session_state.filtered_nbs_pool:
+                    fallback_label = "All Assets"
+                    for item in st.session_state.filtered_nbs_pool:
+                        m = item.get(
+                            "method_only",
+                            item.get("name", "").split(" method for ")[0],
+                        )
+                        rv = item.get("rpri", None)
+                        st_val = item.get("status", "scored")
+                        if not m or st_val != "scored" or rv is None:
+                            continue
+                        if not item.get("is_primary", False):
+                            continue
+                        if m not in hm_data:
+                            hm_data[m] = {}
+                        if fallback_label not in hm_data[m] or rv > hm_data[m][fallback_label]:
+                            hm_data[m][fallback_label] = rv
+                    if hm_data and not hm_all_labels:
+                        hm_all_labels = [fallback_label]
+                hm_col_base = hm_all_labels if hm_all_labels else seen_labels
+
+                if len(hm_data) >= 1 and len(hm_col_base) >= 1:
+
+                    def _mean_rpri(method):
+                        vals = list(hm_data[method].values())
+                        return sum(vals) / len(vals) if vals else 0
+
+                    sorted_methods = sorted(hm_data.keys(), key=_mean_rpri)
+                    ALL_COL_LABEL = "🌐 All Rows Combined"
+                    col_labels = hm_col_base + [ALL_COL_LABEL]
+                    row_labels = sorted_methods
+                    z_matrix = []
+                    text_matrix = []
+
+                    for method in row_labels:
+                        z_row = []
+                        t_row = []
+                        row_vals = []
+                        for lbl in hm_col_base:
+                            val = hm_data[method].get(lbl, None)
+                            z_row.append(val if val is not None else np.nan)
+                            t_row.append(f"{val:.2f}" if val is not None else "—")
+                            if val is not None:
+                                row_vals.append(val)
+                        if row_vals:
+                            agg_val = sum(row_vals) / len(row_vals)
+                            z_row.append(agg_val)
+                            t_row.append(f"{agg_val:.2f}")
+                        else:
+                            z_row.append(np.nan)
+                            t_row.append("—")
+                        z_matrix.append(z_row)
+                        text_matrix.append(t_row)
+
+                    z_min = 0
+                    z_max = 5
+
+                    def _short(label, max_len=28):
+                        return label if len(label) <= max_len else label[: max_len - 1] + "…"
+
+                    short_col_labels = [_short(l) for l in col_labels]
+                    fig_height = max(300, 36 + 30 * len(row_labels))
+
+                    def _rpri_cell_color(val):
+                        """Return fill colour for a cell given its RPRI value (0–5)."""
+                        if val is None or (isinstance(val, float) and np.isnan(val)):
+                            return "#f0f0f0"
+                        stops = [
+                            (0.00, (27, 94, 32)),
+                            (0.14, (46, 125, 50)),
+                            (0.28, (174, 213, 129)),
+                            (0.50, (255, 241, 118)),
+                            (0.72, (255, 183, 77)),
+                            (0.86, (245, 124, 0)),
+                            (1.00, (211, 47, 47)),
+                        ]
+                        t = max(0.0, min(1.0, val / 5.0))
+                        for i in range(len(stops) - 1):
+                            t0, c0 = stops[i]
+                            t1, c1 = stops[i + 1]
+                            if t0 <= t <= t1:
+                                r = (t - t0) / (t1 - t0)
+                                rgb = tuple(int(c0[j] + r * (c1[j] - c0[j])) for j in range(3))
+                                return f"rgb{rgb}"
+                        return f"rgb{stops[-1][1]}"
+
+                    def _font_color(val):
+                        """White text on dark cells, black on light ones."""
+                        if val is None or (isinstance(val, float) and np.isnan(val)):
+                            return "#888888"
+                        return "white" if val >= 3.5 or val <= 0.7 else "black"
+
+                    tbl_cell_values = [row_labels]
+                    tbl_fill_colors = [["#1565c0"] * len(row_labels)]
+                    tbl_font_colors = [["white"] * len(row_labels)]
+
+                    for ci, col_lbl in enumerate(short_col_labels):
+                        col_vals = [z_matrix[ri][ci] for ri in range(len(row_labels))]
+                        col_texts = [text_matrix[ri][ci] for ri in range(len(row_labels))]
+                        tbl_cell_values.append(col_texts)
+                        tbl_fill_colors.append([_rpri_cell_color(v) for v in col_vals])
+                        tbl_font_colors.append([_font_color(v) for v in col_vals])
+
+                    hm_fig = go.Figure(
+                        go.Table(
+                            columnwidth=[220] + [90] * len(short_col_labels),
+                            header=dict(
+                                values=["<b>NbS Method</b>"]
+                                + [f"<b>{l}</b>" for l in short_col_labels],
+                                fill_color="#1565c0",
+                                font=dict(color="white", size=11),
+                                align=["left"] + ["center"] * len(short_col_labels),
+                                height=36,
+                                line=dict(color="white", width=1),
+                            ),
+                            cells=dict(
+                                values=tbl_cell_values,
+                                fill_color=tbl_fill_colors,
+                                font=dict(color=tbl_font_colors, size=11),
+                                align=["left"] + ["center"] * len(short_col_labels),
+                                height=28,
+                                line=dict(color="white", width=1),
+                            ),
+                        )
+                    )
+
+                    hm_fig.update_layout(
+                        height=fig_height,
+                        margin=dict(l=0, r=0, t=10, b=10),
+                        paper_bgcolor="white",
+                    )
+
+                    st.plotly_chart(hm_fig, use_container_width=True)
+                    st.markdown(
+                        """
+                        <div style="display:flex;gap:10px;flex-wrap:wrap;
+                                    margin-top:4px;font-size:0.82em;align-items:center;">
+                          <span style="background:#1b5e20;color:white;padding:2px 8px;
+                                       border-radius:4px;">Very low RPRI</span>
+                          <span style="background:#aed581;color:black;padding:2px 8px;
+                                       border-radius:4px;">Low–medium</span>
+                          <span style="background:#fff176;color:black;padding:2px 8px;
+                                       border-radius:4px;">Medium</span>
+                          <span style="background:#ffb74d;color:black;padding:2px 8px;
+                                       border-radius:4px;">Medium–high</span>
+                          <span style="background:#d32f2f;color:white;padding:2px 8px;
+                                       border-radius:4px;">High RPRI</span>
+                          <span style="background:#f0f0f0;color:#888;padding:2px 8px;
+                                       border-radius:4px;">— Not applicable</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                else:
+                    st.warning(
+                        "⚠️ Heatmap could not render. Open the diagnostics expander above to see what data is available. Ensure the RPRI ranking has been calculated and that primary solutions are assigned.",
+                    )
     else:
         st.warning("Please run Step 7.1 first.")
