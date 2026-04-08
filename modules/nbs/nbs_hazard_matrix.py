@@ -4,191 +4,230 @@
 NbS-Hazard matrix data.
 
 Maps climate hazards to applicable Nature-Based Solutions methods.
+Corrected Version: Resolves transposition error, incorporates corrected 3-letter codes,
+and fixes LFA typo.
 
 References:
     Kuschel, E.; Obriejetan, M.; Kuzmanić, T.; et al. (2025).
     A Systematic Framework for Assessing the Temporally Variable Protective Capacity
     of Nature-Based Solutions Against Natural Hazards. *Infrastructures*, 10(12), 318.
     https://doi.org/10.3390/infrastructures10120318
-
-    Table: https://www.mdpi.com/2412-3811/10/12/318#table_body_display_infrastructures-10-00318-t0A3
 """
 
 NBS_REFERENCE = "Kuschel et al. (2025), https://doi.org/10.3390/infrastructures10120318"
 
 NBS_CODES = {
-    "3DS": "3D steel grids (vegetated)",
-    "AFR": "Afforestation and reforestation",
-    "AGR": "Agroforestry",
-    "AVM": "Avalanche mounds",
-    "BRC": "Bio-retention cells",
-    "BDH": "Biodiverse hedgerows",
-    "BSW": "Bioswales",
-    "BRM": "Brush mattress",
-    "BVS": "Buffer vegetation strips and coppice management",
-    "CHW": "Channel widening",
-    "CTI": "Conservation tillage",
-    "CWT": "Constructed wetlands",
-    "CTR": "Contour trenching",
-    "CGR": "Controlled grazing",
-    "CRC": "Coral reef conservation and restoration",
-    "CVC": "Cover cropping",
-    "DRC": "Dune restoration and coastal vegetation",
-    "EDB": "Earth dams and barriers (vegetated)",
-    "FRT": "Fire-resistant tree species and plants",
-    "FSA": "Fire-smart agriculture",
-    "FBF": "Firebreaks and firestrips",
-    "FPR": "Floodplain restoration",
-    "GCR": "Green corridors and tree rows",
-    "GPV": "Green pavers",
-    "GRF": "Green roofs",
-    "GRV": "Groynes (vegetated)",
-    "HOR": "Horticulture",
-    "HMS": "Hydro and mulch seeding",
-    "IFT": "Infiltration trenches",
-    "LFS": "Littoral/intertidal forests and shrublands",
-    "LFC": "Live fascines",
-    "LFE": "Live fencing (for slope engineering)",
-    "LLT": "Live layered techniques",
-    "LPW": "Live palisades and live weirs",
-    "LSG": "Live slope grids or contour logs",
-    "LSK": "Live staking",
-    "LVS": "Living shorelines",
-    "MAR": "Managed aquifer recharge",
-    "MGR": "Meadow and grassland restoration",
-    "MCP": "Meandering channel planform",
-    "MUL": "Mulching",
-    "OPG": "Open green spaces",
-    "PRB": "Prescribed burning",
-    "PFM": "Protection forest management",
-    "RGN": "Rain gardens",
-    "RSP": "Reinforced soil and earth packs (vegetated)",
-    "RTR": "Retention forest",
-    "RBZ": "Riparian buffer zones",
-    "RWD": "Root wad",
-    "SMR": "Salt marsh restoration",
-    "SDS": "Sand dune stabilisation",
-    "SGR": "Seagrass bed restoration",
-    "SLL": "Sills",
-    "SDT": "Sod (turves)",
-    "SAM": "Soil amendments",
     "TER": "Terracing (slope shaping, reduction of slope inclination)",
-    "TRV": "Tree revetment (tree spurs)",
-    "URF": "Urban forests",
-    "VBM": "Vegetated biodegradable erosion control mats and blankets",
-    "VME": "Vegetated biodegradable erosion control meshes",
+    "EDB": "Earth dams and barriers (vegetated)",
+    "AVM": "Avalanche mounds",
+    "3DG": "3-D steel grids (vegetated)",
+    "RSV": "Reinforced soil and earth packs (vegetated)",
+    "AFF": "Afforestation and reforestation",
+    "PFM": "Protection forest management",
+    "RTF": "Retention forest",
+    "WFM": "Wildfire-forest management",
+    "BVS": "Buffer vegetation strips and coppice management",
+    "FBS": "Firebreaks and firestrips",
+    "FTS": "Fire-resistant tree species and plants",
+    "PRB": "Prescribed burning",
+    "RBZ": "Riparian buffer zones",
+    "FLR": "Floodplain restoration",
+    "MCP": "Meandering channel planform",
+    "CHW": "Channel widening",
+    "SIL": "Sills",
+    "GRO": "Groynes (vegetated)",
+    "VFD": "Vegetated flood protection dams, dikes and levees",
+    "WRB": "Water retention basins and ponds (storage ponds)",
+    "WCR": "Wetland conservation and restoration",
+    "CWL": "Constructed wetlands",
+    "LSL": "Living shorelines",
+    "DRC": "Dune restoration and coastal vegetation",
+    "SDS": "Sand dune stabilization",
+    "SBR": "Seagrass bed restoration",
+    "CRC": "Coral reef conservation and restoration",
+    "SMR": "Salt marsh restoration",
+    "LFS": "Litoral intertidal forests and shrublands",
+    "AGF": "Agroforestry",
+    "HTC": "Horticulture",
+    "WRH": "Water retention, harvesting and cisterns",
+    "MAR": "Managed aquifer recharge (MAR)",
+    "GCR": "Green corridors and tree rows",
+    "BDH": "Biodiverse hedgerows",
+    "MGR": "Meadow and grassland restoration",
     "VBZ": "Vegetated buffer zones",
-    "VCF": "Vegetated cribwall (fascine-based design)",
+    "CRG": "Controlled grazing",
+    "FSA": "Fire-smart agriculture",
+    "CTR": "Contour trenching",
+    "CNT": "Conservation tillage",
+    "MLH": "Mulching",
+    "CVC": "Cover cropping",
+    "SAM": "Soil amendments",
+    "HMS": "Hydro and mulch seeding",
+    "VEM": "Vegetated biodegradeable erosion control meshes",
+    "VMB": "Vegetated biodegradeable erosion control mats and blankets",
+    "SOD": "Sod (turves)",
+    "LST": "Live staking",
+    "LFE": "Live fencing (for slope engineering)",
+    "SLG": "Live slope grids or contour logs",
+    "LLT": "Live layered techniques",
     "VCL": "Vegetated cribwall (layer-based design)",
     "VDS": "Vegetated drainage systems",
-    "VFD": "Vegetated flood protection dams, dikes and levees",
-    "VLB": "Vegetated log/stone barriers and live/rock check dams",
+    "WAF": "Wattle fence (for water engineering)",
+    "TRV": "Tree revetment (tree spurs)",
     "VRP": "Vegetated riprap",
-    "VGR": "Vertical greenery",
-    "WRB": "Water retention basins and ponds (storage ponds)",
-    "WRC": "Water retention, harvesting and cisterns",
-    "WTF": "Wattle fence (for water engineering)",
-    "WCR": "Wetland conservation and restoration",
-    "WFM": "Wildfire-forest management",
+    "RWD": "Root wad",
+    "VCF": "Vegetated crib wall (fascine-based design)",
+    "LFA": "Live fascines",
+    "BMT": "Brush mattress",
+    "LPW": "Live palisades and live weirs",
+    "LSB": "Vegetated log/stone barriers and live/rock check dams",
     "WLF": "Wooden log fences",
+    "OGS": "Open green spaces",
+    "GRP": "Green pavers",
+    "GRF": "Green roofs",
+    "VGN": "Vertical greenery",
+    "UBF": "Urban forests",
+    "RNG": "Rain gardens",
+    "BRC": "Bio-retention cells",
+    "IFT": "Infiltration trenches",
+    "BSW": "Bioswales",
 }
 
 HAZARD_CODES = {
     "EHT": "Extreme high temperatures (Heatwave)",
     "ECT": "Extreme cold temperatures (Coldwave, cold snap)",
     "DRT": "Drought",
-    "WLF": "Wildfire",
-    "DZT": "Desertification",
+    "WFR": "Wildfire",
+    "DSF": "Desertification",
     "SSW": "Storms and strong winds",
-    "HAI": "Hail",
+    "HAL": "Hail",
     "AEO": "Aeolian erosion",
-    "PLF": "Pluvial flood, heavy rainfall and surface runoff",
-    "FLF": "Fluvial flood",
+    "PFR": "Pluvial flood, heavy rainfall and surface runoff",
+    "FVF": "Fluvial flood",
     "COF": "Coastal flood",
     "IFT": "Impact floods and tsunami",
     "FST": "Fluvial sediment transport",
     "SBE": "Stream bank and bed erosion",
-    "SER": "Sheet erosion and rill erosion",
-    "GUL": "Gully erosion",
+    "SRE": "Sheet erosion and rill erosion",
+    "GUE": "Gully erosion",
     "CSE": "Coastal and shoreline erosion",
-    "DFL": "Debris flood (Vol. Sediment Conc. 20–40%)",
-    "DFW": "Debris flow (Volumetric Sediment Concentration >40%)",
-    "SRF": "Small Rockfall (Diameter <25cm)",
-    "LRF": "Large Rockfall (Diameter >25-100 cm)",
+    "DFH": "Debris flood (Vol. Sediment Conc. 20–40%)",
+    "DFM": "Debris flow (Volumetric Sediment Concentration >40%)",
+    "RFS": "Small Rockfall (Diameter <25cm)",
+    "RFL": "Large Rockfall (Diameter >25-100 cm)",
     "LS1": "Landslides < 2 m depth",
     "LS2": "Landslides 2-10 m depth",
     "LS3": "Landslides > 10 m depths",
-    "MEF": "Mud or Earth flow",
-    "SSD": "Soil slope deformation & Soil creep",
-    "SNA": "Snow avalanches",
-    "SND": "Snow drift",
+    "LS4": "Mud or Earth flow",
+    "SDS": "Soil slope deformation & Soil creep",
+    "AVA": "Snow avalanches",
+    "SDR": "Snow drift",
     "SCS": "Snow creep & slide"
 }
 
-NBS_MATRIX = {
-    "EHT": ["BRC", "BSW", "GPV", "GRF", "IFT", "LVS", "MAR", "VLB", "VRP", "VGR", "WRB", "WRC"],
-    "ECT": ["BRC", "BSW", "GPV", "GRF", "LFS", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "VGR", "WRB", "WRC"],
-    "DRT": ["BRC", "BSW", "FPR", "GCR", "LFE", "LLT", "LPW", "MAR", "RTR", "RBZ", "RWD", "SAM", "WRB", "WRC"],
-    "WLF": ["3DS", "BDH", "BRC", "BSW", "BVS", "CHW", "CTI", "CWT", "CTR", "FRT", "FSA", "FPR", "GCR", "GRF", "GRV", "MGR", "MCP", "RSP", "SDS"],
-    "DZT": ["3DS", "BDH", "BRC", "BSW", "BRM", "LFC", "LFE", "LLT", "LPW", "LSG", "LSK", "LVS", "MAR", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RTR", "RBZ", "SAM"],
-    "SSW": ["BRC", "BSW", "BRM", "CGR", "CRC", "GPV", "LVS", "MAR", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VME"],
-    "HAI": ["BRC", "BSW", "BRM", "RSP", "RTR", "RBZ", "RWD", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VME", "VCL"],
-    "AEO": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "BRM", "CHW", "FRT", "LFC", "LFE", "LSG", "LSK", "MAR", "MGR", "OPG", "PRB", "PFM", "RGN", "RSP", "RTR", "RBZ", "RWD", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBM", "VME", "VBZ", "VCF", "VCL"],
-    "PLF": ["3DS", "AFR", "BRC", "BSW", "BRM", "CRC", "CVC", "DRC", "EDB", "FRT", "FSA", "FPR", "GCR", "IFT", "MAR", "MUL", "RSP", "RTR", "RBZ", "SMR", "SAM", "TER", "URF", "VLB", "VRP", "VGR", "WRB", "WRC", "WFM"],
-    "FLF": ["3DS", "BRC", "BSW", "BRM", "CGR", "FRT", "FSA", "FPR", "GCR", "GRF", "GRV", "HOR", "HMS", "IFT", "LFS", "LVS", "MAR", "MUL", "RSP", "RTR", "RBZ", "SMR", "SAM", "TER", "URF", "VCL", "VLB", "VRP", "VGR", "WRB", "WRC", "WFM", "WLF"],
-    "COF": ["3DS", "AFR", "CRC", "CVC", "DRC", "EDB", "GCR", "GPV", "GRF", "GRV", "LFS", "LFC", "LVS", "MAR", "SMR", "SDS", "SGR", "SLL", "SDT", "URF", "VBM", "VME"],
-    "IFT": ["3DS", "BDH", "BRC", "BSW", "BRM", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "IFT", "LFC", "MAR", "RSP", "RTR", "RBZ", "SDS", "SDT", "SAM", "TER", "TRV", "URF", "VBM", "VME"],
-    "FST": ["3DS", "AVM", "BDH", "BRC", "BSW", "BRM", "BVS", "CGR", "FBF", "FRT", "FSA", "FPR", "GCR", "LFC", "LFE", "LLT", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "RWD", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBM", "VDS", "VFD", "WRB", "WRC", "WFM", "WLF"],
-    "SBE": ["3DS", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "FRT", "FPR", "GCR", "GPV", "GRF", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "MUL", "OPG", "PRB", "PFM", "RGN", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VDS", "VFD", "WRB", "WRC", "WFM", "WLF"],
-    "SER": ["3DS", "AFR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FRT", "FPR", "GCR", "GRF", "GRV", "LFC", "LFE", "LLT", "LPW", "LSG", "LSK", "LVS", "MAR", "MUL", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VDS", "VFD", "WRB", "WRC", "WFM", "WLF"],
-    "GUL": ["3DS", "AFR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FRT", "FPR", "GCR", "LFC", "LFE", "LLT", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "RWD", "SMR", "SDS", "SLL", "SDT", "SAM", "TER", "TRV", "URF", "VBZ", "VCF", "VCL", "VFD", "WRB", "WRC", "WFM", "WLF"],
-    "CSE": ["3DS", "AVM", "BDH", "BRC", "BSW", "CGR", "FRT", "GCR", "GRF", "GRV", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VME", "VBZ", "VCF", "VCL", "VFD"],
-    "DFL": ["3DS", "AFR", "AGR", "BDH", "BRC", "BSW", "BRM", "CHW", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RBZ", "RSP", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VBM", "VBZ", "VCF", "VCL", "VDS", "VFD", "VLB", "VRP", "VGR", "WRB", "WRC", "WTF", "WCR", "WFM"],
-    "DFW": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD", "WRB", "WRC"],
-    "SRF": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "LRF": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "LS1": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "LS2": ["3DS", "AFR", "AVM", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "LS3": ["3DS", "AFR", "BRC", "BSW", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SDT", "SAM", "URF", "VFD"],
-    "MEF": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "SSD": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VFD"],
-    "SNA": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
-    "SND": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
-    "SCS": ["3DS", "AFR", "AGR", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"]
-    
-}
+_RAW_MATRIX_DATA = """
+TER	Terracing (slope shaping, reduction of slope inclination)	0	0	0	1	2	0	0	2	1	1	1	1	2	2	2	2	2	1	2	2	2	2	1	1	1	2	1	1	2
+EDB	Earth dams and barriers (vegetated)	0	0	0	0	0	0	0	2	2	0	1	1	0	0	2	2	0	2	2	2	2	2	1	0	1	0	2	2	2
+AVM	Avalanche mounds	0	0	0	0	0	0	0	0	0	0	0	0	1	1	1	1	1	1	2	2	2	2	1	0	2	2	2	2	2
+3DG	3-D steel grids (vegetated)	0	0	0	0	0	0	0	2	0	0	0	0	2	2	2	2	2	1	1	1	2	2	1	0	2	2	0	0	0
+RSV	Reinforced soil and earth packs (vegetated)	0	0	0	1	2	0	0	2	0	0	0	1	2	2	2	2	2	2	2	2	2	2	1	0	2	2	0	0	0
+AFF	Afforestation and reforestation	2	1	2	2	2	1	2	2	2	2	0	1	1	2	2	2	2	2	2	2	1	2	1	1	2	2	2	2	2
+PFM	Protection forest management	1	1	2	2	2	1	2	2	2	2	0	1	1	2	2	2	2	2	2	2	1	2	1	1	2	2	2	2	2
+RTF	Retention forest	1	1	1	0	2	1	2	2	2	2	0	1	1	2	2	2	0	2	2	1	0	1	0	0	1	1	1	1	1
+WFM	Wildfire-forest management 	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+BVS	Buffer vegetation strips and coppice management	0	0	1	2	1	1	0	2	1	1	0	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	1	1	1
+FBS	Firebreaks and firestrips	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+FTS	Fire-resistant tree species and plants	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+PRB	Prescribed burning	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+RBZ	Riparian buffer zones 	1	0	1	0	1	1	0	1	1	2	0	0	2	2	0	0	0	1	1	0	0	0	0	0	0	0	1	1	1
+FLR	Floodplain restoration	1	0	1	0	1	1	0	0	0	2	0	0	2	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+MCP	Meandering channel planform	1	0	1	0	1	0	0	0	0	2	0	0	2	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+CHW	Channel widening	0	0	1	1	1	0	0	0	0	2	0	0	2	2	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0
+SIL	Sills	0	0	1	0	1	0	0	0	0	2	0	0	2	2	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+GRO	Groynes (vegetated)	0	0	0	0	0	0	0	0	0	2	0	0	2	2	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+VFD	Vegetated flood protection dams, dikes and levees 	0	0	0	0	0	0	0	0	2	2	2	0	2	2	0	0	1	2	2	0	0	0	0	0	0	0	0	0	0
+WRB	Water retention basins and ponds (storage ponds)	1	0	1	2	1	0	0	0	2	2	0	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+WCR	Wetland conservation and restoration	1	0	2	1	1	0	0	0	2	2	1	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+CWL	Constructed wetlands 	1	0	1	1	1	0	0	0	2	2	1	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+LSL	Living shorelines	1	1	0	0	1	1	0	0	0	0	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0
+DRC	Dune restoration and coastal vegetation 	0	0	0	0	1	0	0	0	0	0	2	1	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0
+SDS	Sand dune stabilization	0	0	0	0	1	0	0	0	0	0	1	1	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0
+SBR	Seagrass bed restoration 	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0
+CRC	Coral reef conservation and restoration	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0
+SMR	Salt marsh restoration 	1	0	0	0	0	0	0	0	1	1	1	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+LFS	Litoral intertidal forests and shrublands	1	1	0	0	1	1	0	0	0	0	2	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0
+AGF	Agroforestry	1	1	1	0	2	2	1	2	2	2	0	0	1	1	2	1	0	1	1	0	0	1	0	0	1	1	0	1	1
+HTC	Horticulture	1	1	2	0	2	1	0	2	1	1	0	0	1	1	2	0	0	1	1	0	0	1	0	0	1	1	0	1	1
+WRH	Water retention, harvesting and cisterns 	0	0	2	0	2	0	0	0	1	1	0	0	2	0	2	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+MAR	Managed aquifer recharge (MAR)	0	0	2	0	2	0	0	0	1	1	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+GCR	Green corridors and tree rows	1	1	1	0	2	1	0	2	1	1	0	0	2	1	2	0	1	1	1	0	0	1	0	0	1	1	0	2	0
+BDH	Biodiverse hedgerows	1	1	1	0	2	1	0	2	1	1	0	0	1	1	1	1	1	1	1	0	0	1	0	0	1	1	0	2	0
+MGR	Meadow and grassland restoration	1	1	1	0	2	1	0	2	2	2	0	0	1	1	1	1	0	1	1	0	0	1	0	0	1	1	0	1	1
+VBZ	Vegetated buffer zones	1	1	1	0	2	1	0	2	2	2	0	0	2	2	2	1	2	1	1	0	0	1	0	0	1	1	0	2	2
+CRG	Controlled grazing 	0	0	0	2	2	0	0	1	1	1	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+FSA	Fire-smart agriculture	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+CTR	Contour trenching 	0	0	1	1	2	0	0	0	2	2	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+CNT	Conservation tillage	0	0	1	0	2	0	0	1	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+MLH	Mulching 	0	0	1	0	2	0	0	1	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+CVC	Cover cropping	0	0	1	0	2	0	0	1	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+SAM	Soil amendments	0	0	1	0	2	0	0	1	1	1	0	0	0	0	2	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+HMS	Hydro and mulch seeding 	0	0	0	0	2	0	1	2	1	1	1	0	1	2	2	2	2	1	0	2	0	2	1	0	1	1	0	0	0
+VEM	Vegetated biodegradeable erosion control meshes	0	0	2	0	2	0	1	2	1	1	1	0	1	2	2	2	2	1	1	2	0	2	1	0	1	1	0	0	0
+VMB	Vegetated biodegradeable erosion control mats and blankets	0	0	2	0	2	0	1	2	1	1	1	0	1	2	2	2	2	1	1	2	0	2	1	0	1	1	0	0	0
+SOD	Sod (turves)	0	0	2	0	1	0	1	2	1	1	0	0	0	0	2	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+LST	Live staking	0	0	1	0	1	0	1	2	2	2	2	0	1	2	2	2	2	1	2	2	1	2	1	0	1	1	0	1	0
+LFE	Live fencing (for slope engineering)	0	0	0	0	0	2	1	2	1	1	1	0	1	2	2	2	2	1	2	2	1	2	1	0	1	1	0	2	2
+SLG	Live slope grids or contour logs	0	0	1	0	1	0	1	2	1	1	1	0	0	0	2	2	0	1	2	2	1	2	1	0	1	1	0	0	0
+LLT	Live layered techniques	0	0	0	0	0	0	1	2	1	1	1	0	0	0	1	1	0	1	2	2	1	2	1	0	2	2	0	0	0
+VCL	Vegetated cribwall (layer-based design)	0	0	1	0	1	1	1	2	1	1	0	0	1	0	1	1	2	1	2	1	1	2	1	0	2	2	1	2	2
+VDS	Vegetated drainage systems 	0	0	1	0	1	0	1	1	2	2	0	0	0	0	2	2	0	1	2	0	0	2	2	2	2	2	0	0	0
+WAF	Wattle fence (for water engineering)	0	0	0	0	0	0	1	1	2	2	2	0	1	2	2	1	2	1	0	0	0	0	0	0	0	0	0	0	0
+TRV	Tree revetment (tree spurs)	0	0	0	0	0	0	1	1	1	1	0	0	1	2	2	2	2	1	0	0	0	0	0	0	0	0	0	0	0
+VRP	Vegetated riprap 	0	0	0	0	0	0	1	2	2	2	0	0	1	2	2	2	2	1	2	2	1	2	0	0	1	1	0	0	0
+RWD	Root wad	0	0	0	0	0	0	1	1	1	1	0	0	1	2	2	2	0	1	0	0	0	0	0	0	0	0	0	0	0
+VCF	Vegetated crib wall (fascine-based design)	0	0	0	0	0	1	1	2	2	2	0	0	2	2	0	0	2	1	2	0	0	0	0	0	0	0	1	2	2
+LFA	Live fascines	0	0	1	0	1	0	1	2	2	2	0	0	1	2	2	2	2	1	1	0	0	0	0	0	0	0	0	0	0
+BMT	Brush mattress	0	0	1	0	1	0	1	2	2	2	0	0	1	2	2	2	2	1	1	0	0	0	0	0	0	0	0	0	0
+LPW	Live palisades and live weirs	0	0	0	0	0	1	1	2	2	2	0	0	1	2	2	2	2	1	1	0	0	0	0	0	0	0	0	0	0
+LSB	Vegetated log/stone barriers and live/rock check dams 	0	0	0	0	0	0	1	1	2	2	0	0	2	2	0	2	0	1	2	0	0	0	0	0	0	0	1	0	0
+WLF	Wooden log fences	0	0	0	0	0	1	1	1	1	1	0	0	2	2	2	2	0	1	1	2	1	0	0	0	0	0	0	2	2
+OGS	Open green spaces	2	0	1	0	1	0	0	0	2	2	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+GRP	Green pavers	2	0	1	0	1	0	0	0	2	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+GRF	Green roofs	2	1	1	0	1	0	1	0	2	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+VGN	Vertical greenery	2	1	1	0	1	0	0	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+UBF	Urban forests 	2	1	1	0	1	0	0	0	2	2	0	0	1	1	0	0	0	1	1	1	0	1	0	0	1	1	0	0	0
+RNG	Rain gardens	1	0	1	0	1	0	0	0	1	1	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+BRC	Bio-retention cells	1	0	1	0	1	0	0	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+IFT	Infiltration trenches	0	0	1	0	1	0	0	0	2	1	0	0	1	1	1	0	0	1	0	0	0	0	0	0	0	0	0	0	0
+BSW	Bioswales 	1	0	1	0	0	0	0	0	1	2	0	0	1	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
+"""
 
-NBS_MATRIX_SUPPORTIVE = {
-    "EHT": ["BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "LFS", "LSG", "LSK", "SMR", "SDS", "SGR", "SDT", "SAM", "URF", "WTF", "WCR", "WLF"],
-    "ECT": ["AGR", "BRM", "CRC", "CVC", "DRC", "FSA", "FPR", "GCR", "SMR", "SDS", "SGR", "SDT", "SAM", "URF", "WTF", "WCR", "WLF"],
-    "DRT": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRM", "CHW", "CGR", "CRC", "CVC", "DRC", "EDB", "FSA", "GPV", "LFC", "LSG", "LSK", "LVS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SAM", "SMR", "SDS", "SGR", "SDT", "TER", "TRV", "URF", "VBM", "VME", "VBZ", "VCF", "VFD", "WTF", "WCR", "WFM", "WLF"],
-    "WLF": ["AFR", "AGR", "AVM", "BRM", "CGR", "DRC", "FBF", "LFC", "LSG", "LSK", "LVS", "MAR", "MUL", "OPG", "PRB", "PFM", "RGN", "RTR", "RBZ", "SMR", "SGR", "SDT", "SAM", "VFD"],
-    "DZT": ["AFR", "AGR", "AVM", "CGR", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GPV", "GRF", "LFS", "SMR", "SDS", "SGR", "SDT", "TER", "TRV", "URF", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "SSW": ["3DS", "AFR", "AGR", "AVM", "CHW", "FRT", "GCR", "GRF", "GRV", "LFC", "LFE", "LSG", "LSK", "RSP", "RTR", "RBZ", "RWD", "VBM", "VCL", "VDS", "VFD"],
-    "HAI": ["3DS", "AVM", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "TER", "TRV", "VBM", "VBZ", "VCF", "VDS", "VFD"],
-    "AEO": ["CGR", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "FPR", "GCR", "GRV", "LFS", "LFE", "LVS", "VDS", "VFD"],
-    "PLF": ["AGR", "AVM", "CHW", "CGR", "GPV", "GRF", "GRV", "HOR", "HMS", "LFS", "LFC", "LFE", "LLT", "LPW", "LSG", "LSK", "LVS", "MGR", "OPG", "PRB", "PFM", "RGN", "SDS", "SGR", "SDT", "TRV", "VBM", "VBZ", "VCF", "VCL", "VDS", "VFD", "WTF", "WCR", "WLF"],
-    "FLF": ["AFR", "AGR", "AVM", "CHW", "GPV", "LFC", "LFE", "LLT", "LPW", "LSG", "LSK", "MGR", "OPG", "PRB", "PFM", "RGN", "SDS", "SGR", "SDT", "VBM", "VBZ", "VCF", "VDS", "VFD", "WTF", "WCR"],
-    "COF": ["AGR", "AVM", "BRC", "BSW", "BRM", "FPR", "LFE", "LSG", "LSK", "MGR", "RSP", "RTR", "RBZ", "RWD", "SAM", "VBZ", "VCF", "VCL", "VFD"],
-    "IFT": ["AFR", "AGR", "AVM", "CHW", "CGR", "FPR", "GCR", "GRF", "LFE", "LSG", "LSK", "LVS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SMR", "SGR", "SLL", "SAM", "VBZ", "VCF", "VCL", "VDS", "VFD", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "FST": ["AFR", "AGR", "CHW", "GRF", "GRV", "LFS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "VBZ", "VCF", "VCL"],
-    "SBE": ["AFR", "AGR", "CHW", "CRC", "CVC", "DRC", "EDB", "FSA", "GRV", "HOR", "HMS", "IFT", "LFS", "LLT", "LPW", "MCP", "MUL", "OPG", "RWD", "VLB", "VRP", "VGR"],
-    "SER": ["AGR", "CHW", "GPV", "LFS", "MGR", "OPG", "PRB", "PFM", "RGN"],
-    "GUL": ["AGR", "CHW", "FBF", "GPV", "GRF", "GRV", "LFS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SGR", "VBM", "VME", "VDS"],
-    "CSE": ["AFR", "AGR", "BRM", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GPV", "LFS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SGR", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "DFL": ["AVM", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RTR", "SGR", "TER", "TRV"],
-    "DFW": ["BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FBF", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WTF", "WCR", "WFM", "WLF"],
-    "SRF": ["BRM", "CGR", "CRC", "CVC", "DRC", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "LRF": ["BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "LS1": ["BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "LS2": ["AGR", "BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "LS3": ["AGR", "AVM", "BDH", "BRM", "CGR", "CRC", "CVC", "DRC", "FRT", "FSA", "FPR", "GCR", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "SGR", "SLL", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "MEF": ["CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "SSD": ["CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VBZ", "VCF", "VCL", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "SNA": ["BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "SND": ["BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
-    "SCS": ["AVM", "BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"]
-}
+NBS_MATRIX = {h: [] for h in HAZARD_CODES.keys()}
+NBS_MATRIX_SUPPORTIVE = {h: [] for h in HAZARD_CODES.keys()}
+
+def _build_matrices():
+    """Parses the raw verified matrix data safely into final dictionaries."""
+    hazards_ordered = list(HAZARD_CODES.keys())
+    for line in _RAW_MATRIX_DATA.strip().split('\n'):
+        if not line.strip():
+            continue
+        parts = [p.strip() for p in line.split('\t')]
+        if len(parts) < 31: 
+            continue
+        
+        nbs_code = parts[0]
+        scores = parts[2:31]
+        
+        for i, score in enumerate(scores):
+            if i >= len(hazards_ordered):
+                break
+            hazard_code = hazards_ordered[i]
+            if score == '2':
+                NBS_MATRIX[hazard_code].append(nbs_code)
+            elif score == '1':
+                NBS_MATRIX_SUPPORTIVE[hazard_code].append(nbs_code)
+
+_build_matrices()
 # fmt: on
 
 
