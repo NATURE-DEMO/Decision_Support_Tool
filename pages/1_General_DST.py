@@ -2291,8 +2291,9 @@ elif selected_step == 1:
                     if sol in approved_supportive:
                         s_sols.add(sol)
                         
-        primary_sol_col.append(", ".join(sorted(list(p_sols))) if p_sols else "None")
-        supportive_sol_col.append(", ".join(sorted(list(s_sols))) if s_sols else "None")
+        # FIXED: Use " | " instead of a comma so NbS names with internal commas aren't broken
+        primary_sol_col.append(" | ".join(sorted(list(p_sols))) if p_sols else "None")
+        supportive_sol_col.append(" | ".join(sorted(list(s_sols))) if s_sols else "None")
         
     summary_display_df["Primary Solutions"] = primary_sol_col
     summary_display_df["Supportive Solutions"] = supportive_sol_col
@@ -2432,10 +2433,12 @@ elif selected_step == 1:
         hazards = [h.strip() for h in raw_hazards.split(",")] if raw_hazards and raw_hazards != "None" else []
         
         p_raw = str(row.get("Primary Solutions", ""))
-        row_p_sols = [s.strip() for s in p_raw.split(",") if s.strip() and s.strip() in approved_primary]
+        # FIXED: Split by " | " instead of ","
+        row_p_sols = [s.strip() for s in p_raw.split(" | ") if s.strip() and s.strip() in approved_primary]
         
         s_raw = str(row.get("Supportive Solutions", ""))
-        row_s_sols = [s.strip() for s in s_raw.split(",") if s.strip() and show_lvl1_supp and s.strip() in approved_supportive]
+        # FIXED: Split by " | " instead of ","
+        row_s_sols = [s.strip() for s in s_raw.split(" | ") if s.strip() and show_lvl1_supp and s.strip() in approved_supportive]
         
         all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
 
@@ -2530,6 +2533,9 @@ elif selected_step == 1:
         st.markdown("---")
         st.subheader("NbS Feasibility Spider Diagram")
         df_final = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool).sort_values(by="total", ascending=False)
+        
+        # FIXED: Tell Pandas to strictly drop duplicate row records so they aren't graphed twice!
+        df_final = df_final.drop_duplicates(subset=["name"])
         
         fig = go.Figure()
         for _, r in df_final.head(5).iterrows():
