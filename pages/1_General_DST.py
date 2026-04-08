@@ -1534,7 +1534,7 @@ if selected_step == 0:
 
                     context_report = ""
                     if st.session_state.get("gemini_client"):
-                        st.write("🤖 Generating AI Context Report (Internet Search)...")
+                        st.write("🤖 Generating AI Context Report...")
                         context_report = generate_context_report(
                             center_lat,
                             center_lon,
@@ -1709,124 +1709,300 @@ elif selected_step == 1:
 
     col_scope1, col_scope2 = st.columns(2)
     with col_scope1:
+        if not df_lvl2_base.empty and "Infrastructure" in df_lvl2_base.columns:
+            dynamic_infras = sorted(df_lvl2_base["Infrastructure"].unique().tolist())
+        else:
+            dynamic_infras = [
+                "Road", "Railway", "Tunnels", "Bridges", "green spaces",
+                "Dams", "River training infrastructure", "Torrent control infrastructure"
+            ]
+            
         selected_infra_type = st.selectbox(
             "Select Infrastructure Type",
-            options=[
-                "Road",
-                "Railway",
-                "Tunnels",
-                "Bridges",
-                "green spaces",
-                "Dams",
-                "River training infrastructure",
-                "Torrent control infrastructure",
-            ],
+            options=dynamic_infras,
         )
     with col_scope2:
         selected_hazard_type = st.selectbox("Select Climate Driver", options=climate_drivers)
 
-    st.markdown("---")
+    
+    if not df_lvl2_base.empty and "Infrastructure" in df_lvl2_base.columns:
+        filtered_df_lvl1 = df_lvl2_base[df_lvl2_base["Infrastructure"] == selected_infra_type]
+        available_impact_models = sorted(filtered_df_lvl1["Impact model"].dropna().unique().tolist())
+        available_assets = sorted(filtered_df_lvl1["Asset"].dropna().unique().tolist())
+    else:
+        available_impact_models = []
+        available_assets = []
 
-    df_data = st.session_state["risk_matrix_data"]
-    df = pd.DataFrame(df_data, index=kpis)
-    df.index.name = "KPI / Indicator"
+    all_hazards_list_lvl1 = [
+        "Extreme high temperatures (Heatwave)", "Extreme cold temperatures (Coldwave, cold snap)",
+        "Drought", "Wildfire (Forest fire or Bush fire)", "Desertification",
+        "Storms & strong winds", "Hail", "Aeolian erosion",
+        "Pluvial flood, heavy rainfall and surface runoff", "Fluvial flood",
+        "Coastal flood (e.g. storm surge)", "Impact floods and Tsunami",
+        "Fluvial sediment transport", "Stream bank & bed erosion",
+        "Sheet erosion & rill erosion", "Gully erosion",
+        "Coastal and shoreline erosion (includes freshwater environments)",
+        "Debris flood (Volumetric Sediment Concentration 20-40%)",
+        "Debris flow (Volumetric Sediment Concentration >40%)",
+        "Small Rockfall (Diameter <25cm)", "Large Rockfall (Diameter >25-100 cm)",
+        "Landslides < 2 m depth", "Landslides 2-10 m depth", "Landslides > 10 m depths",
+        "Mud or Earth flow", "Soil slope deformation & Soil creep",
+        "Snow avalanches", "Snow drift", "Snow creep & slide",
+    ]
 
-    st.subheader("Input Ratings: Risk and Loss")
-    st.info(
-        "Please provide integers between **1 (best/lowest)** and **5 (worst/highest)** for each cell."
-    )
+    col_lvl1_a, col_lvl1_b, col_lvl1_c = st.columns(3)
 
-    matrix_tab, scenario_key_tab = st.tabs(["Input Matrices (1-5)", "Scenario & KPI Definitions"])
+    with col_lvl1_a:
+        selected_impact_model = st.selectbox("Select Impact Model", options=available_impact_models)
+    with col_lvl1_b:
+        selected_asset = st.selectbox("Select Asset", options=available_assets)
+    with col_lvl1_c:
+        selected_hazards_lvl1 = st.multiselect("Select Possible Hazards", options=all_hazards_list_lvl1)
 
-    with scenario_key_tab:
-        st.markdown("### Key Performance Indicators (KPIs)")
-        st.markdown("""
-        These indicators cover various dimensions of risk and resilience:
-        * **SRS:** Safety, Reliability, and Security.
-        * **AM:** Availability and Maintainability.
-        * **EC:** Economy (cost, efficiency).
-        * **EV:** Environment (environmental impact, sustainability).
-        * **HP:** Health and Politics (public health, political stability).
-        """)
+    dynamic_primaries = set()
+    dynamic_supportives = set()
+    nbs_db = NbS_list if isinstance(NbS_list, dict) else (NbS_list[0] if isinstance(NbS_list, list) and len(NbS_list) > 0 else {})
 
-        st.markdown("### Scenario Definitions")
-        for abbr, desc in scenarios.items():
-            html_abbr = (
-                abbr.replace("CI_HNG", "CI<sub>HNG</sub>")
-                .replace("CI_HN", "CI<sub>HN</sub>")
-                .replace("CI_HG", "CI<sub>HG</sub>")
-                .replace("CI_H", "CI<sub>H</sub>")
-                .replace("CI", "CI")
-            )
-            st.markdown(f"**{html_abbr}** ({desc})", unsafe_allow_html=True)
+    if selected_hazards_lvl1:
+        for h in selected_hazards_lvl1:
+            if h in nbs_db:
+                dynamic_primaries.update(nbs_db[h].get("Yes", []))
+                dynamic_supportives.update(nbs_db[h].get("Supportive", []))
 
-    with matrix_tab:
-        column_config = {
-            "KPI / Indicator": st.column_config.TextColumn("KPI / Indicator", disabled=True)
-        }
+    col_lvl1_d, col_lvl1_e = st.columns(2)
+    with col_lvl1_d:
+        selected_primary_nbs = st.multiselect("Select Primary NbS Solutions", options=sorted(list(dynamic_primaries)))
+    with col_lvl1_e:
+        selected_supportive_nbs = st.multiselect("Select Supportive NbS Solutions", options=sorted(list(dynamic_supportives)))
 
-        for key, desc in scenarios.items():
-            column_config[key] = st.column_config.NumberColumn(
-                label=key,
-                help=desc,
-                min_value=1,
-                max_value=5,
-                default=3,
-                format="%d",
-                width="small",
-            )
+    if "lvl1_added_items" not in st.session_state:
+        st.session_state["lvl1_added_items"] = pd.DataFrame(columns=[
+            "Infrastructure", "Climate driver", "Asset", "Impact model", "Possible Hazards", "NbS Type", "NbS Solution"
+        ])
 
-        st.markdown(
-            f"### 1. Risk Rating (Critical infrastructure Condition) for {selected_infra_type}"
-        )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        with st.form("risk_rating_form"):
-            risk_edited_df = st.data_editor(
-                df,
-                column_config=column_config,
-                num_rows="fixed",
-                key="risk_matrix_editor_widget",
-            )
-            submit_risk = st.form_submit_button("Save Risk Ratings")
+    if st.button("➕ Add to Scope Table", type="primary", use_container_width=True):
+        if selected_impact_model and selected_asset:
+            hazards_str = ", ".join(selected_hazards_lvl1) if selected_hazards_lvl1 else "None"
+            base_row = {
+                "Infrastructure": selected_infra_type,
+                "Climate driver": selected_hazard_type,
+                "Asset": selected_asset,
+                "Impact model": selected_impact_model,
+                "Possible Hazards": hazards_str,
+            }
 
-        if submit_risk:
-            st.session_state["risk_matrix_data"] = risk_edited_df.to_dict()
-            st.rerun()
-        st.markdown(f"### 2. Extent of Loss Rating (CI) for {selected_infra_type}")
+            new_rows = []
 
-        df_loss_data = st.session_state["loss_matrix_data"]
-        df_loss = pd.DataFrame(df_loss_data, index=kpis)
-        df_loss.index.name = "KPI / Indicator"
-
-        loss_display_columns = [col for col in df_loss.columns if col != "CI"]
-        df_loss_display = df_loss[loss_display_columns]
-
-        column_config_loss = column_config.copy()
-        if "CI" in column_config_loss:
-            del column_config_loss["CI"]
-
-        with st.form("loss_rating_form"):
-            loss_edited_df_display = st.data_editor(
-                df_loss_display,
-                column_config=column_config_loss,
-                num_rows="fixed",
-                key="loss_matrix_editor_widget",
-            )
-            submit_loss = st.form_submit_button("Save Loss Ratings")
-
-        if submit_loss:
-            if "CI" in df_loss.columns:
-                ci_column_original = df_loss["CI"].copy()
-                reconstructed_df_loss = loss_edited_df_display.assign(CI=ci_column_original)
-                st.session_state["loss_matrix_data"] = reconstructed_df_loss.to_dict()
+            if not selected_primary_nbs and not selected_supportive_nbs:
+                row = base_row.copy()
+                row["NbS Type"] = "None"
+                row["NbS Solution"] = "None"
+                new_rows.append(row)
             else:
-                st.session_state["loss_matrix_data"] = loss_edited_df_display.to_dict()
-            st.rerun()
+
+                for nbs in selected_primary_nbs:
+                    row = base_row.copy()
+                    row["NbS Type"] = "Primary"
+                    row["NbS Solution"] = nbs
+                    new_rows.append(row)
+
+                for nbs in selected_supportive_nbs:
+                    row = base_row.copy()
+                    row["NbS Type"] = "Supportive"
+                    row["NbS Solution"] = nbs
+                    new_rows.append(row)
+
+            new_rows_df = pd.DataFrame(new_rows)
+            st.session_state["lvl1_added_items"] = pd.concat([st.session_state["lvl1_added_items"], new_rows_df], ignore_index=True)
+            st.toast(f"Added {len(new_rows)} item(s) to the scope table!", icon="✅")
+        else:
+            st.warning("Please ensure both an Impact Model and an Asset are available and selected.")
+
+    if not st.session_state["lvl1_added_items"].empty:
+        display_df = st.session_state["lvl1_added_items"].copy()
+        if "Risk Score" in display_df.columns:
+            display_df = display_df.drop(columns=["Risk Score"])
+            
+        selection_event = st.dataframe(
+            display_df, 
+            use_container_width=True, 
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="multi-row",
+            key="lvl1_scope_table"
+        )
+        
+        btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 3])
+        
+        with btn_col1:
+            if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
+                selected_indices = selection_event.selection.rows
+                if selected_indices:
+                    st.session_state["lvl1_added_items"] = st.session_state["lvl1_added_items"].drop(selected_indices).reset_index(drop=True)
+                    st.rerun()
+                else:
+                    st.warning("Please select at least one row by clicking the checkbox on the left side of the table.")
+                    
+        with btn_col2:
+            if st.button("🗑️ Clear Scope Table", type="secondary", use_container_width=True):
+                st.session_state["lvl1_added_items"] = pd.DataFrame(columns=[
+                    "Infrastructure", "Climate driver", "Asset", "Impact model", "Possible Hazards", "NbS Type", "NbS Solution"
+                ])
+                st.rerun()
+
+    st.markdown("---")
+    st.subheader("Input Ratings: Risk and Loss")
+
+    if "lvl1_added_items" not in st.session_state or st.session_state["lvl1_added_items"].empty:
+        st.warning("⚠️ Please add at least one item to the Scope Table above before inputting ratings.")
+    else:
+        scope_options = st.session_state["lvl1_added_items"].apply(
+            lambda r: f"{r['Infrastructure']} | {r['Asset']} | {r['Impact model']} | {r['Climate driver']} | {r.get('NbS Solution', 'None')}", axis=1
+        ).tolist()
+        
+        selected_rating_item = st.selectbox("Select Scope Item to Rate:", options=scope_options)
+
+        if "item_risk_matrices" not in st.session_state:
+            st.session_state["item_risk_matrices"] = {}
+        if "item_loss_matrices" not in st.session_state:
+            st.session_state["item_loss_matrices"] = {}
+
+        if selected_rating_item not in st.session_state["item_risk_matrices"]:
+            initial_risk = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
+            st.session_state["item_risk_matrices"][selected_rating_item] = pd.DataFrame(initial_risk, index=kpis).to_dict()
+            
+        if selected_rating_item not in st.session_state["item_loss_matrices"]:
+            initial_loss = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
+            st.session_state["item_loss_matrices"][selected_rating_item] = pd.DataFrame(initial_loss, index=kpis).to_dict()
+
+        df_data = st.session_state["item_risk_matrices"][selected_rating_item]
+        df = pd.DataFrame(df_data, index=kpis)
+        df.index.name = "KPI / Indicator"
+
+        st.info("Please select values between **1 (best/lowest)** and **5 (worst/highest)** from the dropdowns for each cell.")
+
+        matrix_tab, scenario_key_tab = st.tabs(["Input Matrices (1-5)", "Scenario & KPI Definitions"])
+
+        with scenario_key_tab:
+            st.markdown("### Key Performance Indicators (KPIs)")
+            st.markdown("""
+            These indicators cover various dimensions of risk and resilience:
+            * **SRS:** Safety, Reliability, and Security.
+            * **AM:** Availability and Maintainability.
+            * **EC:** Economy (cost, efficiency).
+            * **EV:** Environment (environmental impact, sustainability).
+            * **HP:** Health and Politics (public health, political stability).
+            """)
+
+            st.markdown("### Scenario Definitions")
+            for abbr, desc in scenarios.items():
+                html_abbr = (
+                    abbr.replace("CI_HNG", "CI<sub>HNG</sub>")
+                    .replace("CI_HN", "CI<sub>HN</sub>")
+                    .replace("CI_HG", "CI<sub>HG</sub>")
+                    .replace("CI_H", "CI<sub>H</sub>")
+                    .replace("CI", "CI")
+                )
+                st.markdown(f"**{html_abbr}** ({desc})", unsafe_allow_html=True)
+
+        with matrix_tab:
+            risk_column_config = {
+                "KPI / Indicator": st.column_config.TextColumn("KPI / Indicator", disabled=True)
+            }
+            for key, desc in scenarios.items():
+                risk_column_config[key] = st.column_config.SelectboxColumn(
+                    label=key,
+                    help=desc,
+                    options=[1, 2, 3, 4, 5, "Not Available"],
+                    default=3,
+                    width="small",
+                    required=True,
+                )
+
+            st.markdown("### 1. Risk Rating (Critical infrastructure Condition)")
+
+            with st.form("risk_rating_form"):
+                risk_edited_df = st.data_editor(
+                    df,
+                    column_config=risk_column_config,
+                    num_rows="fixed",
+                    key=f"risk_matrix_editor_{selected_rating_item}", 
+                )
+                submit_risk = st.form_submit_button("Save Risk Ratings")
+
+            if submit_risk:
+                st.session_state["item_risk_matrices"][selected_rating_item] = risk_edited_df.to_dict()
+                if "CI_HN" in risk_edited_df.columns:
+                    ci_hn_series = pd.to_numeric(risk_edited_df["CI_HN"], errors="coerce")
+                    final_score = int(ci_hn_series.max()) if ci_hn_series.notna().any() else 0
+                else:
+                    final_score = 0
+                temp_df = st.session_state["lvl1_added_items"].copy()
+                if "Risk Score" not in temp_df.columns:
+                    temp_df["Risk Score"] = None
+                
+                # --- UPDATED: Match logic updated to find the exploded row ---
+                mask = temp_df.apply(
+                    lambda r: f"{r['Infrastructure']} | {r['Asset']} | {r['Impact model']} | {r['Climate driver']} | {r.get('NbS Solution', 'None')}",
+                    axis=1
+                ) == selected_rating_item
+
+                if mask.any():
+                    temp_df.loc[mask, "Risk Score"] = final_score
+                    st.session_state["lvl1_added_items"] = temp_df
+                    st.success(f"Saved! Risk Score (max CI_HN) = **{final_score}** for the selected item.")
+                else:
+                    st.error("Could not match the selected item back to the scope table. Please try saving again.")
+
+                st.rerun()
+
+            st.markdown("### 2. Extent of Loss Rating (CI)")
+
+            df_loss_data = st.session_state["item_loss_matrices"][selected_rating_item]
+            df_loss = pd.DataFrame(df_loss_data, index=kpis)
+            df_loss.index.name = "KPI / Indicator"
+
+            loss_display_columns = [col for col in df_loss.columns if col != "CI"]
+            df_loss_display = df_loss[loss_display_columns]
+
+            column_config_loss = {
+                "KPI / Indicator": st.column_config.TextColumn("KPI / Indicator", disabled=True)
+            }
+            for key, desc in scenarios.items():
+                if key != "CI":
+                    column_config_loss[key] = st.column_config.SelectboxColumn(
+                        label=key,
+                        help=desc,
+                        options=[1, 2, 3, 4, 5],
+                        default=3,
+                        width="small",
+                    )
+
+            with st.form("loss_rating_form"):
+                loss_edited_df_display = st.data_editor(
+                    df_loss_display,
+                    column_config=column_config_loss,
+                    num_rows="fixed",
+                    key=f"loss_matrix_editor_{selected_rating_item}", 
+                )
+                submit_loss = st.form_submit_button("Save Loss Ratings")
+
+            if submit_loss:
+                if "CI" in df_loss.columns:
+                    ci_column_original = df_loss["CI"].copy()
+                    reconstructed_df_loss = loss_edited_df_display.assign(CI=ci_column_original)
+                    st.session_state["item_loss_matrices"][selected_rating_item] = reconstructed_df_loss.to_dict()
+                else:
+                    st.session_state["item_loss_matrices"][selected_rating_item] = loss_edited_df_display.to_dict()
+                st.success(f"Loss Ratings saved for: {selected_rating_item}")
+                st.rerun()
 
         st.markdown("---")
-        st.subheader("Radar Plot of Input Risks")
+        st.subheader(f"Radar Plot of Input Risks: {selected_rating_item.split(' | ')[0]}")
 
-        df_risk_current = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
+        df_risk_current = pd.DataFrame(st.session_state["item_risk_matrices"][selected_rating_item], index=kpis)
 
         try:
             kpis_for_plot = df_risk_current.reset_index()
@@ -1836,9 +2012,7 @@ elif selected_step == 1:
         available_series = kpis_for_plot.columns[1:].tolist()
 
         if not available_series:
-            st.info(
-                "No scenario columns available to plot. Please configure the risk matrix columns."
-            )
+            st.info("No scenario columns available to plot.")
         else:
             st.markdown("Select scenarios to include in the radar plot:")
             cols_radar = st.columns(len(available_series))
@@ -1864,71 +2038,55 @@ elif selected_step == 1:
                         st.plotly_chart(radar_fig, use_container_width=True)
                 except Exception as e:
                     st.error(f"Failed to create radar plot: {e}")
-                    st.exception(e)
 
         st.markdown("---")
         st.subheader("Consequence Assessment Matrices (Risk vs. Loss)")
-        st.caption(
-            "Each plot compares the Risk Rating (X) and Loss Rating (CI) for the selected scenario across all 5 KPIs."
-        )
+        st.caption(f"Showing Consequence Matrix for: **{selected_rating_item}**")
 
         scenarios_to_plot = ["CI_H", "CI_HG", "CI_HN", "CI_HNG"]
         plot_cols = st.columns(2)
 
-        all_risk_values_flat = pd.DataFrame(st.session_state["risk_matrix_data"]).values.flatten()
-        risk_values_series = pd.Series(pd.to_numeric(all_risk_values_flat, errors="coerce"))
-        valid_risk_input = all(risk_values_series.between(1, 5, inclusive="both").fillna(False))
+        df_for_plot_loss = pd.DataFrame(st.session_state["item_loss_matrices"][selected_rating_item], index=kpis)
+        df_for_plot_risk = pd.DataFrame(st.session_state["item_risk_matrices"][selected_rating_item], index=kpis)
 
-        all_loss_values_flat = pd.DataFrame(st.session_state["loss_matrix_data"]).values.flatten()
-        loss_values_series = pd.Series(pd.to_numeric(all_loss_values_flat, errors="coerce"))
-        valid_loss_input = all(loss_values_series.between(1, 5, inclusive="both").fillna(False))
+        for i, scenario in enumerate(scenarios_to_plot):
+            try:
+                fig = create_risk_heatmap_plotly(
+                    df_for_plot_risk, df_for_plot_loss, scenario, kpis
+                )
+                with plot_cols[i % 2]:
+                    st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                with plot_cols[i % 2]:
+                    st.error(f"Failed to generate plot for scenario {scenario}: {e}")
 
-        if not valid_risk_input or not valid_loss_input:
-            st.warning(
-                "Please ensure all cells in both tables contain valid integers between 1 and 5 to generate the matrix plots."
+        st.subheader("Summary: Assessed Risks and Scores")
+        st.caption("Overview of all scoped items and their calculated Risk Scores (based on the maximum CI_HN value).")
+        
+        if "lvl1_added_items" in st.session_state and not st.session_state["lvl1_added_items"].empty:
+            st.dataframe(
+                st.session_state["lvl1_added_items"],
+                use_container_width=True,
+                hide_index=True
             )
         else:
-            df_for_plot_loss = pd.DataFrame(st.session_state["loss_matrix_data"], index=kpis)
-
-            df_for_plot_risk = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
-
-            for i, scenario in enumerate(scenarios_to_plot):
-                try:
-                    fig = create_risk_heatmap_plotly(
-                        df_for_plot_risk, df_for_plot_loss, scenario, kpis
-                    )
-                    with plot_cols[i % 2]:
-                        st.plotly_chart(fig, use_container_width=True)
-                except Exception as e:
-                    with plot_cols[i % 2]:
-                        st.error(f"Failed to generate plot for scenario {scenario}: {e}")
-
-        st.markdown("---")
+            st.info("No risks have been assessed yet. Add items to the Scope Table and save their risk ratings to see the summary here.")
+        
         with st.expander("Interpretation"):
             if st.session_state.get("gemini_client"):
                 if st.button(
                     "Generate Interpretation Report",
                     type="primary",
-                    help="Analyze the current risk matrix using Gemini with contextual search.",
+                    help="Analyze the current risk matrix using Gemini.",
                 ):
-                    if not "risk_matrix_data" in st.session_state:
-                        st.error(
-                            "Please populate the Risk Matrix table first before generating an interpretation."
-                        )
-                        st.stop()
-
                     try:
-                        current_df = pd.DataFrame(st.session_state["risk_matrix_data"], index=kpis)
+                        current_df = pd.DataFrame(st.session_state["item_risk_matrices"][selected_rating_item], index=kpis)
                     except (KeyError, ValueError) as e:
-                        st.error(
-                            f"Error reading risk matrix data: {e}. Ensure 'kpis' and 'risk_matrix_data' are correctly structured."
-                        )
+                        st.error(f"Error reading risk matrix data: {e}.")
                         current_df = None
 
                     if current_df is not None:
-                        with st.spinner(
-                            "Generating Risk Matrix Interpretation (Gemini with Google Search)..."
-                        ):
+                        with st.spinner("Generating Risk Matrix Interpretation (Gemini)..."):
                             interpretation_report = generate_risk_interpretation(
                                 current_df, kpis, scenarios
                             )
@@ -1937,50 +2095,538 @@ elif selected_step == 1:
 
                         st.subheader("Risk Matrix Interpretation Report")
                         if interpretation_report:
-                            render_ai_header("Risk Matrix Interpretation Report")
-                            with st.expander(
-                                "📊 View Raw Data Fed to AI (Risk Assessment Matrix)",
-                                expanded=False,
-                            ):
-                                st.caption(
-                                    "This is the risk matrix data that was provided to the AI model for interpretation."
-                                )
+                            render_ai_header(f"Risk Matrix Interpretation Report: {selected_rating_item.split(' | ')[0]}")
+                            with st.expander("📊 View Raw Data Fed to AI", expanded=False):
                                 st.dataframe(current_df, use_container_width=True)
                             st.markdown(interpretation_report)
                             render_ai_footer()
-                        else:
-                            st.warning("The Risk Matrix Interpretation Report failed to generate.")
 
-                if st.session_state["interpretation_report"]:
+                elif st.session_state.get("interpretation_report"):
                     st.subheader("Risk Matrix Interpretation Report")
                     render_ai_header("Risk Matrix Interpretation Report")
-                    with st.expander(
-                        "📊 View Raw Data Fed to AI (Risk Assessment Matrix)",
-                        expanded=False,
-                    ):
-                        st.caption(
-                            "This is the risk matrix data that was provided to the AI model for interpretation."
-                        )
+                    with st.expander("📊 View Raw Data Fed to AI", expanded=False):
                         try:
                             persistent_df = pd.DataFrame(
-                                st.session_state["risk_matrix_data"], index=kpis
+                                st.session_state["item_risk_matrices"][selected_rating_item], index=kpis
                             )
                             st.dataframe(persistent_df, use_container_width=True)
                         except Exception:
-                            st.info("Risk matrix data not available for display.")
+                            pass
                     st.markdown(st.session_state["interpretation_report"])
                     render_ai_footer()
-                else:
-                    st.info(
-                        "Click the button above to generate the AI interpretation report based on the current matrix data."
-                    )
-
             else:
                 st.warning(
                     "Gemini client not initialized. AI interpretation feature disabled. Ensure GEMINI_API_KEY is available."
                 )
 
         pass
+
+
+    st.markdown("---")
+    st.subheader("3. NbS Selection and Risk Mitigation")
+    st.info("Evaluate potential Nature-based Solutions for your identified hazards across strategic criteria.")
+    primary_sols = {}
+    supp_sols = {}
+    has_valid_hazards = False
+
+    if "lvl1_added_items" in st.session_state and not st.session_state["lvl1_added_items"].empty:
+        for _, row in st.session_state["lvl1_added_items"].iterrows():
+            nbs_type = row.get("NbS Type", "None")
+            sol = row.get("NbS Solution", "None")
+            hazards_str = str(row.get("Possible Hazards", ""))
+            
+            if hazards_str != "None" and hazards_str.strip():
+                has_valid_hazards = True
+                
+            if sol == "None" or not str(sol).strip():
+                continue
+            hazards = [h.strip() for h in hazards_str.split(",") if h.strip() and h.strip() != "None"]
+            
+            if nbs_type == "Primary":
+                if sol not in primary_sols:
+                    primary_sols[sol] = set()
+                primary_sols[sol].update(hazards)
+            elif nbs_type == "Supportive":
+                if sol not in supp_sols:
+                    supp_sols[sol] = set()
+                supp_sols[sol].update(hazards)
+
+    if not has_valid_hazards:
+        st.warning("⚠️ No hazards have been identified in the Scope Table yet. Please add items to generate NbS criteria.")
+    elif not primary_sols and not supp_sols:
+        st.info("ℹ️ No specific NbS Solutions were added to the Scope Table. Please select and add NbS solutions above.")
+    primary_sols = {sol: sorted(list(hazards)) for sol, hazards in primary_sols.items()}
+    supp_sols = {sol: sorted(list(hazards)) for sol, hazards in supp_sols.items()}
+    def build_lvl1_nbs_rows(sols_dict):
+        rows = []
+        for sol, haz_list in sorted(sols_dict.items()):
+            rows.append({
+                "Include": True,
+                "NbS Solution": sol,
+                "Addressed Hazards": ", ".join(haz_list),
+                "Technical Efficacy": 3,
+                "Implementation Costs": 3,
+                "Implementation Time": 3,
+                "Environmental Impact": 3,
+                "Social Acceptance": 3
+            })
+        return rows
+
+    nbs_lvl1_column_config = {
+        "Include": st.column_config.CheckboxColumn("Include", width="small", default=True),
+        "NbS Solution": st.column_config.TextColumn("NbS Solution", disabled=True, width="medium"),
+        "Addressed Hazards": st.column_config.TextColumn("Addressed Hazards", disabled=True, width="medium"),
+        "Technical Efficacy": st.column_config.SelectboxColumn("Technical Efficacy", options=[1, 2, 3, 4, 5, "Not Acceptable"], required=True, default=3),
+        "Implementation Costs": st.column_config.SelectboxColumn("Implementation Costs", options=[1, 2, 3, 4, 5, "Not Acceptable"], required=True, default=3),
+        "Implementation Time": st.column_config.SelectboxColumn("Implementation Time", options=[1, 2, 3, 4, 5, "Not Acceptable"], required=True, default=3),
+        "Environmental Impact": st.column_config.SelectboxColumn("Environmental Impact", options=[1, 2, 3, 4, 5, "Not Acceptable"], required=True, default=3),
+        "Social Acceptance": st.column_config.SelectboxColumn("Social Acceptance", options=[1, 2, 3, 4, 5, "Not Acceptable"], required=True, default=3),
+    }
+
+    if primary_sols:
+        st.markdown("##### ✅ Primary NbS Solutions")
+        st.caption("Select the criteria that make each primary solution suitable for your project.")
+        
+        if "lvl1_primary_nbs_df" not in st.session_state or len(st.session_state["lvl1_primary_nbs_df"]) != len(primary_sols):
+            st.session_state["lvl1_primary_nbs_df"] = pd.DataFrame(build_lvl1_nbs_rows(primary_sols))
+
+        with st.form("lvl1_primary_nbs_form"):
+            edited_primary_lvl1 = st.data_editor(
+                st.session_state["lvl1_primary_nbs_df"],
+                column_config=nbs_lvl1_column_config,
+                hide_index=True,
+                use_container_width=True,
+                key="lvl1_primary_nbs_editor"
+            )
+            
+            btn_col1, btn_col2, _ = st.columns([2, 2, 4])
+            with btn_col1:
+                save_primary = st.form_submit_button("Save Primary NbS Criteria", type="primary", use_container_width=True)
+            with btn_col2:
+                remove_primary = st.form_submit_button("❌ Remove Checked Rows", use_container_width=True)
+
+            if save_primary:
+                st.session_state["lvl1_primary_nbs_df"] = edited_primary_lvl1
+                st.success("Primary NbS criteria saved!")
+                st.rerun()
+                
+            if remove_primary:
+                remaining_df = edited_primary_lvl1[~edited_primary_lvl1["Include"]].reset_index(drop=True)
+                st.session_state["lvl1_primary_nbs_df"] = remaining_df
+                st.success("Checked rows removed!")
+                st.rerun()
+
+    show_lvl1_supp = False
+    if supp_sols:
+        st.markdown("<br>", unsafe_allow_html=True)
+        show_lvl1_supp = st.toggle("🔄 View Supportive Solutions", value=False, key="lvl1_supp_toggle")
+        
+        if show_lvl1_supp:
+            st.markdown("##### 🔄 Supportive NbS Solutions")
+            st.caption("Select the criteria that make each supportive solution suitable for your project.")
+            
+            if "lvl1_supp_nbs_df" not in st.session_state or len(st.session_state["lvl1_supp_nbs_df"]) != len(supp_sols):
+                st.session_state["lvl1_supp_nbs_df"] = pd.DataFrame(build_lvl1_nbs_rows(supp_sols))
+
+            with st.form("lvl1_supp_nbs_form"):
+                edited_supp_lvl1 = st.data_editor(
+                    st.session_state["lvl1_supp_nbs_df"],
+                    column_config=nbs_lvl1_column_config,
+                    hide_index=True,
+                    use_container_width=True,
+                    key="lvl1_supp_nbs_editor"
+                )
+                
+                btn_col1, btn_col2, _ = st.columns([2, 2, 4])
+                with btn_col1:
+                    save_supp = st.form_submit_button("Save Supportive NbS Criteria", type="primary", use_container_width=True)
+                with btn_col2:
+                    remove_supp = st.form_submit_button("❌ Remove Checked Rows", use_container_width=True)
+
+                if save_supp:
+                    st.session_state["lvl1_supp_nbs_df"] = edited_supp_lvl1
+                    st.success("Supportive NbS criteria saved!")
+                    st.rerun()
+                    
+                if remove_supp:
+                    remaining_df = edited_supp_lvl1[~edited_supp_lvl1["Include"]].reset_index(drop=True)
+                    st.session_state["lvl1_supp_nbs_df"] = remaining_df
+                    st.success("Checked rows removed!")
+                    st.rerun()
+
+    st.markdown("---")
+    st.markdown("#### NbS Implementation Mapping Summary")
+    st.caption("Overview of the specific Primary and Supportive Nature-based Solutions assigned to each scoped asset based on your selections above.")
+    summary_display_df = st.session_state["lvl1_added_items"].copy()
+    approved_primary = set()
+    if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
+        active_primary = st.session_state["lvl1_primary_nbs_df"][st.session_state["lvl1_primary_nbs_df"]["Include"]]
+        approved_primary = set(active_primary["NbS Solution"])
+    
+    approved_supportive = set()
+    if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
+        active_supp = st.session_state["lvl1_supp_nbs_df"][st.session_state["lvl1_supp_nbs_df"]["Include"]]
+        approved_supportive = set(active_supp["NbS Solution"])
+        
+    primary_sol_col = []
+    supportive_sol_col = []
+    for _, row in summary_display_df.iterrows():
+        hazards_str = str(row.get("Possible Hazards", ""))
+        if hazards_str == "None" or not hazards_str.strip():
+            primary_sol_col.append("None")
+            supportive_sol_col.append("None")
+            continue
+            
+        current_hazards = [h.strip() for h in hazards_str.split(",")]
+        
+        p_sols = set()
+        s_sols = set()
+        
+        for h in current_hazards:
+            if h in nbs_db:
+                for sol in nbs_db[h].get("Yes", []):
+                    if sol in approved_primary:
+                        p_sols.add(sol)
+                for sol in nbs_db[h].get("Supportive", []):
+                    if sol in approved_supportive:
+                        s_sols.add(sol)
+                        
+        primary_sol_col.append(", ".join(sorted(list(p_sols))) if p_sols else "None")
+        supportive_sol_col.append(", ".join(sorted(list(s_sols))) if s_sols else "None")
+        
+    summary_display_df["Primary Solutions"] = primary_sol_col
+    summary_display_df["Supportive Solutions"] = supportive_sol_col
+    cols_to_show = [
+        "Infrastructure", 
+        "Asset", 
+        "Impact model", 
+        "Possible Hazards", 
+        "Primary Solutions", 
+        "Supportive Solutions"
+    ]
+    cols_to_show = [c for c in cols_to_show if c in summary_display_df.columns]
+    
+    st.dataframe(summary_display_df[cols_to_show], use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.markdown("#### Filtration of the Recommended NbS Solutions")
+    st.info("Filter and refine NbS selection by integrating Site-Specific Feasibility (SSF), Socio-Economic acceptance (SEI), and Hazard Impact Attenuation (HIA).")
+    
+    _lvl1_sei_dropdown_options = sorted(list(approved_primary | approved_supportive))
+    
+    if "lvl1_sei_lookup" not in st.session_state:
+        st.session_state.lvl1_sei_lookup = {}
+    if "lvl1_site_conditions_lookup" not in st.session_state:
+        st.session_state.lvl1_site_conditions_lookup = {}
+        
+    sei_factors_list = [
+        "Community Engagement", "Cultural Preferences", "Workforce Availability",
+        "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints",
+    ]
+    ssf_labels = {
+        "Slope instability": "Unstable/Steep Slopes",
+        "Limited vegetation and low quality of soil": "Poor Soil/Low Vegetation",
+        "Limited access for implementation": "Difficult Site Access",
+        "Cold temperatures": "Cold Temperatures / Frost Risk",
+        "Limited water availability": "Water Scarcity",
+        "Lack of connection to major services": "No Infrastructure/Services Access",
+        "Space Constraints": "Very Limited Space",
+        "Exposure to soil, water and/or air pollution": "Polluted Soil/Water/Air",
+        "Limitations due to high population density": "Urban/Densely Populated Area",
+    }
+    
+    if _lvl1_sei_dropdown_options:
+        selected_nbs_for_sei = st.selectbox(
+            "Select an NbS Solution to configure SSF and SEI factors:", _lvl1_sei_dropdown_options, key="lvl1_sei_dropdown"
+        )
+        if selected_nbs_for_sei not in st.session_state.lvl1_sei_lookup:
+            st.session_state.lvl1_sei_lookup[selected_nbs_for_sei] = {f: 1 for f in sei_factors_list}
+        if selected_nbs_for_sei not in st.session_state.lvl1_site_conditions_lookup:
+            st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei] = {k: False for k in ssf_labels.keys()}
+            st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei]["Slope instability"] = True
+    else:
+        selected_nbs_for_sei = None
+        
+    if "lvl1_ssf_lookup" not in st.session_state:
+        st.session_state.lvl1_ssf_lookup = {}
+
+    edit_ssf_toggle = st.toggle("🛠️ Customize Site-Specific Feasibility (SSF) Rules", key="lvl1_edit_ssf_toggle", help="Modify the baseline assumptions for how site constraints affect each NbS method.")
+
+    if edit_ssf_toggle:
+        st.markdown("##### Edit SSF Rulebook")
+        val_to_str = {100: "Highly Feasible", 50: "Moderately Feasible", 0: "Not Feasible"}
+        str_to_val = {v: k for k, v in val_to_str.items()}
+        
+        edit_data = []
+        for method in sorted(_lvl1_sei_dropdown_options):
+            row_dict = {"NbS Method": method}
+            for crit in ssf_labels.keys():
+                crit_data = st.session_state.lvl1_ssf_lookup.get(method, {}).get(crit, {})
+                val = crit_data.get("Value", 100) if isinstance(crit_data, dict) else 100
+                row_dict[crit] = val_to_str.get(val, "Highly Feasible")
+            edit_data.append(row_dict)
+            
+        if edit_data:
+            col_config = {"NbS Method": st.column_config.TextColumn(disabled=True)}
+            for crit in ssf_labels.keys():
+                col_config[crit] = st.column_config.SelectboxColumn(
+                    options=["Highly Feasible", "Moderately Feasible", "Not Feasible"], required=True
+                )
+            edited_df = st.data_editor(
+                pd.DataFrame(edit_data), column_config=col_config, hide_index=True, use_container_width=True, key="lvl1_ssf_rule_editor"
+            )
+            for _, row in edited_df.iterrows():
+                method = row["NbS Method"]
+                if method not in st.session_state.lvl1_ssf_lookup:
+                    st.session_state.lvl1_ssf_lookup[method] = {}
+                for crit in ssf_labels.keys():
+                    st.session_state.lvl1_ssf_lookup[method][crit] = {"Value": str_to_val[row[crit]]}
+        else:
+            st.info("No identified solutions found to edit.")
+        st.divider()
+
+    with st.expander("⚙️ Configure Site Conditions & Socio-Economic Factors", expanded=True):
+        col_input1, col_input2 = st.columns(2)
+        with col_input1:
+            with st.container(border=True):
+                st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
+                if selected_nbs_for_sei:
+                    st.caption(f"Configuring SSF conditions for: **{selected_nbs_for_sei}**")
+                    for crit, label in ssf_labels.items():
+                        current_val = st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei].get(crit, False)
+                        val = st.toggle(label, value=current_val, key=f"lvl1_ssf_cond_{selected_nbs_for_sei}_{crit}")
+                        st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei][crit] = val
+                else:
+                    st.info("Select an NbS solution from the dropdown above to configure SSF conditions.")
+        with col_input2:
+            with st.container(border=True):
+                st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
+                if selected_nbs_for_sei:
+                    st.caption(f"Configuring SEI factors for: **{selected_nbs_for_sei}**")
+                    for f in sei_factors_list:
+                        current_val = st.session_state.lvl1_sei_lookup[selected_nbs_for_sei].get(f, 1)
+                        val = st.select_slider(f"{f}", options=[1, 2, 3], value=current_val, key=f"lvl1_sei_{selected_nbs_for_sei}_{f}", help="1: Favorable, 2: Neutral, 3: Unfavorable")
+                        st.session_state.lvl1_sei_lookup[selected_nbs_for_sei][f] = val
+                else:
+                    st.info("Select an NbS solution from the dropdown above to configure SEI factors.")
+
+    st.session_state.lvl1_filtered_nbs_pool = []
+    low_perf_pool = []
+    
+    unique_pairs = {}
+    method_to_hazards = {}
+    
+    for row_idx, row in summary_display_df.iterrows():
+        raw_pri = row.get("Risk Score", 0)
+        try:
+            pri_score = float(raw_pri) if raw_pri is not None and str(raw_pri).strip() not in ["None", ""] else 0.0
+        except (ValueError, TypeError):
+            pri_score = 0.0
+            
+        asset_val = str(row.get("Asset", "")).strip() or "—"
+        impact_val = str(row.get("Impact model", "")).strip() or "—"
+        infra_val = str(row.get("Infrastructure", "")).strip() or ""
+        row_label = f"{asset_val} — {impact_val}"
+
+        raw_hazards = str(row.get("Possible Hazards", ""))
+        hazards = [h.strip() for h in raw_hazards.split(",")] if raw_hazards and raw_hazards != "None" else []
+        
+        p_raw = str(row.get("Primary Solutions", ""))
+        row_p_sols = [s.strip() for s in p_raw.split(",") if s.strip() and s.strip() in approved_primary]
+        
+        s_raw = str(row.get("Supportive Solutions", ""))
+        row_s_sols = [s.strip() for s in s_raw.split(",") if s.strip() and show_lvl1_supp and s.strip() in approved_supportive]
+        
+        all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
+
+        for h in hazards:
+            for sol in all_sols:
+                pair_name = f"{sol} method for {h}"
+                up_key = (row_idx, pair_name)
+                is_prim = sol in row_p_sols
+
+                if up_key not in unique_pairs:
+                    unique_pairs[up_key] = {
+                        "original_pri": pri_score,
+                        "status": "scored",
+                        "pair_name": pair_name,
+                        "method_only": sol,
+                        "row_label": row_label,
+                        "asset": asset_val,
+                        "impact_model": impact_val,
+                        "infrastructure": infra_val,
+                        "is_primary": is_prim,
+                    }
+                elif unique_pairs[up_key]["original_pri"] < pri_score:
+                    unique_pairs[up_key]["original_pri"] = pri_score
+                    if is_prim:
+                        unique_pairs[up_key]["is_primary"] = True
+
+                if sol not in method_to_hazards:
+                    method_to_hazards[sol] = set()
+                method_to_hazards[sol].add(h)
+
+    for _, data in unique_pairs.items():
+        name = data["pair_name"]
+        method_base = data["method_only"]
+
+        m_ssf_data = st.session_state.lvl1_ssf_lookup.get(method_base, {})
+        method_site_conditions = st.session_state.lvl1_site_conditions_lookup.get(method_base, {})
+        ssf_scores = []
+
+        for crit in ssf_labels.keys():
+            if method_site_conditions.get(crit, False):
+                c_info = m_ssf_data.get(crit, {})
+                val = c_info.get("Value", 100) if isinstance(c_info, dict) else 100
+                ssf_scores.append(val)
+            else:
+                ssf_scores.append(100)
+
+        avg_ssf = sum(ssf_scores) / len(ssf_scores) if ssf_scores else 100
+        method_sei_vals = st.session_state.lvl1_sei_lookup.get(method_base, {f: 1 for f in sei_factors_list})
+        sei_scores = [100 if v == 1 else (50 if v == 2 else 0) for v in method_sei_vals.values()]
+        avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
+        
+        relevant_hazards = method_to_hazards.get(method_base, set())
+        hia_scores = []
+        for haz_key in relevant_hazards:
+            haz_data = nbs_db.get(haz_key, {})
+            if method_base in haz_data.get("Yes", []):
+                hia_scores.append(100)
+            elif method_base in haz_data.get("Supportive", []):
+                hia_scores.append(50)
+            else:
+                hia_scores.append(0)
+        avg_hia = sum(hia_scores) / len(hia_scores) if hia_scores else 0
+
+        total_score = (avg_ssf + avg_sei + avg_hia) / 3
+        if total_score < 10: tech_eff = 1
+        elif total_score < 30: tech_eff = 2
+        elif total_score < 60: tech_eff = 3
+        elif total_score < 80: tech_eff = 4
+        else: tech_eff = 5
+
+        af = 1.0 - tech_eff / 5.0
+        pri_score = data.get("original_pri", 0)
+        rpri = pri_score * af
+        
+        data.update({
+            "name": name, "method_only": method_base, "ssf": avg_ssf,
+            "sei": avg_sei, "hia": avg_hia, "total": total_score,
+            "tech_eff": tech_eff, "eff_percent": total_score, "rpri": rpri,
+        })
+        
+        if total_score >= 30:
+            st.session_state.lvl1_filtered_nbs_pool.append(data)
+        else:
+            low_perf_pool.append(data)
+
+    if not st.session_state.lvl1_filtered_nbs_pool:
+        if unique_pairs:
+            st.warning("⚠️ No solutions strictly passed the 30% feasibility threshold. Showing all potential methods for your review.")
+            st.session_state.lvl1_filtered_nbs_pool = list(unique_pairs.values())
+
+    if st.session_state.lvl1_filtered_nbs_pool:
+        st.markdown("---")
+        st.subheader("NbS Feasibility Spider Diagram")
+        df_final = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool).sort_values(by="total", ascending=False)
+        
+        fig = go.Figure()
+        for _, r in df_final.head(5).iterrows():
+            fig.add_trace(go.Scatterpolar(
+                r=[r["ssf"], r["sei"], r["hia"], r["ssf"]],
+                theta=["Site Feasibility (SSF)", "Socio-Economic (SEI)", "Hazard Attenuation (HIA)", "Site Feasibility (SSF)"],
+                fill="toself", name=r["name"]
+            ))
+        fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+        with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
+            filt_config = {
+                "name": st.column_config.TextColumn("NbS Method"),
+                "ssf": st.column_config.ProgressColumn("SSF (%)", format="%.0f%%", min_value=0, max_value=100),
+                "sei": st.column_config.ProgressColumn("SEI (%)", format="%.0f%%", min_value=0, max_value=100),
+                "hia": st.column_config.ProgressColumn("HIA (%)", format="%.0f%%", min_value=0, max_value=100),
+                "total": st.column_config.ProgressColumn("Final Index (%)", format="%.0f%%", min_value=0, max_value=100),
+            }
+            st.dataframe(df_final[["name", "ssf", "sei", "hia", "total"]], column_config=filt_config, use_container_width=True, hide_index=True)
+
+        if low_perf_pool:
+            st.markdown("##### ⚠️ Threshold Analysis")
+            with st.expander(f"View {len(low_perf_pool)} methods below 30% threshold", expanded=False):
+                for item in low_perf_pool:
+                    st.warning(f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%).")
+                    
+    st.markdown("---")
+    st.markdown("#### Suitability Index (SI) Results")
+    st.caption("The Suitability Index evaluates the overall feasibility of each active solution. SI = (((5-TE) × (5-IC) × (5-IT) × (5-EI) × (5-SA))^(1/5)) / 4")
+        
+    si_results = []
+    
+    def calculate_si(row_data):
+        factors = [
+            row_data.get("Technical Efficacy", 3),
+            row_data.get("Implementation Costs", 3),
+            row_data.get("Implementation Time", 3),
+            row_data.get("Environmental Impact", 3),
+            row_data.get("Social Acceptance", 3)
+        ]
+        for f in factors:
+            if f == "Not Acceptable" or pd.isna(f):
+                return 0.0
+                
+        try:
+            numeric_factors = [float(f) for f in factors]
+            if any(pd.isna(x) for x in numeric_factors):
+                return 0.0
+            product = 1.0
+            for f in numeric_factors:
+                product *= (5.0 - f)
+            geom_mean = product ** (1/5)
+            si = geom_mean / 4.0
+            if pd.isna(si):
+                return 0.0
+                
+            return max(0.0, min(1.0, si))
+        except Exception:
+            return 0.0
+            
+    if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
+        df_prim = st.session_state["lvl1_primary_nbs_df"]
+        active_prim = df_prim[df_prim["Include"] == True]
+        for _, row in active_prim.iterrows():
+            si_val = calculate_si(row)
+            si_results.append({
+                "NbS Solution": row["NbS Solution"],
+                "Type": "Primary",
+                "SI": si_val
+            })
+
+    if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
+        df_supp = st.session_state["lvl1_supp_nbs_df"]
+        active_supp = df_supp[df_supp["Include"] == True]
+        for _, row in active_supp.iterrows():
+            si_val = calculate_si(row)
+            si_results.append({
+                "NbS Solution": row["NbS Solution"],
+                "Type": "Supportive",
+                "SI": si_val
+            })
+            
+    if si_results:
+        si_results = sorted(si_results, key=lambda x: x["SI"], reverse=True)
+        
+        for res in si_results:
+            color = "green" if res["SI"] > 0.6 else ("orange" if res["SI"] > 0.0 else "red")
+            badge = f"**[{res['Type']}]**"
+            
+            st.markdown(
+                f"- {badge} {res['NbS Solution']}: "
+                f"<span style='color:{color}; font-weight:bold;'>SI = {res['SI']:.3f}</span>",
+                unsafe_allow_html=True
+            )
+    else:
+        st.info("No active NbS solutions found. Ensure you have checked 'Include' and saved your criteria in the tables above.")
 
 elif selected_step == 2:
     st.header("Infrastructure Impact & Hazard Analysis")
