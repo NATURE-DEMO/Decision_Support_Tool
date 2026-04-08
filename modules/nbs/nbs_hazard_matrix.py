@@ -4,17 +4,18 @@
 NbS-Hazard matrix data.
 
 Maps climate hazards to applicable Nature-Based Solutions methods.
-Corrected Version: Resolves transposition error and aligns with corrected matrix image.
 
 References:
     Kuschel, E.; Obriejetan, M.; Kuzmanić, T.; et al. (2025).
     A Systematic Framework for Assessing the Temporally Variable Protective Capacity
     of Nature-Based Solutions Against Natural Hazards. *Infrastructures*, 10(12), 318.
+    https://doi.org/10.3390/infrastructures10120318
+
+    Table: https://www.mdpi.com/2412-3811/10/12/318#table_body_display_infrastructures-10-00318-t0A3
 """
 
 NBS_REFERENCE = "Kuschel et al. (2025), https://doi.org/10.3390/infrastructures10120318"
 
-# Updated to match the exact names and codes from the corrected image
 NBS_CODES = {
     "3DS": "3D steel grids (vegetated)",
     "AFR": "Afforestation and reforestation",
@@ -34,10 +35,10 @@ NBS_CODES = {
     "CVC": "Cover cropping",
     "DRC": "Dune restoration and coastal vegetation",
     "EDB": "Earth dams and barriers (vegetated)",
-    "FTS": "Fire-resistant tree species and plants", # Updated from FRT
+    "FRT": "Fire-resistant tree species and plants",
     "FSA": "Fire-smart agriculture",
     "FBF": "Firebreaks and firestrips",
-    "PLR": "Floodplain restoration", # Updated from FPR
+    "FPR": "Floodplain restoration",
     "GCR": "Green corridors and tree rows",
     "GPV": "Green pavers",
     "GRF": "Green roofs",
@@ -46,7 +47,7 @@ NBS_CODES = {
     "HMS": "Hydro and mulch seeding",
     "IFT": "Infiltration trenches",
     "LFS": "Littoral/intertidal forests and shrublands",
-    "LFA": "Live fascines", # Updated from LFC as requested
+    "LFC": "Live fascines",
     "LFE": "Live fencing (for slope engineering)",
     "LLT": "Live layered techniques",
     "LPW": "Live palisades and live weirs",
@@ -62,7 +63,7 @@ NBS_CODES = {
     "PFM": "Protection forest management",
     "RGN": "Rain gardens",
     "RSP": "Reinforced soil and earth packs (vegetated)",
-    "RTF": "Retention forest", # Updated from RTR
+    "RTR": "Retention forest",
     "RBZ": "Riparian buffer zones",
     "RWD": "Root wad",
     "SMR": "Salt marsh restoration",
@@ -85,48 +86,46 @@ NBS_CODES = {
     "VRP": "Vegetated riprap",
     "VGR": "Vertical greenery",
     "WRB": "Water retention basins and ponds (storage ponds)",
-    "WRH": "Water retention, harvesting and cisterns", # Updated from WRC
+    "WRC": "Water retention, harvesting and cisterns",
     "WTF": "Wattle fence (for water engineering)",
     "WCR": "Wetland conservation and restoration",
     "WFM": "Wildfire-forest management",
     "WLF": "Wooden log fences",
 }
 
-# Updated to match the new exact column headers from the corrected image
 HAZARD_CODES = {
     "EHT": "Extreme high temperatures (Heatwave)",
     "ECT": "Extreme cold temperatures (Coldwave, cold snap)",
     "DRT": "Drought",
-    "WFR": "Wildfire", # Updated from WLF
-    "DZF": "Desertification", # Updated from DZT
+    "WLF": "Wildfire",
+    "DZT": "Desertification",
     "SSW": "Storms and strong winds",
-    "HAL": "Hail", # Updated from HAI
+    "HAI": "Hail",
     "AEO": "Aeolian erosion",
-    "PFR": "Pluvial flood, heavy rainfall and surface runoff", # Updated from PLF
+    "PLF": "Pluvial flood, heavy rainfall and surface runoff",
     "FLF": "Fluvial flood",
     "COF": "Coastal flood",
     "IFT": "Impact floods and tsunami",
     "FST": "Fluvial sediment transport",
     "SBE": "Stream bank and bed erosion",
-    "SRE": "Sheet erosion and rill erosion", # Updated from SER
-    "GUE": "Gully erosion", # Updated from GUL
+    "SER": "Sheet erosion and rill erosion",
+    "GUL": "Gully erosion",
     "CSE": "Coastal and shoreline erosion",
     "DFL": "Debris flood (Vol. Sediment Conc. 20–40%)",
-    "DFM": "Debris flow (Volumetric Sediment Concentration >40%)", # Updated from DFW
-    "RFS": "Small Rockfall (Diameter <25cm)", # Updated from SRF
-    "RFL": "Large Rockfall (Diameter >25-100 cm)", # Updated from LRF
+    "DFW": "Debris flow (Volumetric Sediment Concentration >40%)",
+    "SRF": "Small Rockfall (Diameter <25cm)",
+    "LRF": "Large Rockfall (Diameter >25-100 cm)",
     "LS1": "Landslides < 2 m depth",
     "LS2": "Landslides 2-10 m depth",
     "LS3": "Landslides > 10 m depths",
-    "LS4": "Mud or Earth flow", # Updated from MEF
-    "SDS": "Soil slope deformation & Soil creep", # Updated from SSD
-    "AVA": "Snow avalanches", # Updated from SNA
-    "SDR": "Snow drift", # Updated from SND
+    "MEF": "Mud or Earth flow",
+    "SSD": "Soil slope deformation & Soil creep",
+    "SNA": "Snow avalanches",
+    "SND": "Snow drift",
     "SCS": "Snow creep & slide"
 }
 
-# The original matrix with transposition error
-_OLD_NBS_MATRIX = {
+NBS_MATRIX = {
     "EHT": ["BRC", "BSW", "GPV", "GRF", "IFT", "LVS", "MAR", "VLB", "VRP", "VGR", "WRB", "WRC"],
     "ECT": ["BRC", "BSW", "GPV", "GRF", "LFS", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "VGR", "WRB", "WRC"],
     "DRT": ["BRC", "BSW", "FPR", "GCR", "LFE", "LLT", "LPW", "MAR", "RTR", "RBZ", "RWD", "SAM", "WRB", "WRC"],
@@ -156,9 +155,10 @@ _OLD_NBS_MATRIX = {
     "SNA": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
     "SND": ["3DS", "AFR", "AGR", "AVM", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"],
     "SCS": ["3DS", "AFR", "AGR", "BRC", "BSW", "BRM", "CGR", "FRT", "LFC", "LFE", "LSG", "LSK", "LVS", "MAR", "RSP", "RTR", "RBZ", "SMR", "SDS", "SGR", "SLL", "SDT", "SAM", "URF", "VBM", "VME", "VBZ", "VCF", "VCL", "VFD"]
+    
 }
 
-_OLD_NBS_MATRIX_SUPPORTIVE = {
+NBS_MATRIX_SUPPORTIVE = {
     "EHT": ["BRM", "CGR", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "LFS", "LSG", "LSK", "SMR", "SDS", "SGR", "SDT", "SAM", "URF", "WTF", "WCR", "WLF"],
     "ECT": ["AGR", "BRM", "CRC", "CVC", "DRC", "FSA", "FPR", "GCR", "SMR", "SDS", "SGR", "SDT", "SAM", "URF", "WTF", "WCR", "WLF"],
     "DRT": ["3DS", "AFR", "AGR", "AVM", "BDH", "BRM", "CHW", "CGR", "CRC", "CVC", "DRC", "EDB", "FSA", "GPV", "LFC", "LSG", "LSK", "LVS", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "SAM", "SMR", "SDS", "SGR", "SDT", "TER", "TRV", "URF", "VBM", "VME", "VBZ", "VCF", "VFD", "WTF", "WCR", "WFM", "WLF"],
@@ -189,46 +189,6 @@ _OLD_NBS_MATRIX_SUPPORTIVE = {
     "SND": ["BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"],
     "SCS": ["AVM", "BDH", "CRC", "CVC", "DRC", "EDB", "FSA", "FPR", "GCR", "GRF", "GRV", "LFS", "LLT", "LPW", "MGR", "MUL", "OPG", "PRB", "PFM", "RGN", "RWD", "TER", "TRV", "VDS", "WRB", "WRC", "WTF", "WCR", "WFM", "WLF"]
 }
-
-# Mapping logic: Converts transposed Excel names back to their intended targeted values. 
-# Also substitutes deprecated keys used in the original matrix with the newly defined ones.
-_NBS_REMAP = {
-    "3DS": "TER", "AFR": "EDB", "AGR": "AVM", "AVM": "3DS", "BRC": "AFR", "BDH": "RSP", 
-    "BSW": "PFM", "BRM": "RTF", "BVS": "WFM", "CHW": "BVS", "CTI": "FBF", "CWT": "FTS", 
-    "CTR": "PRB", "CGR": "RBZ", "CRC": "PLR", "CVC": "MCP", "DRC": "CHW", "EDB": "SLL", 
-    "FBF": "GRV", "FRT": "VFD", "FSA": "WRB", "FPR": "WCR", "GCR": "CWT", "GPV": "LVS", 
-    "GRF": "DRC", "GRV": "SDS", "HOR": "SGR", "HMS": "CRC", "IFT": "SMR", "LFS": "LFS", 
-    "LFC": "AGR", "LFE": "HOR", "LLT": "WRH", "LPW": "MAR", "LSG": "GCR", "LSK": "BDH", 
-    "LVS": "MGR", "MAR": "VBZ", "MGR": "CGR", "MCP": "FSA", "MUL": "CTR", "OPG": "CTI", 
-    "PRB": "MUL", "PFM": "CVC", "RGN": "SAM", "RSP": "HMS", "RTR": "VME", "RBZ": "VBM", 
-    "RWD": "SDT", "SMR": "LSK", "SDS": "LFE", "SGR": "LSG", "SLL": "LLT", "SDT": "VCL", 
-    "SAM": "VDS", "TER": "WTF", "TRV": "TRV", "URF": "VRP", "VBM": "RWD", "VME": "VCF", 
-    "VBZ": "LFA", "VCF": "BRM", "VCL": "LPW", "VDS": "VLB", "VFD": "WLF", "VLB": "OPG", 
-    "VRP": "GPV", "VGR": "GRF", "WRB": "VGR", "WRC": "URF", "WTF": "RGN", "WCR": "BRC", 
-    "WFM": "IFT", "WLF": "BSW"
-}
-
-_HAZARD_REMAP = {
-    "WLF": "WFR", "DZT": "DZF", "HAI": "HAL", "PLF": "PFR", "SER": "SRE", 
-    "GUL": "GUE", "DFW": "DFM", "SRF": "RFS", "LRF": "RFL", "MEF": "LS4", 
-    "SSD": "SDS", "SNA": "AVA", "SND": "SDR"
-}
-
-def _apply_corrections(matrix_data: dict) -> dict:
-    """Restores the actual data layout."""
-    corrected_matrix = {}
-    for old_hazard, nbs_list in matrix_data.items():
-        new_hazard = _HAZARD_REMAP.get(old_hazard, old_hazard)
-        corrected_list = []
-        for nbs in nbs_list:
-            corrected_nbs = _NBS_REMAP.get(nbs, nbs)
-            corrected_list.append(corrected_nbs)
-        corrected_matrix[new_hazard] = corrected_list
-    return corrected_matrix
-
-# Dynamically construct the corrected matrices 
-NBS_MATRIX = _apply_corrections(_OLD_NBS_MATRIX)
-NBS_MATRIX_SUPPORTIVE = _apply_corrections(_OLD_NBS_MATRIX_SUPPORTIVE)
 # fmt: on
 
 
