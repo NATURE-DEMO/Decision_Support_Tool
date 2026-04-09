@@ -2255,66 +2255,22 @@ elif selected_step == 1:
                     st.rerun()
 
     st.markdown("---")
-    st.markdown("#### NbS Implementation Mapping Summary")
-    st.caption("Overview of the specific Primary and Supportive Nature-based Solutions assigned to each scoped asset based on your selections above.")
-    summary_display_df = st.session_state["lvl1_added_items"].copy()
+    st.markdown("#### Filtration of the Recommended NbS Solutions")
+    st.info("Filter and refine NbS selection by integrating Site-Specific Feasibility (SSF), Socio-Economic acceptance (SEI), and Hazard Impact Attenuation (HIA).")
+
     approved_primary = set()
     if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
-        active_primary = st.session_state["lvl1_primary_nbs_df"][st.session_state["lvl1_primary_nbs_df"]["Include"]]
+        active_primary = st.session_state["lvl1_primary_nbs_df"][st.session_state["lvl1_primary_nbs_df"]["Include"] == True]
         approved_primary = set(active_primary["NbS Solution"])
     
     approved_supportive = set()
     if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
-        active_supp = st.session_state["lvl1_supp_nbs_df"][st.session_state["lvl1_supp_nbs_df"]["Include"]]
+        active_supp = st.session_state["lvl1_supp_nbs_df"][st.session_state["lvl1_supp_nbs_df"]["Include"] == True]
         approved_supportive = set(active_supp["NbS Solution"])
-        
-    primary_sol_col = []
-    supportive_sol_col = []
-    for _, row in summary_display_df.iterrows():
-        hazards_str = str(row.get("Possible Hazards", ""))
-        if hazards_str == "None" or not hazards_str.strip():
-            primary_sol_col.append("None")
-            supportive_sol_col.append("None")
-            continue
-            
-        current_hazards = [h.strip() for h in hazards_str.split(",")]
-        
-        p_sols = set()
-        s_sols = set()
-        
-        for h in current_hazards:
-            if h in nbs_db:
-                for sol in nbs_db[h].get("Yes", []):
-                    if sol in approved_primary:
-                        p_sols.add(sol)
-                for sol in nbs_db[h].get("Supportive", []):
-                    if sol in approved_supportive:
-                        s_sols.add(sol)
-                        
-        # FIXED: Use " | " instead of a comma so NbS names with internal commas aren't broken
-        primary_sol_col.append(" | ".join(sorted(list(p_sols))) if p_sols else "None")
-        supportive_sol_col.append(" | ".join(sorted(list(s_sols))) if s_sols else "None")
-        
-    summary_display_df["Primary Solutions"] = primary_sol_col
-    summary_display_df["Supportive Solutions"] = supportive_sol_col
-    cols_to_show = [
-        "Infrastructure", 
-        "Asset", 
-        "Impact model", 
-        "Possible Hazards", 
-        "Primary Solutions", 
-        "Supportive Solutions"
-    ]
-    cols_to_show = [c for c in cols_to_show if c in summary_display_df.columns]
-    
-    st.dataframe(summary_display_df[cols_to_show], use_container_width=True, hide_index=True)
 
-    st.markdown("---")
-    st.markdown("#### Filtration of the Recommended NbS Solutions")
-    st.info("Filter and refine NbS selection by integrating Site-Specific Feasibility (SSF), Socio-Economic acceptance (SEI), and Hazard Impact Attenuation (HIA).")
-    
+    show_lvl1_supp = st.session_state.get("lvl1_supp_toggle", False)
+
     _lvl1_sei_dropdown_options = sorted(list(approved_primary | approved_supportive))
-    
     if "lvl1_sei_lookup" not in st.session_state:
         st.session_state.lvl1_sei_lookup = {}
     if "lvl1_site_conditions_lookup" not in st.session_state:
@@ -2416,8 +2372,12 @@ elif selected_step == 1:
     
     unique_pairs = {}
     method_to_hazards = {}
-    
-    for row_idx, row in summary_display_df.iterrows():
+    try:
+        source_df = summary_display_df
+    except NameError:
+        source_df = st.session_state.get("lvl1_added_items", pd.DataFrame())
+
+    for row_idx, row in source_df.iterrows():
         raw_pri = row.get("Risk Score", 0)
         try:
             pri_score = float(raw_pri) if raw_pri is not None and str(raw_pri).strip() not in ["None", ""] else 0.0
@@ -2431,15 +2391,17 @@ elif selected_step == 1:
 
         raw_hazards = str(row.get("Possible Hazards", ""))
         hazards = [h.strip() for h in raw_hazards.split(",")] if raw_hazards and raw_hazards != "None" else []
-        
-        p_raw = str(row.get("Primary Solutions", ""))
-        # FIXED: Split by " | " instead of ","
-        row_p_sols = [s.strip() for s in p_raw.split(" | ") if s.strip() and s.strip() in approved_primary]
-        
-        s_raw = str(row.get("Supportive Solutions", ""))
-        # FIXED: Split by " | " instead of ","
-        row_s_sols = [s.strip() for s in s_raw.split(" | ") if s.strip() and show_lvl1_supp and s.strip() in approved_supportive]
-        
+        if "Primary Solutions" in row:
+            p_raw = str(row.get("Primary Solutions", ""))
+            row_p_sols = [s.strip() for s in p_raw.split(" | ") if s.strip() and s.strip() in approved_primary]
+            s_raw = str(row.get("Supportive Solutions", ""))
+            row_s_sols = [s.strip() for s in s_raw.split(" | ") if s.strip() and show_lvl1_supp and s.strip() in approved_supportive]
+        else:
+            sol = str(row.get("NbS Solution", "")).strip()
+            nbs_type = str(row.get("NbS Type", "")).strip()
+            row_p_sols = [sol] if nbs_type == "Primary" and sol in approved_primary else []
+            row_s_sols = [sol] if nbs_type == "Supportive" and show_lvl1_supp and sol in approved_supportive else []
+            
         all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
 
         for h in hazards:
@@ -2504,7 +2466,7 @@ elif selected_step == 1:
 
         total_score = (avg_ssf + avg_sei + avg_hia) / 3
         if total_score < 10: tech_eff = 1
-        elif total_score < 30: tech_eff = 2
+        elif total_score <= 33.34: tech_eff = 2
         elif total_score < 60: tech_eff = 3
         elif total_score < 80: tech_eff = 4
         else: tech_eff = 5
@@ -2518,23 +2480,20 @@ elif selected_step == 1:
             "sei": avg_sei, "hia": avg_hia, "total": total_score,
             "tech_eff": tech_eff, "eff_percent": total_score, "rpri": rpri,
         })
-        
-        if total_score >= 30:
+        if total_score > 33.34:
             st.session_state.lvl1_filtered_nbs_pool.append(data)
         else:
             low_perf_pool.append(data)
 
     if not st.session_state.lvl1_filtered_nbs_pool:
         if unique_pairs:
-            st.warning("⚠️ No solutions strictly passed the 30% feasibility threshold. Showing all potential methods for your review.")
+            st.warning("⚠️ No solutions strictly passed the 33.34% feasibility threshold. Showing all potential methods for your review.")
             st.session_state.lvl1_filtered_nbs_pool = list(unique_pairs.values())
 
     if st.session_state.lvl1_filtered_nbs_pool:
         st.markdown("---")
         st.subheader("NbS Feasibility Spider Diagram")
         df_final = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool).sort_values(by="total", ascending=False)
-        
-        # FIXED: Tell Pandas to strictly drop duplicate row records so they aren't graphed twice!
         df_final = df_final.drop_duplicates(subset=["name"])
         
         fig = go.Figure()
@@ -2559,17 +2518,54 @@ elif selected_step == 1:
 
         if low_perf_pool:
             st.markdown("##### ⚠️ Threshold Analysis")
-            with st.expander(f"View {len(low_perf_pool)} methods below 30% threshold", expanded=False):
+            with st.expander(f"View {len(low_perf_pool)} methods scoring 33.34% or below", expanded=False):
                 for item in low_perf_pool:
                     st.warning(f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%).")
-                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # --- 4. Final NbS Recommendation Strategy (SI * Risk Score) ---
     st.markdown("---")
-    st.markdown("#### Suitability Index (SI) Results")
-    st.caption("T Solutions are scored from 0 (Not Suitable) to 1 (Highly Suitable) based on the geometric mean of the criteria ratings. Use this to prioritize which NbS methods to implement.")
+    st.markdown("#### Final NbS Recommendation Strategy")
+    st.info("Ranking Based on Suitability Score (Risk Score × Suitability Index)")
         
-    si_results = []
+    method_max_total = {}
+    try:
+        for data_dict in unique_pairs.values():
+            m_name = str(data_dict.get("method_only", "")).strip()
+            t_score = data_dict.get("total", 0.0)
+            if m_name:
+                if m_name not in method_max_total or t_score > method_max_total[m_name]:
+                    method_max_total[m_name] = t_score
+    except NameError:
+        pass 
     
-    def calculate_si(row_data):
+    def get_si_for_method(nbs_name, row_data):
+        final_index = method_max_total.get(nbs_name, 100.0) 
+        if final_index <= 33.34:
+            return 0.0
+            
         factors = [
             row_data.get("Technical Efficacy", 3),
             row_data.get("Implementation Costs", 3),
@@ -2585,54 +2581,204 @@ elif selected_step == 1:
             numeric_factors = [float(f) for f in factors]
             if any(pd.isna(x) for x in numeric_factors):
                 return 0.0
-            product = 1.0
-            for f in numeric_factors:
-                product *= (5.0 - f)
-            geom_mean = product ** (1/5)
-            si = geom_mean / 4.0
-            if pd.isna(si):
-                return 0.0
-                
-            return max(0.0, min(1.0, si))
+            sum_val = sum((6.0 - f) for f in numeric_factors)
+            si = sum_val / 25.0
+            return si if not pd.isna(si) else 0.0
         except Exception:
             return 0.0
-            
-    if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
-        df_prim = st.session_state["lvl1_primary_nbs_df"]
-        active_prim = df_prim[df_prim["Include"] == True]
-        for _, row in active_prim.iterrows():
-            si_val = calculate_si(row)
-            si_results.append({
-                "NbS Solution": row["NbS Solution"],
-                "Type": "Primary",
-                "SI": si_val
-            })
 
+    # Calculate SI for all approved methods
+    si_dict = {}
+    if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
+        for _, row in st.session_state["lvl1_primary_nbs_df"].iterrows():
+            if row.get("Include"):
+                m_name = str(row.get("NbS Solution", "")).strip()
+                si_dict[m_name] = get_si_for_method(m_name, row)
+                
     if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
-        df_supp = st.session_state["lvl1_supp_nbs_df"]
-        active_supp = df_supp[df_supp["Include"] == True]
-        for _, row in active_supp.iterrows():
-            si_val = calculate_si(row)
-            si_results.append({
-                "NbS Solution": row["NbS Solution"],
-                "Type": "Supportive",
-                "SI": si_val
-            })
-            
-    if si_results:
-        si_results = sorted(si_results, key=lambda x: x["SI"], reverse=True)
+        for _, row in st.session_state["lvl1_supp_nbs_df"].iterrows():
+            if row.get("Include"):
+                m_name = str(row.get("NbS Solution", "")).strip()
+                si_dict[m_name] = get_si_for_method(m_name, row)
+
+    # Attach SI and Suitability Score to the filtered pool
+    for item in st.session_state.lvl1_filtered_nbs_pool:
+        m_name = item.get("method_only", "")
+        item["si"] = si_dict.get(m_name, 0.0)
+        item["suitability_score"] = item.get("original_pri", 0.0) * item["si"]
+
+    if st.session_state.lvl1_filtered_nbs_pool:
+        # 1. Generate the Table
+        df_strat = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool)
         
-        for res in si_results:
-            color = "green" if res["SI"] > 0.6 else ("orange" if res["SI"] > 0.0 else "red")
-            badge = f"**[{res['Type']}]**"
-            
-            st.markdown(
-                f"- {badge} {res['NbS Solution']}: "
-                f"<span style='color:{color}; font-weight:bold;'>SI = {res['SI']:.3f}</span>",
-                unsafe_allow_html=True
+        df_table = df_strat[[
+            "infrastructure", "asset", "impact_model", "method_only", 
+            "original_pri", "si", "suitability_score"
+        ]].copy()
+        
+        df_table.rename(columns={
+            "infrastructure": "Infrastructure",
+            "asset": "Asset",
+            "impact_model": "Impact model",
+            "method_only": "NbS Solution",
+            "original_pri": "Risk Score",
+            "si": "Suitability Index (SI)",
+            "suitability_score": "Suitability Score (NbS)"
+        }, inplace=True)
+        
+        df_table = df_table.drop_duplicates().reset_index(drop=True)
+        
+        st.dataframe(
+            df_table,
+            column_config={
+                "Suitability Index (SI)": st.column_config.NumberColumn(format="%.3f"),
+                "Suitability Score (NbS)": st.column_config.NumberColumn(format="%.2f"),
+                "Risk Score": st.column_config.NumberColumn(format="%.1f")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.divider()
+
+        # 2. Render the Ranking Cards
+        def get_dynamic_color_si(score_val, min_val, max_val):
+            if max_val == min_val:
+                return "#1b5e20" # Green if all are the same
+            norm = (score_val - min_val) / (max_val - min_val)
+            # Higher is better for Suitability Score
+            if norm >= 0.8: return "#1b5e20"
+            elif norm >= 0.6: return "#2e7d32"
+            elif norm >= 0.4: return "#aed581"
+            elif norm >= 0.2: return "#ffb74d"
+            else: return "#d32f2f"
+
+        def render_suitability_ranking(pool, show_row_badge=False):
+            cons = {}
+            for item in pool:
+                if not item.get("is_primary", False):
+                    continue
+                m = item["method_only"]
+                if m not in cons or item.get("suitability_score", 0) > cons[m].get("suitability_score", 0):
+                    cons[m] = item
+
+            scored = sorted(
+                [i for i in cons.values() if i["status"] == "scored"],
+                key=lambda x: x["suitability_score"],
+                reverse=True # Higher Suitability Score is better!
             )
+
+            if not scored:
+                st.info("No primary solutions found for this selection.")
+                return
+
+            valid_vals = [i["suitability_score"] for i in scored]
+            mn, mx = (min(valid_vals), max(valid_vals)) if valid_vals else (0, 0)
+
+            for rank, item in enumerate(scored, 1):
+                bg = get_dynamic_color_si(item["suitability_score"], mn, mx)
+                tc = "black" if bg in ["#fff176", "#ffb74d", "#aed581"] else "white"
+                pri_val = item.get("original_pri", 0.0)
+                si_val = item.get("si", 0.0)
+                score_val = item.get("suitability_score", 0.0)
+                
+                row_badge_html = ""
+                if show_row_badge:
+                    lbl = item.get("row_label", "")
+                    if lbl:
+                        row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
+                
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:#ffffff;
+                        border:1.5px solid #dee2e6;
+                        border-left:5px solid {bg};
+                        border-radius:8px;
+                        padding:12px 16px;
+                        margin-bottom:10px;
+                        display:flex;
+                        align-items:center;
+                        gap:16px;
+                        box-shadow:0 1px 4px rgba(0,0,0,0.07);
+                    ">
+                      <div style="
+                        background:{bg};color:{tc};
+                        border-radius:50%;min-width:40px;height:40px;
+                        display:flex;align-items:center;justify-content:center;
+                        font-weight:bold;font-size:18px;flex-shrink:0;">
+                        {rank}
+                      </div>
+                      <div style="flex:1;color:#212529;">
+                        <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
+                          {item["method_only"]}{row_badge_html}
+                        </div>
+                        <div style="font-size:0.9em;margin-bottom:2px;">
+                          🔹 <b>Suitability Score:</b> {score_val:.2f} &nbsp;|&nbsp;
+                          <b>Total Feasibility: {item["eff_percent"]:.1f}&nbsp;
+                      </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown("##### 🏆 Ranked NbS Solutions by Suitability Score")
+        seen_labels = []
+        for item in st.session_state.lvl1_filtered_nbs_pool:
+            lbl = item.get("row_label", "")
+            if lbl and item.get("is_primary", False) and lbl not in seen_labels:
+                seen_labels.append(lbl)
+
+        ALL_LABEL = "🌐 All Rows Combined"
+        view_options = [ALL_LABEL] + seen_labels
+
+        st.info(
+            "Use the selector below to view the ranking for a specific Impact Model / Asset row, or select **All Rows Combined** to see the overall ranking (each method shown once at its highest score across all rows).",
+            icon="ℹ️",
+        )
+
+        selected_view = st.selectbox(
+            "📋 View ranking for:", view_options, key="si_view_selector"
+        )
+
+        if selected_view == ALL_LABEL:
+            render_suitability_ranking(st.session_state.lvl1_filtered_nbs_pool, show_row_badge=True)
+        else:
+            row_pool = [
+                item
+                for item in st.session_state.lvl1_filtered_nbs_pool
+                if item.get("row_label") == selected_view
+            ]
+            if row_pool:
+                infra = row_pool[0].get("infrastructure", "")
+                asset = row_pool[0].get("asset", "")
+                imp = row_pool[0].get("impact_model", "")
+                parts = [p for p in [infra, asset, imp] if p and p != "—"]
+                st.markdown(
+                    f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;"><strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
+                    unsafe_allow_html=True,
+                )
+            render_suitability_ranking(row_pool, show_row_badge=False)
+
     else:
         st.info("No active NbS solutions found. Ensure you have checked 'Include' and saved your criteria in the tables above.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 elif selected_step == 2:
     st.header("Infrastructure Impact & Hazard Analysis")
