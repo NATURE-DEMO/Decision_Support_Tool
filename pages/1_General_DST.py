@@ -2273,8 +2273,18 @@ elif selected_step == 1:
     _lvl1_sei_dropdown_options = sorted(list(approved_primary | approved_supportive))
     if "lvl1_sei_lookup" not in st.session_state:
         st.session_state.lvl1_sei_lookup = {}
-    if "lvl1_site_conditions_lookup" not in st.session_state:
-        st.session_state.lvl1_site_conditions_lookup = {}
+    if "global_site_conditions" not in st.session_state:
+        st.session_state.global_site_conditions = {
+            "Slope instability": False,
+            "Limited vegetation and low quality of soil": False,
+            "Limited access for implementation": False,
+            "Cold temperatures": False,
+            "Limited water availability": False,
+            "Lack of connection to major services": False,
+            "Space Constraints": False,
+            "Exposure to soil, water and/or air pollution": False,
+            "Limitations due to high population density": False
+        }
         
     sei_factors_list = [
         "Community Engagement", "Cultural Preferences", "Workforce Availability",
@@ -2291,18 +2301,15 @@ elif selected_step == 1:
         "Exposure to soil, water and/or air pollution": "Polluted Soil/Water/Air",
         "Limitations due to high population density": "Urban/Densely Populated Area",
     }
-    
     if _lvl1_sei_dropdown_options:
         selected_nbs_for_sei = st.selectbox(
-            "Select an NbS Solution to configure SSF and SEI factors:", _lvl1_sei_dropdown_options, key="lvl1_sei_dropdown"
+            "Select an NbS Solution to configure SEI factors:", _lvl1_sei_dropdown_options, key="lvl1_sei_dropdown"
         )
         if selected_nbs_for_sei not in st.session_state.lvl1_sei_lookup:
             st.session_state.lvl1_sei_lookup[selected_nbs_for_sei] = {f: 1 for f in sei_factors_list}
-        if selected_nbs_for_sei not in st.session_state.lvl1_site_conditions_lookup:
-            st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei] = {k: False for k in ssf_labels.keys()}
-            st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei]["Slope instability"] = True
     else:
         selected_nbs_for_sei = None
+
         
     if "lvl1_ssf_lookup" not in st.session_state:
         st.session_state.lvl1_ssf_lookup = {}
@@ -2347,14 +2354,15 @@ elif selected_step == 1:
         with col_input1:
             with st.container(border=True):
                 st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
-                if selected_nbs_for_sei:
-                    st.caption(f"Configuring SSF conditions for: **{selected_nbs_for_sei}**")
-                    for crit, label in ssf_labels.items():
-                        current_val = st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei].get(crit, False)
-                        val = st.toggle(label, value=current_val, key=f"lvl1_ssf_cond_{selected_nbs_for_sei}_{crit}")
-                        st.session_state.lvl1_site_conditions_lookup[selected_nbs_for_sei][crit] = val
-                else:
-                    st.info("Select an NbS solution from the dropdown above to configure SSF conditions.")
+                st.caption("These physical conditions apply globally to your specific site.")
+                for crit, label in ssf_labels.items():
+                    current_val = st.session_state.global_site_conditions.get(crit, False)
+                    val = st.toggle(
+                        label, 
+                        value=current_val, 
+                        key=f"lvl1_ssf_global_cond_{crit}"
+                    )
+                    st.session_state.global_site_conditions[crit] = val
         with col_input2:
             with st.container(border=True):
                 st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
@@ -2362,7 +2370,13 @@ elif selected_step == 1:
                     st.caption(f"Configuring SEI factors for: **{selected_nbs_for_sei}**")
                     for f in sei_factors_list:
                         current_val = st.session_state.lvl1_sei_lookup[selected_nbs_for_sei].get(f, 1)
-                        val = st.select_slider(f"{f}", options=[1, 2, 3], value=current_val, key=f"lvl1_sei_{selected_nbs_for_sei}_{f}", help="1: Favorable, 2: Neutral, 3: Unfavorable")
+                        val = st.select_slider(
+                            f"{f}", 
+                            options=[1, 2, 3], 
+                            value=current_val, 
+                            key=f"lvl1_sei_{selected_nbs_for_sei}_{f}", 
+                            help="1: Favorable, 2: Neutral, 3: Unfavorable"
+                        )
                         st.session_state.lvl1_sei_lookup[selected_nbs_for_sei][f] = val
                 else:
                     st.info("Select an NbS solution from the dropdown above to configure SEI factors.")
@@ -2372,10 +2386,7 @@ elif selected_step == 1:
     
     unique_pairs = {}
     method_to_hazards = {}
-    try:
-        source_df = summary_display_df
-    except NameError:
-        source_df = st.session_state.get("lvl1_added_items", pd.DataFrame())
+    source_df = st.session_state.get("lvl1_added_items", pd.DataFrame())
 
     for row_idx, row in source_df.iterrows():
         raw_pri = row.get("Risk Score", 0)
@@ -2436,7 +2447,7 @@ elif selected_step == 1:
         method_base = data["method_only"]
 
         m_ssf_data = st.session_state.lvl1_ssf_lookup.get(method_base, {})
-        method_site_conditions = st.session_state.lvl1_site_conditions_lookup.get(method_base, {})
+        method_site_conditions = st.session_state.global_site_conditions
         ssf_scores = []
 
         for crit in ssf_labels.keys():
@@ -2451,8 +2462,14 @@ elif selected_step == 1:
         method_sei_vals = st.session_state.lvl1_sei_lookup.get(method_base, {f: 1 for f in sei_factors_list})
         sei_scores = [100 if v == 1 else (50 if v == 2 else 0) for v in method_sei_vals.values()]
         avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
+
+        all_lvl1_hazards = set()
+        for _, r in source_df.iterrows():
+            raw_h = str(r.get("Possible Hazards", ""))
+            all_lvl1_hazards.update([h.strip() for h in raw_h.split(",") if h.strip() and h.strip() != "None"])
+
+        relevant_hazards = all_lvl1_hazards
         
-        relevant_hazards = method_to_hazards.get(method_base, set())
         hia_scores = []
         for haz_key in relevant_hazards:
             haz_data = nbs_db.get(haz_key, {})
@@ -2462,8 +2479,8 @@ elif selected_step == 1:
                 hia_scores.append(50)
             else:
                 hia_scores.append(0)
+                
         avg_hia = sum(hia_scores) / len(hia_scores) if hia_scores else 0
-
         total_score = (avg_ssf + avg_sei + avg_hia) / 3
         if total_score < 10: tech_eff = 1
         elif total_score <= 33.34: tech_eff = 2
@@ -4353,8 +4370,19 @@ elif selected_step == 2:
 
     if "sei_lookup" not in st.session_state:
         st.session_state.sei_lookup = {}
-    if "site_conditions_lookup" not in st.session_state:
-        st.session_state.site_conditions_lookup = {}
+    if "global_site_conditions" not in st.session_state:
+        st.session_state.global_site_conditions = {
+            "Slope instability": False,
+            "Limited vegetation and low quality of soil": False,
+            "Limited access for implementation": False,
+            "Cold temperatures": False,
+            "Limited water availability": False,
+            "Lack of connection to major services": False,
+            "Space Constraints": False,
+            "Exposure to soil, water and/or air pollution": False,
+            "Limitations due to high population density": False
+        }
+
     sei_factors_list = [
         "Community Engagement",
         "Cultural Preferences",
@@ -4364,6 +4392,7 @@ elif selected_step == 2:
         "Land Ownership",
         "Regulatory Constraints",
     ]
+    
     ssf_labels = {
         "Slope instability": "Unstable/Steep Slopes",
         "Limited vegetation and low quality of soil": "Poor Soil/Low Vegetation",
@@ -4378,17 +4407,10 @@ elif selected_step == 2:
     if _sei_dropdown_options:
         relevant_methods = _sei_dropdown_options
         selected_nbs_for_sei = st.selectbox(
-            "Select an NbS Solution to configure SSF and SEI factors:", relevant_methods
+            "Select an NbS Solution to configure SEI factors:", relevant_methods
         )
         if selected_nbs_for_sei not in st.session_state.sei_lookup:
             st.session_state.sei_lookup[selected_nbs_for_sei] = {f: 1 for f in sei_factors_list}
-        if selected_nbs_for_sei not in st.session_state.site_conditions_lookup:
-            st.session_state.site_conditions_lookup[selected_nbs_for_sei] = {
-                k: False for k in ssf_labels.keys()
-            }
-            st.session_state.site_conditions_lookup[selected_nbs_for_sei]["Slope instability"] = (
-                True
-            )
     else:
         selected_nbs_for_sei = None
         relevant_methods = []
@@ -5303,22 +5325,15 @@ elif selected_step == 2:
         with col_input1:
             with st.container(border=True):
                 st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
-                if selected_nbs_for_sei:
-                    st.caption(f"Configuring SSF conditions for: **{selected_nbs_for_sei}**")
-                    for crit, label in ssf_labels.items():
-                        current_val = st.session_state.site_conditions_lookup[
-                            selected_nbs_for_sei
-                        ].get(crit, False)
-                        val = st.toggle(
-                            label,
-                            value=current_val,
-                            key=f"ssf_cond_{selected_nbs_for_sei}_{crit}",
-                        )
-                        st.session_state.site_conditions_lookup[selected_nbs_for_sei][crit] = val
-                else:
-                    st.info(
-                        "Select an NbS solution from the dropdown above to configure SSF conditions."
+                st.caption("These physical conditions apply globally to your specific site.")
+                for crit, label in ssf_labels.items():
+                    current_val = st.session_state.global_site_conditions.get(crit, False)
+                    val = st.toggle(
+                        label,
+                        value=current_val,
+                        key=f"ssf_global_cond_{crit}", 
                     )
+                    st.session_state.global_site_conditions[crit] = val
         with col_input2:
             with st.container(border=True):
                 st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
@@ -5425,7 +5440,7 @@ elif selected_step == 2:
             method_base = data["method_only"]
 
             m_ssf_data = st.session_state.ssf_lookup.get(method_base, {})
-            method_site_conditions = st.session_state.site_conditions_lookup.get(method_base, {})
+            method_site_conditions = st.session_state.global_site_conditions
             ssf_scores = []
 
             for crit in ssf_labels.keys():
@@ -5445,12 +5460,14 @@ elif selected_step == 2:
                 100 if v == 1 else (50 if v == 2 else 0) for v in method_sei_vals.values()
             ]
             avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
-            relevant_hazards = method_to_hazards.get(method_base, set())
+            relevant_hazards = st.session_state.get("selected_nbs_hazards", [])
+            
             hia_scores = []
             for haz_key in relevant_hazards:
                 haz_data = nbs_db.get(haz_key, {})
                 yes_list = haz_data.get("Yes", [])
                 supp_list = haz_data.get("Supportive", [])
+                
                 if method_base in yes_list:
                     hia_scores.append(100)
                 elif method_base in supp_list:
