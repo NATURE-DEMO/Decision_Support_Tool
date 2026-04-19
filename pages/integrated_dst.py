@@ -1664,35 +1664,23 @@ if current_view == 'custom_analysis':
 
     # ── Native st.radio navigation — 100% reliable, single section renders ──
     # ── Bulletproof Native Navigation ──
-    st.write("### Navigation")
-    step_options = [
-        "📍 Extraction (Mapping & Data)", 
-        "1️⃣ Level 1 (Perceived Risks)", 
-        "2️⃣ Level 2 (Technical Analysis)"
-    ]
-    
-    # Use native Streamlit radio buttons aligned horizontally
-    selected_step_label = st.radio(
-        "Go to section:", 
-        step_options, 
-        horizontal=True, 
-        label_visibility="collapsed",
-        index=st.session_state.get("custom_step", 0)
-    )
-    
-    # Map the text choice back to the 0, 1, or 2 index your code uses
-    if selected_step_label == step_options[0]:
-        selected_step = 0
-    elif selected_step_label == step_options[1]:
-        selected_step = 1
-    else:
-        selected_step = 2
+    selected_step = sac.steps(
+    items=[
+        sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
+        sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
+        sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
+    ],
+    format_func="title",
+    placement="horizontal",
+    size="large",
+    variant="navigation",
+    color="dark",
+    return_index=True,
+)
 
-    # Save the state
-    if selected_step != st.session_state.get("custom_step"):
-        st.session_state["custom_step"] = selected_step
-        st.rerun()
-
+if selected_step != st.session_state.get("custom_step"):
+    st.session_state["custom_step"] = selected_step
+    st.rerun()
     # ── STEP 0: Extraction ─────────────────────────────────────
     if selected_step == 0:
         st.header("Select Infrastructure Types")
