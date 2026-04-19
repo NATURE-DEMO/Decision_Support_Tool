@@ -1664,23 +1664,23 @@ if current_view == 'custom_analysis':
 
     # ── Native st.radio navigation — 100% reliable, single section renders ──
     # ── Bulletproof Native Navigation ──
-    selected_step = sac.steps(
-    items=[
-        sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-        sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-        sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
-    ],
-    format_func="title",
-    placement="horizontal",
-    size="large",
-    variant="navigation",
-    color="dark",
-    return_index=True,
-)
+        selected_step = sac.steps(
+        items=[
+            sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
+            sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
+            sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
+        ],
+        format_func="title",
+        placement="horizontal",
+        size="large",
+        variant="navigation",
+        color="dark",
+        return_index=True,
+    )
 
-if selected_step != st.session_state.get("custom_step"):
-    st.session_state["custom_step"] = selected_step
-    st.rerun()
+    if selected_step != st.session_state.get("custom_step"):
+        st.session_state["custom_step"] = selected_step
+        st.rerun()
     # ── STEP 0: Extraction ─────────────────────────────────────
     if selected_step == 0:
         st.header("Select Infrastructure Types")
