@@ -345,6 +345,8 @@ def check_password_strength(password):
     return "Weak ⚠️"
 
 def create_user(username, password, name, lastname, email, job_title, industry, role="viewer"):
+    if not DB_AVAILABLE:
+        return False
     try:
         with conn.session as s:
             s.execute(
@@ -357,6 +359,8 @@ def create_user(username, password, name, lastname, email, job_title, industry, 
         return False
 
 def change_user_password(username, old_pw, new_pw):
+    if not DB_AVAILABLE:
+        return False, "Database unavailable."
     try:
         with conn.session as s:
             result = s.execute(text('SELECT password FROM users WHERE username = :u'), params={"u": username})
@@ -408,6 +412,8 @@ def verify_login(username, password):
         return {"status": "db_error", "error": str(e)}
 
 def verify_login_status_only(username):
+    if not DB_AVAILABLE:
+        return None
     try:
         with conn.session as s:
             result = s.execute(text('SELECT role, approved, name, lastname FROM users WHERE username = :u'), params={"u": username})
@@ -677,13 +683,13 @@ def get_consensus_data(site_key, table_type, original_df):
         for col in numeric_cols:
             try: original_val = float(final_df.at[i, col])
             except: continue
-            admin_df = run_query(
+            admin_df = safe_run_query(
                 "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND role='admin'",
                 params={"s": site_key, "t": table_type, "r": row_label, "c": col})
             if not admin_df.empty:
                 final_df.at[i, col] = admin_df['new_value'].iloc[0]
             else:
-                expert_df = run_query(
+                expert_df = safe_run_query(
                     "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND role='expert'",
                     params={"s": site_key, "t": table_type, "r": row_label, "c": col})
                 if not expert_df.empty:
@@ -698,7 +704,7 @@ def get_user_personal_data(site_key, table_type, original_df, username):
     for i in range(len(personal_df)):
         row_label = str(personal_df.iloc[i, 0])
         for col in numeric_cols:
-            user_data = run_query(
+            user_data = safe_run_query(
                 "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND username=:u",
                 params={"s": site_key, "t": table_type, "r": row_label, "c": col, "u": username})
             if not user_data.empty:
@@ -706,6 +712,9 @@ def get_user_personal_data(site_key, table_type, original_df, username):
     return personal_df
 
 def save_user_input(site_key, table_type, edited_df, username, role):
+    if not DB_AVAILABLE:
+        st.error("Database unavailable. Cannot save changes.")
+        return
     numeric_cols = edited_df.select_dtypes(include=np.number).columns
     with conn.session as s:
         for i in range(len(edited_df)):
