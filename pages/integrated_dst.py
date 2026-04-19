@@ -1664,19 +1664,18 @@ if current_view == 'custom_analysis':
 
     # ── Native st.radio navigation — 100% reliable, single section renders ──
     # ── Bulletproof Native Navigation ──
-        selected_step = sac.steps(
-        items=[
-            sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-            sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-            sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
-        ],
-        format_func="title",
-        placement="horizontal",
-        size="large",
-        variant="navigation",
-        color="dark",
-        return_index=True,
-    )
+    selected_step = sac.steps(
+    items=[
+        sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
+        sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
+        sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
+    ],
+    format_func="title",
+    placement="horizontal",
+    size="large",
+    variant="navigation",
+    color="dark",
+    return_index=True,)
 
     # Update session state if the user changed step
     if selected_step != st.session_state.get("custom_step"):
