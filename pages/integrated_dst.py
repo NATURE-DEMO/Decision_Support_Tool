@@ -1653,31 +1653,26 @@ for _k in ["selected_nbs_hazards","approved_nbs_methods","approved_supportive_me
 # MAIN CONTENT ROUTING
 # ─────────────────────────────────────────────────────────────
 if current_view == 'custom_analysis':
-    # ══════════════════════════════════════════════════════════
-    # CUSTOM SITE ANALYSIS & NbS RECOMMENDATION
-    # (Full General DST content)
-    # ══════════════════════════════════════════════════════════
     st.title("Custom Site Analysis & NbS Recommendation")
 
     if not st.session_state.get("gemini_client"):
-        st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key in your environment.")
+        st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled.")
 
-    # ── Native st.radio navigation — 100% reliable, single section renders ──
-    # ── Bulletproof Native Navigation ──
+    # Navigation
     selected_step = sac.steps(
-    items=[
-        sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-        sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-        sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
-    ],
-    format_func="title",
-    placement="horizontal",
-    size="large",
-    variant="navigation",
-    color="dark",
-    return_index=True,)
+        items=[
+            sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
+            sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
+            sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
+        ],
+        format_func="title",
+        placement="horizontal",
+        size="large",
+        variant="navigation",
+        color="dark",
+        return_index=True,
+    )
 
-    # Update session state if the user changed step
     if selected_step != st.session_state.get("custom_step"):
         st.session_state["custom_step"] = selected_step
         st.rerun()
