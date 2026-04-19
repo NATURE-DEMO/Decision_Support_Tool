@@ -1652,6 +1652,7 @@ for _k in ["selected_nbs_hazards","approved_nbs_methods","approved_supportive_me
 # ─────────────────────────────────────────────────────────────
 # MAIN CONTENT ROUTING
 # ─────────────────────────────────────────────────────────────
+
 if current_view == 'custom_analysis':
     st.title("Custom Site Analysis & NbS Recommendation")
 
@@ -1672,7 +1673,7 @@ if current_view == 'custom_analysis':
         color="dark",
         return_index=True,
     )
-
+    
     if selected_step != st.session_state.get("custom_step"):
         st.session_state["custom_step"] = selected_step
         st.rerun()
@@ -1680,14 +1681,8 @@ if current_view == 'custom_analysis':
     if selected_step == 0:
         st.header("Select Infrastructure Types")
         all_infra_keys = list(infra_options.keys())
-        infra_icon_map = {
-            "roads & highways":"car-front","railways":"train-lightrail","bridges":"bezier2",
-            "tunnels":"circle-half","dams & water storage":"droplet-half",
-            "urban green spaces":"tree","embankments & levees":"moisture",
-            "slope stabilization":"shield","buildings":"building",
-            "power & utilities":"lightning","water bodies & rivers":"water",
-            "catchment surface cover":"map",
-        }
+        infra_icon_map = {"roads & highways": "car-front", "railways": "train-lightrail", "bridges": "bezier2", "tunnels": "circle-half", "dams & water storage": "droplet-half", "urban green spaces": "tree", "embankments & levees": "moisture", "slope stabilization": "shield", "buildings": "building", "power & utilities": "lightning", "water bodies & rivers": "water", "catchment surface cover": "map"}
+
         selected_infras = sac.chip(
             items=[sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(),"gear")) for k in all_infra_keys],
             label="Choose Infrastructure for Analysis:",
@@ -2751,11 +2746,26 @@ if current_view == 'custom_analysis':
         if "pri_display_df" in st.session_state and not st.session_state.pri_display_df.empty:
             final_config = {"Sensitivity Index":None,"Possible Hazards":None,"Hazard Level":None,"PRI scores":st.column_config.ProgressColumn("PRI Score",format="%d",min_value=0,max_value=5),"PRI values":st.column_config.TextColumn("PRI Level"),"Hazard Index":st.column_config.ProgressColumn("Hazard Index",format="%d",min_value=0,max_value=5),"Exposure Index":st.column_config.ProgressColumn("Exposure Index",format="%d",min_value=0,max_value=5),"Vulnerability Index":st.column_config.ProgressColumn("Vulnerability Index",format="%.2f",min_value=0,max_value=5)}
             st.dataframe(st.session_state.pri_display_df,column_config=final_config,use_container_width=True,hide_index=True)
-            if st.button("Generate PRI Report",type="secondary",use_container_width=True):
-                with st.spinner("Generating PRI Report (Gemini)..."):
-                    pri_rpt = generate_pri_report_gemini(st.session_state.pri_display_df)
-                    render_ai_header("PRI Assessment Report")
-                    st.markdown(pri_rpt); render_ai_footer()
+            if st.button("Generate PRI Assessment Report", type="primary", use_container_width=True):
+            if not st.session_state.get("gemini_client"):
+                st.error("Please provide a valid API Key to generate the report.")
+            else:
+                with st.spinner("Analyzing Risk Indices and writing report (Gemini)..."):
+                    pri_report_text = generate_pri_report_gemini(st.session_state.pri_display_df)
+                    st.session_state["pri_report"] = pri_report_text
+
+        if "pri_report" in st.session_state and st.session_state["pri_report"]:
+            with st.expander("View PRI Assessment Report", expanded=True):
+                render_ai_header("Potential Risk Index (PRI) Assessment Report")
+                st.markdown(st.session_state["pri_report"])
+                render_ai_footer()
+
+            st.download_button(
+                label="Download Report as Text",
+                data=st.session_state["pri_report"],
+                file_name="PRI_Assessment_Report.txt",
+                mime="text/plain",
+            )
 
         st.divider()
         st.subheader("7. NbS Recommendation")
