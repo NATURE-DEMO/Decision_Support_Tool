@@ -321,8 +321,12 @@ def init_db():
 
 try:
     init_db()
-except Exception:
-    pass
+except Exception as _db_init_err:
+    st.warning(
+        f"⚠️ **Database initialisation failed:** {_db_init_err}\n\n"
+        "Login will not work until the database connection is resolved. "
+        "Check your `secrets.toml` or environment variable for the Supabase connection URL."
+    )
 
 def run_query(query_str, params=None):
     with conn.session as s:
@@ -345,8 +349,6 @@ def check_password_strength(password):
     return "Weak ⚠️"
 
 def create_user(username, password, name, lastname, email, job_title, industry, role="viewer"):
-    if not DB_AVAILABLE:
-        return False
     try:
         with conn.session as s:
             s.execute(
@@ -359,8 +361,6 @@ def create_user(username, password, name, lastname, email, job_title, industry, 
         return False
 
 def change_user_password(username, old_pw, new_pw):
-    if not DB_AVAILABLE:
-        return False, "Database unavailable."
     try:
         with conn.session as s:
             result = s.execute(text('SELECT password FROM users WHERE username = :u'), params={"u": username})
@@ -380,40 +380,26 @@ def change_user_password(username, old_pw, new_pw):
         return False, str(e)
 
 def verify_login(username, password):
-    global DB_AVAILABLE
     try:
         with conn.session as s:
-            result = s.execute(
-                text("SELECT password, role, approved, name, lastname FROM users WHERE username = :u"),
-                params={"u": username}
-            )
+            result = s.execute(text('SELECT password, role, approved, name, lastname FROM users WHERE username = :u'), params={"u": username})
             row = result.fetchone()
-
-            if not row:
-                return {"status": "no_user"}
-
+        if row:
             stored_pw = row[0]
+            # Handle all possible BYTEA return types from PostgreSQL
             if isinstance(stored_pw, memoryview):
                 stored_pw = bytes(stored_pw)
-
+            elif isinstance(stored_pw, str):
+                # psycopg2 hex-escaped format: '\x...'
+                stored_pw = bytes.fromhex(stored_pw[2:]) if stored_pw.startswith('\\x') else stored_pw.encode('latin-1')
             if check_password(password, stored_pw):
-                return {
-                    "status": "ok",
-                    "role": row[1],
-                    "approved": row[2],
-                    "name": row[3],
-                    "lastname": row[4]
-                }
-
-            return {"status": "bad_password"}
-
-    except Exception as e:
-        DB_AVAILABLE = False
-        return {"status": "db_error", "error": str(e)}
+                return {"role": row[1], "approved": row[2], "name": row[3], "lastname": row[4]}
+    except Exception as _e:
+        # Surface DB/connection errors so they show as warnings, not "Invalid credentials"
+        st.warning(f"⚠️ Database error during login: {_e}. Check your connection settings.")
+    return None
 
 def verify_login_status_only(username):
-    if not DB_AVAILABLE:
-        return None
     try:
         with conn.session as s:
             result = s.execute(text('SELECT role, approved, name, lastname FROM users WHERE username = :u'), params={"u": username})
@@ -421,7 +407,7 @@ def verify_login_status_only(username):
         if row:
             return {"role": row[0], "approved": row[1], "name": row[2], "lastname": row[3]}
     except Exception:
-        pass
+        pass  # Silent — used for cookie auto-login; failure just means no auto-login
     return None
 
 
@@ -683,13 +669,13 @@ def get_consensus_data(site_key, table_type, original_df):
         for col in numeric_cols:
             try: original_val = float(final_df.at[i, col])
             except: continue
-            admin_df = safe_run_query(
+            admin_df = run_query(
                 "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND role='admin'",
                 params={"s": site_key, "t": table_type, "r": row_label, "c": col})
             if not admin_df.empty:
                 final_df.at[i, col] = admin_df['new_value'].iloc[0]
             else:
-                expert_df = safe_run_query(
+                expert_df = run_query(
                     "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND role='expert'",
                     params={"s": site_key, "t": table_type, "r": row_label, "c": col})
                 if not expert_df.empty:
@@ -704,7 +690,7 @@ def get_user_personal_data(site_key, table_type, original_df, username):
     for i in range(len(personal_df)):
         row_label = str(personal_df.iloc[i, 0])
         for col in numeric_cols:
-            user_data = safe_run_query(
+            user_data = run_query(
                 "SELECT new_value FROM inputs_v3 WHERE site_key=:s AND table_type=:t AND row_name=:r AND column_name=:c AND username=:u",
                 params={"s": site_key, "t": table_type, "r": row_label, "c": col, "u": username})
             if not user_data.empty:
@@ -712,9 +698,6 @@ def get_user_personal_data(site_key, table_type, original_df, username):
     return personal_df
 
 def save_user_input(site_key, table_type, edited_df, username, role):
-    if not DB_AVAILABLE:
-        st.error("Database unavailable. Cannot save changes.")
-        return
     numeric_cols = edited_df.select_dtypes(include=np.number).columns
     with conn.session as s:
         for i in range(len(edited_df)):
@@ -1351,23 +1334,20 @@ if not st.session_state['logged_in']:
     if auth_choice == "Login":
         with st.form("login_form"):
             user = st.text_input("Username")
-            pw = st.text_input("Password", type="password")
+            pw   = st.text_input("Password", type="password")
             if st.form_submit_button("Login"):
                 user_data = verify_login(user, pw)
-
-                if user_data["status"] == "db_error":
-                    st.error(f"Database error: {user_data['error']}")
-                elif user_data["status"] in ["no_user", "bad_password"]:
+                if user_data is None:
                     st.error("Invalid credentials")
                 elif not user_data["approved"]:
                     st.warning("Account waiting for Admin approval.")
                 else:
                     expires = datetime.datetime.now() + datetime.timedelta(days=7)
                     cookie_manager.set("dst_username", user, expires_at=expires)
-                    st.session_state['logged_in'] = True
-                    st.session_state['user_role'] = user_data["role"]
-                    st.session_state['username'] = user
-                    st.session_state['user_name_full'] = f"{user_data['name']} {user_data['lastname']}"
+                    st.session_state['logged_in']      = True
+                    st.session_state['user_role']       = user_data["role"]
+                    st.session_state['username']        = user
+                    st.session_state['user_name_full']  = f"{user_data['name']} {user_data['lastname']}"
                     time.sleep(0.5)
                     st.rerun()
 
@@ -1652,37 +1632,55 @@ for _k in ["selected_nbs_hazards","approved_nbs_methods","approved_supportive_me
 # ─────────────────────────────────────────────────────────────
 # MAIN CONTENT ROUTING
 # ─────────────────────────────────────────────────────────────
-
 if current_view == 'custom_analysis':
+    # ══════════════════════════════════════════════════════════
+    # CUSTOM SITE ANALYSIS & NbS RECOMMENDATION
+    # (Full General DST content)
+    # ══════════════════════════════════════════════════════════
     st.title("Custom Site Analysis & NbS Recommendation")
 
     if not st.session_state.get("gemini_client"):
-        st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled.")
+        st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key in your environment.")
 
-    # Navigation
-    selected_step = sac.steps(
-        items=[
-            sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-            sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-            sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
-        ],
-        format_func="title",
-        placement="horizontal",
-        size="large",
-        variant="navigation",
-        color="dark",
-        return_index=True,
+    # ── Navigation — native st.radio, session-state backed ──────────────────
+    if "custom_step" not in st.session_state:
+        st.session_state["custom_step"] = 0
+
+    step_options = [
+        "🗺️ Extraction — Mapping & Data",
+        "📊 Level 1 — Perceived Risks",
+        "🔬 Level 2 — Technical Analysis",
+    ]
+
+    selected_step_label = st.radio(
+        "Navigation",
+        step_options,
+        index=st.session_state["custom_step"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="custom_nav_radio",
     )
-    
-    if selected_step != st.session_state.get("custom_step"):
-        st.session_state["custom_step"] = selected_step
+
+    _new_step = step_options.index(selected_step_label)
+    if _new_step != st.session_state["custom_step"]:
+        st.session_state["custom_step"] = _new_step
         st.rerun()
+
+    selected_step = st.session_state["custom_step"]
+    st.markdown("---")
+
     # ── STEP 0: Extraction ─────────────────────────────────────
     if selected_step == 0:
         st.header("Select Infrastructure Types")
         all_infra_keys = list(infra_options.keys())
-        infra_icon_map = {"roads & highways": "car-front", "railways": "train-lightrail", "bridges": "bezier2", "tunnels": "circle-half", "dams & water storage": "droplet-half", "urban green spaces": "tree", "embankments & levees": "moisture", "slope stabilization": "shield", "buildings": "building", "power & utilities": "lightning", "water bodies & rivers": "water", "catchment surface cover": "map"}
-
+        infra_icon_map = {
+            "roads & highways":"car-front","railways":"train-lightrail","bridges":"bezier2",
+            "tunnels":"circle-half","dams & water storage":"droplet-half",
+            "urban green spaces":"tree","embankments & levees":"moisture",
+            "slope stabilization":"shield","buildings":"building",
+            "power & utilities":"lightning","water bodies & rivers":"water",
+            "catchment surface cover":"map",
+        }
         selected_infras = sac.chip(
             items=[sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(),"gear")) for k in all_infra_keys],
             label="Choose Infrastructure for Analysis:",
@@ -1691,6 +1689,7 @@ if current_view == 'custom_analysis':
             color="blue",
             key="infra_chip_selector",
         )
+        selected_infras = selected_infras or []  # sac.chip returns None on first render
         if len(selected_infras) > 5:
             st.warning("⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
 
@@ -2746,26 +2745,11 @@ if current_view == 'custom_analysis':
         if "pri_display_df" in st.session_state and not st.session_state.pri_display_df.empty:
             final_config = {"Sensitivity Index":None,"Possible Hazards":None,"Hazard Level":None,"PRI scores":st.column_config.ProgressColumn("PRI Score",format="%d",min_value=0,max_value=5),"PRI values":st.column_config.TextColumn("PRI Level"),"Hazard Index":st.column_config.ProgressColumn("Hazard Index",format="%d",min_value=0,max_value=5),"Exposure Index":st.column_config.ProgressColumn("Exposure Index",format="%d",min_value=0,max_value=5),"Vulnerability Index":st.column_config.ProgressColumn("Vulnerability Index",format="%.2f",min_value=0,max_value=5)}
             st.dataframe(st.session_state.pri_display_df,column_config=final_config,use_container_width=True,hide_index=True)
-            if st.button("Generate PRI Assessment Report", type="primary", use_container_width=True):
-            if not st.session_state.get("gemini_client"):
-                st.error("Please provide a valid API Key to generate the report.")
-            else:
-                with st.spinner("Analyzing Risk Indices and writing report (Gemini)..."):
-                    pri_report_text = generate_pri_report_gemini(st.session_state.pri_display_df)
-                    st.session_state["pri_report"] = pri_report_text
-
-        if "pri_report" in st.session_state and st.session_state["pri_report"]:
-            with st.expander("View PRI Assessment Report", expanded=True):
-                render_ai_header("Potential Risk Index (PRI) Assessment Report")
-                st.markdown(st.session_state["pri_report"])
-                render_ai_footer()
-
-            st.download_button(
-                label="Download Report as Text",
-                data=st.session_state["pri_report"],
-                file_name="PRI_Assessment_Report.txt",
-                mime="text/plain",
-            )
+            if st.button("Generate PRI Report",type="secondary",use_container_width=True):
+                with st.spinner("Generating PRI Report (Gemini)..."):
+                    pri_rpt = generate_pri_report_gemini(st.session_state.pri_display_df)
+                    render_ai_header("PRI Assessment Report")
+                    st.markdown(pri_rpt); render_ai_footer()
 
         st.divider()
         st.subheader("7. NbS Recommendation")
