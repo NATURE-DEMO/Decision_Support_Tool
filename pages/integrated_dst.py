@@ -1678,6 +1678,7 @@ if current_view == 'custom_analysis':
         return_index=True,
     )
 
+    # Update session state if the user changed step
     if selected_step != st.session_state.get("custom_step"):
         st.session_state["custom_step"] = selected_step
         st.rerun()
