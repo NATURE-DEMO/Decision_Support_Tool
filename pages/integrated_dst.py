@@ -1,8 +1,3 @@
-# ============================================================
-# INTEGRATED DECISION SUPPORT TOOL
-# Combines: Specific Site DST + General DST (Custom Analysis)
-# ============================================================
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -254,9 +249,10 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 .custom-analysis-btn.active {
     border: 2px solid #52b788; box-shadow: 0 0 0 3px rgba(82,183,136,0.35);
 }
-if "custom_step" not in st.session_state: st.session_state["custom_step"] = 0
 </style>
 """, unsafe_allow_html=True)
+
+if "custom_step" not in st.session_state: st.session_state["custom_step"] = 0
 
 
 # ─────────────────────────────────────────────────────────────
@@ -278,7 +274,22 @@ if found_url:
     conn = st.connection("supabase", type="sql", url=found_url)
 else:
     conn = st.connection("supabase", type="sql")
+DB_AVAILABLE = True
 
+def safe_run_query(query_str, params=None):
+    """Run query; if DB unavailable, return empty DataFrame and set flag."""
+    global DB_AVAILABLE
+    if not DB_AVAILABLE:
+        return pd.DataFrame()
+    try:
+        with conn.session as s:
+            result = s.execute(text(query_str), params)
+            df = pd.DataFrame(result.fetchall(), columns=result.keys())
+            return df
+    except Exception as e:
+        DB_AVAILABLE = False
+        # Optional: log error silently
+        return pd.DataFrame()
 def init_db():
     with conn.session as s:
         s.execute(text('''
@@ -365,18 +376,36 @@ def change_user_password(username, old_pw, new_pw):
         return False, str(e)
 
 def verify_login(username, password):
+    global DB_AVAILABLE
     try:
         with conn.session as s:
-            result = s.execute(text('SELECT password, role, approved, name, lastname FROM users WHERE username = :u'), params={"u": username})
+            result = s.execute(
+                text("SELECT password, role, approved, name, lastname FROM users WHERE username = :u"),
+                params={"u": username}
+            )
             row = result.fetchone()
-        if row:
+
+            if not row:
+                return {"status": "no_user"}
+
             stored_pw = row[0]
-            if isinstance(stored_pw, memoryview): stored_pw = bytes(stored_pw)
+            if isinstance(stored_pw, memoryview):
+                stored_pw = bytes(stored_pw)
+
             if check_password(password, stored_pw):
-                return {"role": row[1], "approved": row[2], "name": row[3], "lastname": row[4]}
-    except Exception:
-        pass
-    return None
+                return {
+                    "status": "ok",
+                    "role": row[1],
+                    "approved": row[2],
+                    "name": row[3],
+                    "lastname": row[4]
+                }
+
+            return {"status": "bad_password"}
+
+    except Exception as e:
+        DB_AVAILABLE = False
+        return {"status": "db_error", "error": str(e)}
 
 def verify_login_status_only(username):
     try:
@@ -1313,20 +1342,23 @@ if not st.session_state['logged_in']:
     if auth_choice == "Login":
         with st.form("login_form"):
             user = st.text_input("Username")
-            pw   = st.text_input("Password", type="password")
+            pw = st.text_input("Password", type="password")
             if st.form_submit_button("Login"):
                 user_data = verify_login(user, pw)
-                if user_data is None:
+
+                if user_data["status"] == "db_error":
+                    st.error(f"Database error: {user_data['error']}")
+                elif user_data["status"] in ["no_user", "bad_password"]:
                     st.error("Invalid credentials")
                 elif not user_data["approved"]:
                     st.warning("Account waiting for Admin approval.")
                 else:
                     expires = datetime.datetime.now() + datetime.timedelta(days=7)
                     cookie_manager.set("dst_username", user, expires_at=expires)
-                    st.session_state['logged_in']      = True
-                    st.session_state['user_role']       = user_data["role"]
-                    st.session_state['username']        = user
-                    st.session_state['user_name_full']  = f"{user_data['name']} {user_data['lastname']}"
+                    st.session_state['logged_in'] = True
+                    st.session_state['user_role'] = user_data["role"]
+                    st.session_state['username'] = user
+                    st.session_state['user_name_full'] = f"{user_data['name']} {user_data['lastname']}"
                     time.sleep(0.5)
                     st.rerun()
 
@@ -1400,60 +1432,79 @@ with st.sidebar:
     # Admin panel
     if st.session_state.get('user_role') == 'admin':
         with st.expander("🛡️ Admin Panel", expanded=False):
-            users   = run_query("SELECT username, role, approved, name, lastname, email, job_title, industry FROM users")
-            pending = users[users['approved'] == 0]
-            active  = users[users['approved'] == 1]
-
-            st.markdown("### ⏳ Pending")
-            if not pending.empty:
-                st.error(f"{len(pending)} Requests")
-                target = st.selectbox("User", pending['username'], key="p_sel")
-                user_info = pending[pending['username'] == target].iloc[0]
-                with st.container(border=True):
-                    st.caption("Request Details")
-                    st.markdown(f"**Name:** {user_info['name']} {user_info['lastname']}")
-                    st.markdown(f"**Email:** {user_info['email']}")
-                    st.markdown(f"**Job:** {user_info['job_title']}")
-                    st.markdown(f"**Industry:** {user_info['industry']}")
-                curr_role = pending.loc[pending['username']==target,'role'].iloc[0]
-                new_role  = st.selectbox("Assign Role",["viewer","expert","admin"],
-                                          index=["viewer","expert","admin"].index(curr_role) if curr_role in ["viewer","expert","admin"] else 0,
-                                          key="r_sel")
-                action = st.radio("Action",["Approve","Reject/Delete"], key="act_rad")
-                if st.button("Process"):
-                    with conn.session as s:
-                        if action == "Approve":
-                            s.execute(text("UPDATE users SET approved=1, role=:r WHERE username=:u"),
-                                       params={"r":new_role,"u":target})
-                            st.success(f"Approved {target}")
-                        else:
-                            s.execute(text("DELETE FROM users WHERE username=:u"), params={"u":target})
-                            st.warning(f"Deleted {target}")
-                        s.commit()
-                    time.sleep(0.5); st.rerun()
+            if not DB_AVAILABLE:
+                st.error("⚠️ Database connection unavailable. Admin functions are disabled.")
             else:
-                st.success("No pending.")
+                users = safe_run_query("SELECT username, role, approved, name, lastname, email, job_title, industry FROM users")
+                if users.empty:
+                    st.info("No user data found or database error.")
+                else:
+                    pending = users[users['approved'] == 0]
+                    active  = users[users['approved'] == 1]
 
-            st.divider()
-            st.markdown("### 📋 Audit")
-            audit_df = run_query("SELECT * FROM inputs_v3 ORDER BY site_key, table_type")
-            if not audit_df.empty:
-                st.download_button("📥 Download Audit CSV",
-                                   data=audit_df.to_csv(index=False).encode('utf-8'),
-                                   file_name="expert_inputs_audit.csv", mime="text/csv")
-            st.divider()
-            st.markdown("### ✅ Active Users")
-            st.dataframe(active[['username','role','name','lastname']], hide_index=True)
-            if not active.empty:
-                with st.popover("Delete User"):
-                    target_del = st.selectbox("User", active['username'], key="del_act")
-                    if target_del != st.session_state['username']:
-                        if st.button("Confirm Delete"):
-                            with conn.session as s:
-                                s.execute(text("DELETE FROM users WHERE username=:u"),
-                                           params={"u":target_del})
-                                s.commit()
-                            st.rerun()
+                    st.markdown("### ⏳ Pending")
+                    if not pending.empty:
+                        st.error(f"{len(pending)} Requests")
+                        target = st.selectbox("User", pending['username'], key="p_sel")
+                        user_info = pending[pending['username'] == target].iloc[0]
+                        with st.container(border=True):
+                            st.caption("Request Details")
+                            st.markdown(f"**Name:** {user_info['name']} {user_info['lastname']}")
+                            st.markdown(f"**Email:** {user_info['email']}")
+                            st.markdown(f"**Job:** {user_info['job_title']}")
+                            st.markdown(f"**Industry:** {user_info['industry']}")
+                        curr_role = pending.loc[pending['username']==target,'role'].iloc[0]
+                        new_role  = st.selectbox("Assign Role",["viewer","expert","admin"],
+                                                index=["viewer","expert","admin"].index(curr_role) if curr_role in ["viewer","expert","admin"] else 0,
+                                                key="r_sel")
+                        action = st.radio("Action",["Approve","Reject/Delete"], key="act_rad")
+                        if st.button("Process"):
+                            if not DB_AVAILABLE:
+                                st.error("Cannot process: database unavailable.")
+                            else:
+                                with conn.session as s:
+                                    if action == "Approve":
+                                        s.execute(text("UPDATE users SET approved=1, role=:r WHERE username=:u"),
+                                                params={"r":new_role,"u":target})
+                                        st.success(f"Approved {target}")
+                                    else:
+                                        s.execute(text("DELETE FROM users WHERE username=:u"), params={"u":target})
+                                        st.warning(f"Deleted {target}")
+                                    s.commit()
+                                time.sleep(0.5)
+                                st.rerun()
+                    else:
+                        st.success("No pending.")
+
+                    st.divider()
+                    st.markdown("### 📋 Audit")
+                    audit_df = safe_run_query("SELECT * FROM inputs_v3 ORDER BY site_key, table_type")
+                    if not audit_df.empty:
+                        st.download_button("📥 Download Audit CSV",
+                                        data=audit_df.to_csv(index=False).encode('utf-8'),
+                                        file_name="expert_inputs_audit.csv", mime="text/csv")
+                    else:
+                        st.info("No audit records found or database unavailable.")
+
+                    st.divider()
+                    st.markdown("### ✅ Active Users")
+                    if not active.empty:
+                        st.dataframe(active[['username','role','name','lastname']], hide_index=True)
+                        with st.popover("Delete User"):
+                            target_del = st.selectbox("User", active['username'], key="del_act")
+                            if target_del != st.session_state['username']:
+                                if st.button("Confirm Delete"):
+                                    if not DB_AVAILABLE:
+                                        st.error("Cannot delete: database unavailable.")
+                                    else:
+                                        with conn.session as s:
+                                            s.execute(text("DELETE FROM users WHERE username=:u"),
+                                                    params={"u":target_del})
+                                            s.commit()
+                                        st.rerun()
+                    else:
+                        st.info("No active users.")
+
 
     st.divider()
 
@@ -1603,18 +1654,32 @@ if current_view == 'custom_analysis':
         st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key in your environment.")
 
     # ── Native st.radio navigation — 100% reliable, single section renders ──
-    selected_step = sac.steps(
-        items=[
-            sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-            sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-            sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),],
-        format_func="title",
-        placement="horizontal",
-        size="large",
-        variant="navigation",
-        color="dark",
-        return_index=True,
-        index=st.session_state.get("custom_step", 0),)
+    # ── Bulletproof Native Navigation ──
+    st.write("### Navigation")
+    step_options = [
+        "📍 Extraction (Mapping & Data)", 
+        "1️⃣ Level 1 (Perceived Risks)", 
+        "2️⃣ Level 2 (Technical Analysis)"
+    ]
+    
+    # Use native Streamlit radio buttons aligned horizontally
+    selected_step_label = st.radio(
+        "Go to section:", 
+        step_options, 
+        horizontal=True, 
+        label_visibility="collapsed",
+        index=st.session_state.get("custom_step", 0)
+    )
+    
+    # Map the text choice back to the 0, 1, or 2 index your code uses
+    if selected_step_label == step_options[0]:
+        selected_step = 0
+    elif selected_step_label == step_options[1]:
+        selected_step = 1
+    else:
+        selected_step = 2
+
+    # Save the state
     if selected_step != st.session_state.get("custom_step"):
         st.session_state["custom_step"] = selected_step
         st.rerun()
@@ -2890,6 +2955,7 @@ if current_view == 'custom_analysis':
             with col_input1:
                 with st.container(border=True):
                     st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
+                    st.caption("These physical conditions apply globally to your specific site.")
                     for crit,label in ssf_labels_v2.items():
                         val = st.toggle(label,value=st.session_state.global_site_conditions.get(crit,False),key=f"ssf_global_cond_{crit}")
                         st.session_state.global_site_conditions[crit] = val
@@ -2936,11 +3002,11 @@ if current_view == 'custom_analysis':
                 method_base = data["method_only"]; m_ssf_data = st.session_state.ssf_lookup.get(method_base,{})
                 ssf_scores = []
                 for crit in ssf_labels_v2.keys():
-                    if st.session_state.global_site_conditions.get(crit,False):
-                        c_info = m_ssf_data.get(crit,{}); val = c_info.get("Value",100) if isinstance(c_info,dict) else 100; ssf_scores.append(val)
+                    if st.session_state.global_site_conditions.get(crit, False):
+                        c_info = m_ssf_data.get(crit, {}); val = c_info.get("Value",100) if isinstance(c_info,dict) else 100; ssf_scores.append(val)
                     else: ssf_scores.append(100)
                 avg_ssf = sum(ssf_scores)/len(ssf_scores) if ssf_scores else 100
-                method_sei_vals = st.session_state.sei_lookup.get(method_base,{f:1 for f in sei_factors_list_v2})
+                method_sei_vals = st.session_state.sei_lookup.get(method_base, {f:1 for f in sei_factors_list_v2})
                 sei_scores = [100 if v==1 else (50 if v==2 else 0) for v in method_sei_vals.values()]
                 avg_sei = sum(sei_scores)/len(sei_scores) if sei_scores else 100
                 relevant_hazards = st.session_state.get("selected_nbs_hazards",[])
@@ -3021,7 +3087,7 @@ if current_view == 'custom_analysis':
                         lbl = item.get("row_label","")
                         if lbl: row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;margin-left:6px;">{lbl}</span>'
                     af_val = 1.0 - item["tech_eff"]/5.0
-                    st.markdown(f'<div style="background:#ffffff;border:1.5px solid #dee2e6;border-left:5px solid {bg};border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07);"><div style="background:{bg};color:{tc};border-radius:50%;min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;flex-shrink:0;">{rank}</div><div style="flex:1;color:#212529;"><div style="font-weight:600;font-size:1em;margin-bottom:3px;">{item["method_only"]}{row_badge_html}</div><div style="font-size:0.9em;margin-bottom:2px;">🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp; <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp; <b>Δ RPRI:</b> {delta_val:.2f}</div><div style="font-size:0.82em;color:#555;">Technical Efficiency: {item["tech_eff"]} / 5 (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp; AF: {af_val:.2f}</div></div></div>',unsafe_allow_html=True)
+                    st.markdown(f'<div style="background:#ffffff;border:1.5px solid #dee2e6;border-left:5px solid {bg};border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,0.07);"><div style="background:{bg};color:{tc};border-radius:50%;min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;flex-shrink:0;">{rank}</div><div style="flex:1;color:#212529;"><div style="font-weight:600;font-size:1em;margin-bottom:3px;">{item["method_only"]}{row_badge_html}</div><div style="font-size:0.9em;margin-bottom:2px;">🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp; <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp; <b>Δ RPRI:</b> {delta_val:.2f}</div><div style="font-size:0.82em;color:#555;">Technical Efficiency: {item["tech_eff"]} / 5 (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp; AF: {af_val:.2f}</div></div></div>', unsafe_allow_html=True)
 
             st.markdown("##### 🏆 Ranked NbS Solutions by Residual Risk (RPRI)")
             seen_labels = []
