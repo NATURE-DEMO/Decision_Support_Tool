@@ -305,6 +305,8 @@ with st.sidebar:
                    "/General_DST", use_container_width=True)
     st.link_button("🗺️ Specific Site DST",
                    "/Specific_Site_DST_v2", use_container_width=True)
+    st.link_button("🏗️ Integrated DST",
+                   "/integrated_dst", use_container_width=True)
     st.link_button("🌡️ Climate Visualization",
                    "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
 
