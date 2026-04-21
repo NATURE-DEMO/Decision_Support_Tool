@@ -28,20 +28,11 @@ import extra_streamlit_components as stx
 import streamlit_antd_components as sac
 from google import genai
 from google.genai.errors import APIError
-
 from modules.impact_models import get_all_impact_data
 from modules.nbs import NbS_list
 
-# ─────────────────────────────────────────────────────────────
-# PAGE CONFIG  (must be first Streamlit call)
-# ─────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Decision Support Tool", layout="wide",
                    initial_sidebar_state="expanded")
-
-# ─────────────────────────────────────────────────────────────
-# MERGED CSS  — Forest-Nature theme (general app) +
-#               custom card/link styles (specific app)
-# ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -143,16 +134,43 @@ button[data-baseweb="tab"][aria-selected="true"] {
     background: rgba(45,106,79,.07) !important; border-radius: 6px 6px 0 0 !important;
 }
 
-/* sac.steps */
-/* sac.steps */
+/* ── sac.steps placeholder (kept for forward-compat) ────────── */
 .ant-steps-item-finish .ant-steps-item-icon,
 .ant-steps-item-process .ant-steps-item-icon {
     background: var(--accent) !important; border-color: var(--accent) !important;
 }
-.ant-steps-item-title { 
-    font-size: 20px !important; 
-    font-weight: bold !important; 
+.ant-steps-item-title { font-size: 0.88rem !important; font-weight: 600 !important; }
+
+/* ── st.tabs styled to match the original sac.steps navigation bar ─── */
+div[data-testid="stTabs"] > div:first-child {
+    border-bottom: 2px solid var(--border) !important;
+    gap: 0 !important;
 }
+button[data-baseweb="tab"] {
+    padding: 10px 22px !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: 0 !important;
+    transition: all .18s ease;
+    letter-spacing: 0.01em;
+}
+button[data-baseweb="tab"] > div[data-testid="stMarkdownContainer"] > p {
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    color: var(--muted) !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    border-bottom: 3px solid var(--accent) !important;
+    background: rgba(45,106,79,.06) !important;
+    border-radius: 0 !important;
+}
+button[data-baseweb="tab"][aria-selected="true"]
+    > div[data-testid="stMarkdownContainer"] > p {
+    color: var(--accent) !important;
+}
+
+/* chip selector checkboxes removed — st.button chips used instead */
 
 /* Buttons */
 [data-testid="baseButton-primary"], button[kind="primary"] {
@@ -249,15 +267,27 @@ hr { border: none !important; border-top: 1px solid var(--border) !important; ma
 .custom-analysis-btn.active {
     border: 2px solid #52b788; box-shadow: 0 0 0 3px rgba(82,183,136,0.35);
 }
+div[data-testid="stTabs"] > div:first-child {
+    border-bottom: 2px solid #e0e0e0 !important;
+    gap: 20px !important;
+    justify-content: center !important;
+}
+button[data-baseweb="tab"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 15px 30px !important;
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #6c757d !important;
+    border-bottom: 4px solid transparent !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    border-bottom: 4px solid #2d6a4f !important;
+    color: #2d6a4f !important;
+}           
 </style>
 """, unsafe_allow_html=True)
 
-if "custom_step" not in st.session_state: st.session_state["custom_step"] = 0
-
-
-# ─────────────────────────────────────────────────────────────
-# DATABASE SETUP  (from specific-site app)
-# ─────────────────────────────────────────────────────────────
 def get_db_url_from_env():
     for key, value in os.environ.items():
         if "postgresql://" in value:
@@ -386,16 +416,13 @@ def verify_login(username, password):
             row = result.fetchone()
         if row:
             stored_pw = row[0]
-            # Handle all possible BYTEA return types from PostgreSQL
             if isinstance(stored_pw, memoryview):
                 stored_pw = bytes(stored_pw)
             elif isinstance(stored_pw, str):
-                # psycopg2 hex-escaped format: '\x...'
                 stored_pw = bytes.fromhex(stored_pw[2:]) if stored_pw.startswith('\\x') else stored_pw.encode('latin-1')
             if check_password(password, stored_pw):
                 return {"role": row[1], "approved": row[2], "name": row[3], "lastname": row[4]}
     except Exception as _e:
-        # Surface DB/connection errors so they show as warnings, not "Invalid credentials"
         st.warning(f"⚠️ Database error during login: {_e}. Check your connection settings.")
     return None
 
@@ -407,13 +434,9 @@ def verify_login_status_only(username):
         if row:
             return {"role": row[0], "approved": row[1], "name": row[2], "lastname": row[3]}
     except Exception:
-        pass  # Silent — used for cookie auto-login; failure just means no auto-login
+        pass
     return None
 
-
-# ─────────────────────────────────────────────────────────────
-# CONSTANTS — shared & app-specific
-# ─────────────────────────────────────────────────────────────
 GITHUB_RAW_BASE   = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE   = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
 GITHUB_IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
@@ -435,7 +458,6 @@ KOPPEN_CLASSES = {i: c for i, c in enumerate([
     "Dwa","Dwb","Dwc","Dwd","Dfa","Dfb","Dfc","Dfd","ET","EF"
 ], 1)}
 
-# Demo sites for specific-site tool
 items = [
     {"name": "Demo site 1-A", "address": "Lattenbach Valley, Austria",  "icon_url": f"{GITHUB_IMAGE_BASE_URL}/logo1.jpg", "github_key": "demo1a", "coordinate": [47.148472, 10.499805]},
     {"name": "Demo site 1-B", "address": "Brunntal, Austria",           "icon_url": f"{GITHUB_IMAGE_BASE_URL}/logo2.jpg", "github_key": "demo1b", "coordinate": [47.625027, 15.052111]},
@@ -445,7 +467,6 @@ items = [
     {"name": "Demo site 5",   "address": "Globocica, Macedonia",        "icon_url": f"{GITHUB_IMAGE_BASE_URL}/logo6.png", "github_key": "demo5",  "coordinate": [48.5647,   19.114430]},
 ]
 
-# General DST constants
 GEMINI_MODEL_VERSION = "gemini-2.5-flash-lite"
 AI_DISCLAIMER_TEXT = (
     "**Disclaimer:** The AI-generated summaries and interpretations provided by this tool are "
@@ -586,10 +607,6 @@ climate_indicators = {
     "spei3_severe_prob": "Annual probability of severe agricultural drought (SPEI-3)",
 }
 
-
-# ─────────────────────────────────────────────────────────────
-# HELPER FUNCTIONS — specific-site app
-# ─────────────────────────────────────────────────────────────
 def clean_df_for_display(df):
     if df is None: return None
     df = df.copy()
@@ -788,10 +805,6 @@ def create_kpi_analysis_plots_plotly(kpis_df: pd.DataFrame, el_df: pd.DataFrame,
         figs.append(fig)
     return figs
 
-
-# ─────────────────────────────────────────────────────────────
-# HELPER FUNCTIONS — general app (AI, maps, OSM)
-# ─────────────────────────────────────────────────────────────
 def render_ai_header(report_title: str):
     st.markdown(f"""
         <div style="background-color:#fff8e1;border-left:5px solid #f9a825;
@@ -913,12 +926,26 @@ def build_query(coords, selected_infras):
 
 def make_overpass_request(query, max_retries=2):
     overpass_url = "https://overpass-api.de/api/interpreter"
+    headers = {
+        "User-Agent": "DecisionSupportTool/1.0 (contact@nature-demo.eu)",
+        "Accept": "*/*"
+    }
+    
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(overpass_url, params={"data": query}, timeout=180)
-            if response.status_code == 200: return response
+            response = requests.get(
+                overpass_url, 
+                params={"data": query}, 
+                headers=headers, 
+                timeout=180
+            )
+            
+            if response.status_code == 200: 
+                return response
             elif response.status_code == 400:
                 st.error("Overpass API Error: Bad Request (400)."); return response
+            elif response.status_code == 406:
+                st.error("Overpass API Error: Not Acceptable (406). Usually a User-Agent issue."); return response
             elif response.status_code == 429:
                 st.error("Overpass API Error: Too Many Requests (429)."); return response
             elif response.status_code == 504:
@@ -926,11 +953,13 @@ def make_overpass_request(query, max_retries=2):
                 else: st.error("⚠️ Overpass API Error: Server timeout (504)."); return response
             else:
                 st.error(f"⚠️ Overpass API Error: HTTP Status Code {response.status_code}"); return response
+                
         except requests.exceptions.Timeout:
             if attempt < max_retries: time.sleep(5); continue
             else: st.error("⚠️ Request timeout after multiple attempts"); return None
         except requests.exceptions.RequestException as e:
             st.error(f"⚠️ Network error: {str(e)}"); return None
+            
     return None
 
 def create_detailed_dataframe(elements):
@@ -983,8 +1012,6 @@ def calculate_exposure(rev, cap, r_l, r_h, c_l, c_h):
         elif c_l <= cap <= c_h: return 4
         else: return 5
 
-
-# ── AI generation helpers ──────────────────────────────────────
 def _gemini_generate(prompt, system_instruction, temperature=0.7):
     """Shared retry wrapper for all Gemini calls."""
     if not st.session_state.get("gemini_client"):
@@ -1163,21 +1190,13 @@ INSTRUCTIONS: Write a professional NbS Recommendation Report in narrative Markdo
 4. Conclude with overall NbS strategy recommendation.
 """
     return _gemini_generate(user_prompt, system_instruction)
-
-
-# ─────────────────────────────────────────────────────────────
-# SESSION STATE INITIALISATION
-# ─────────────────────────────────────────────────────────────
-# Auth state
 if 'logged_in'       not in st.session_state: st.session_state['logged_in']       = False
 if 'user_role'       not in st.session_state: st.session_state['user_role']        = None
 if 'username'        not in st.session_state: st.session_state['username']         = None
 if 'user_name_full'  not in st.session_state: st.session_state['user_name_full']   = None
 
-# View routing
 if 'current_view'    not in st.session_state: st.session_state['current_view']     = 'specific_site'
 
-# Site selection
 query_params = st.query_params
 if "item" in query_params:
     st.session_state['selected_site_key'] = query_params["item"]
@@ -1185,7 +1204,6 @@ if "item" in query_params:
 elif 'selected_site_key' not in st.session_state:
     st.session_state['selected_site_key'] = "demo1a"
 
-# General app map state
 if "map_center"     not in st.session_state: st.session_state["map_center"]     = [51.1657, 10.4515]
 if "map_zoom"       not in st.session_state: st.session_state["map_zoom"]       = 6
 if "drawing_key"    not in st.session_state: st.session_state["drawing_key"]    = 0
@@ -1193,14 +1211,12 @@ if "last_polygon"   not in st.session_state: st.session_state["last_polygon"]   
 if "extract_clicked" not in st.session_state: st.session_state["extract_clicked"] = False
 if "extracted_data" not in st.session_state: st.session_state["extracted_data"] = None
 
-# General app risk matrices
 initial_data = {sk: {k: 3 for k in kpis} for sk in scenarios}
 if "risk_matrix_data"    not in st.session_state: st.session_state["risk_matrix_data"]    = pd.DataFrame(initial_data, index=kpis).to_dict()
 if "loss_matrix_data"    not in st.session_state: st.session_state["loss_matrix_data"]    = pd.DataFrame(initial_data, index=kpis).to_dict()
 if "interpretation_report" not in st.session_state: st.session_state["interpretation_report"] = ""
 if "hazard_report"       not in st.session_state: st.session_state["hazard_report"]       = ""
 
-# Level 2 saved data
 try:
     all_lvl2_data = get_all_impact_data()
     df_lvl2_base  = pd.DataFrame(all_lvl2_data)
@@ -1216,7 +1232,6 @@ if "saved_data"         not in st.session_state: st.session_state.saved_data    
 if "calculated_results" not in st.session_state: st.session_state.calculated_results = pd.DataFrame()
 if "capex_df"           not in st.session_state: st.session_state.capex_df           = pd.DataFrame()
 
-# Level 1 state
 if "lvl1_added_items" not in st.session_state:
     st.session_state["lvl1_added_items"] = pd.DataFrame(columns=[
         "Infrastructure","Climate driver","Asset","Impact model","Possible Hazards","NbS Type","NbS Solution"])
@@ -1234,14 +1249,24 @@ if "global_site_conditions" not in st.session_state:
         "Exposure to soil, water and/or air pollution": False,
         "Limitations due to high population density": False,
     }
+
+if "lvl1_global_site_conditions" not in st.session_state:
+    st.session_state.lvl1_global_site_conditions = {
+        "Slope instability": False,
+        "Limited vegetation and low quality of soil": False,
+        "Limited access for implementation": False,
+        "Cold temperatures": False,
+        "Limited water availability": False,
+        "Lack of connection to major services": False,
+        "Space Constraints": False,
+        "Exposure to soil, water and/or air pollution": False,
+        "Limitations due to high population density": False,
+    }
 if "lvl1_sei_lookup" not in st.session_state: st.session_state.lvl1_sei_lookup = {}
 if "lvl1_ssf_lookup" not in st.session_state: st.session_state.lvl1_ssf_lookup = {}
 if "lvl1_filtered_nbs_pool" not in st.session_state: st.session_state.lvl1_filtered_nbs_pool = []
 if "filtered_nbs_pool"      not in st.session_state: st.session_state.filtered_nbs_pool = []
 
-# ─────────────────────────────────────────────────────────────
-# GEMINI CLIENT INIT
-# ─────────────────────────────────────────────────────────────
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     try:
@@ -1258,12 +1283,8 @@ else:
     if "gemini_client" not in st.session_state:
         st.session_state["gemini_client"] = None
 
-# ─────────────────────────────────────────────────────────────
-# COOKIE MANAGER
-# ─────────────────────────────────────────────────────────────
 cookie_manager = stx.CookieManager(key="cookie_mgr")
 
-# Auto-login from cookie
 if "logout" in query_params:
     cookie_user = None
 else:
@@ -1278,10 +1299,6 @@ if not st.session_state['logged_in'] and cookie_user:
         st.session_state['user_name_full']   = f"{user_data['name']} {user_data['lastname']}"
         st.rerun()
 
-
-# ─────────────────────────────────────────────────────────────
-# AUTH — login / signup gate
-# ─────────────────────────────────────────────────────────────
 if not st.session_state['logged_in']:
     auth_bg_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/background.png")
     if auth_bg_b64:
@@ -1378,18 +1395,13 @@ if not st.session_state['logged_in']:
                         st.error("Username taken.")
     st.stop()
 
-# ─────────────────────────────────────────────────────────────
-# SIDEBAR  (only shown when logged in)
-# ─────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Logo
     logo_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/main_logo.png")
     if logo_b64:
         st.markdown(f'<div style="text-align:center;margin-bottom:16px;">'
                     f'<img src="data:image/png;base64,{logo_b64}" style="width:100%;"></div>',
                     unsafe_allow_html=True)
 
-    # User panel
     if st.session_state.get('user_name_full'):
         st.markdown(f"**{st.session_state['user_name_full']}**")
         st.markdown(f"Role: **{st.session_state.get('user_role','None')}**")
@@ -1496,8 +1508,6 @@ with st.sidebar:
 
 
     st.divider()
-
-    # ── Custom Site Analysis button (above Select Site) ────────
     is_custom = st.session_state.get('current_view') == 'custom_analysis'
     active_cls = "active" if is_custom else ""
     custom_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/main_logo.png")
@@ -1510,12 +1520,8 @@ with st.sidebar:
         f'</div></a>'
     )
     st.markdown(custom_nav_html, unsafe_allow_html=True)
-
-    # Handle custom_analysis URL param
     if "view" in query_params and query_params["view"] == "custom_analysis":
         st.session_state['current_view'] = 'custom_analysis'
-
-    # ── Select Site header & cards ─────────────────────────────
     st.write("### Select Site")
     for it in items:
         b64 = cached_base64_image(it["icon_url"])
@@ -1531,17 +1537,8 @@ with st.sidebar:
                  f'</div></a>')
             st.markdown(h, unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────────────────────
-# ROUTING — decide what main content to show
-# ─────────────────────────────────────────────────────────────
-# Clicking a site card sets ?item=..., which sets current_view='specific_site' above
-# Clicking custom analysis sets ?view=custom_analysis
 current_view = st.session_state.get('current_view', 'specific_site')
 
-
-# ─────────────────────────────────────────────────────────────
-# SSF DEFAULT LOOKUP  (large constant — shared by both views)
-# ─────────────────────────────────────────────────────────────
 SSF_DEFAULT_LOOKUP = {
     "Terracing (slope shaping - reduction of slope inclination)": {"Slope instability":{"Value":100},"Limited vegetation and low quality of soil":{"Value":50},"Limited access for implementation":{"Value":0},"Cold temperatures":{"Value":0},"Limited water availability":{"Value":50},"Lack of connection to major services":{"Value":50},"Space Constraints":{"Value":0},"Exposure to soil, water and/or air pollution":{"Value":50},"Limitations due to high population density":{"Value":100}},
     "Earth dams and barriers (vegetated)": {"Slope instability":{"Value":100},"Limited vegetation and low quality of soil":{"Value":50},"Limited access for implementation":{"Value":0},"Cold temperatures":{"Value":50},"Limited water availability":{"Value":50},"Lack of connection to major services":{"Value":50},"Space Constraints":{"Value":0},"Exposure to soil, water and/or air pollution":{"Value":50},"Limitations due to high population density":{"Value":100}},
@@ -1606,13 +1603,11 @@ SSF_DEFAULT_LOOKUP = {
     "Infiltration trenches": {"Slope instability":{"Value":100},"Limited vegetation and low quality of soil":{"Value":50},"Limited access for implementation":{"Value":100},"Cold temperatures":{"Value":50},"Limited water availability":{"Value":100},"Lack of connection to major services":{"Value":100},"Space Constraints":{"Value":100},"Exposure to soil, water and/or air pollution":{"Value":100},"Limitations due to high population density":{"Value":100}},
     "Permeable pavements": {"Slope instability":{"Value":50},"Limited vegetation and low quality of soil":{"Value":100},"Limited access for implementation":{"Value":100},"Cold temperatures":{"Value":50},"Limited water availability":{"Value":100},"Lack of connection to major services":{"Value":50},"Space Constraints":{"Value":100},"Exposure to soil, water and/or air pollution":{"Value":100},"Limitations due to high population density":{"Value":100}},
 }
-# Ensure ssf_lookup is seeded with defaults on first run
 if "ssf_lookup" not in st.session_state or not st.session_state.ssf_lookup:
     st.session_state.ssf_lookup = SSF_DEFAULT_LOOKUP.copy()
 if "lvl1_ssf_lookup" not in st.session_state or not st.session_state.lvl1_ssf_lookup:
     st.session_state.lvl1_ssf_lookup = SSF_DEFAULT_LOOKUP.copy()
 
-# Add missing state keys required by step 2
 for _k in ["selected_nbs_hazards","approved_nbs_methods","approved_supportive_methods",
            "nbs_table_excluded","nbs_supp_table_excluded","prev_dynamic_nbs",
            "prev_dynamic_supportive","pri_display_df","ac_editor_df","hazard_transfer_key"]:
@@ -1627,75 +1622,54 @@ for _k in ["selected_nbs_hazards","approved_nbs_methods","approved_supportive_me
             st.session_state[_k] = pd.DataFrame()
         else:
             st.session_state[_k] = None
-if "rpri_results_ready" not in st.session_state:
-    st.session_state.rpri_results_ready = False
 
-
-# ─────────────────────────────────────────────────────────────
-# MAIN CONTENT ROUTING
-# ─────────────────────────────────────────────────────────────
 if current_view == 'custom_analysis':
-    # ══════════════════════════════════════════════════════════
-    # CUSTOM SITE ANALYSIS & NbS RECOMMENDATION
-    # (Full General DST content)
-    # ══════════════════════════════════════════════════════════
     st.title("Custom Site Analysis & NbS Recommendation")
 
     if not st.session_state.get("gemini_client"):
-        st.warning("⚠️ GEMINI_API_KEY not found. AI report feature disabled. Please set the key in your environment.")
-    
-    # ── Navigation — native st.radio, session-state backed ──────────────────
-    selected_step = sac.steps(
-    items=[
-        sac.StepsItem(title="Extraction", subtitle="Mapping & Data", icon="geo-alt"),
-        sac.StepsItem(title="Level 1", subtitle="Perceived Risks", icon="1-circle"),
-        sac.StepsItem(title="Level 2", subtitle="Technical Analysis", icon="2-circle"),
-    ],
-    format_func="title",
-    placement="horizontal",
-    size="large",
-    variant="navigation",
-    color="dark",
-    return_index=True,)
-    #st.markdown("---")
-
-    # ── STEP 0: Extraction ─────────────────────────────────────
-    # ==================== EXTRACTION (Step 0) ====================
-    if selected_step == 0:
-        st.header("Select Infrastructure Types")
-        all_infra_keys = list(infra_options.keys())
-
-        infra_icon_map = {
-            "roads & highways": "car-front",
-            "railways": "train-lightrail",
-            "bridges": "bezier2",
-            "tunnels": "circle-half",
-            "dams & water storage": "droplet-half",
-            "urban green spaces": "tree",
-            "embankments & levees": "moisture",
-            "slope stabilization": "shield",
-            "buildings": "building",
-            "power & utilities": "lightning",
-            "water bodies & rivers": "water",
-            "catchment surface cover": "map",
-        }
-
-        selected_infras = sac.chip(
-            items=[
-                sac.ChipItem(label=k, icon=infra_icon_map.get(k.lower(), "gear"))
-                for k in all_infra_keys
-            ],
-            label="Choose Infrastructure for Analysis:",
-            multiple=True,
-            variant="outline",
-            color="blue",
-            key="infra_chip_selector",
+        st.warning(
+            "⚠️ **GEMINI_API_KEY not found.** AI report features are disabled. "
+            "Set the key in your environment variables or `secrets.toml`."
         )
 
+    _tab_ext, _tab_l1, _tab_l2 = st.tabs([
+        "Extraction  ·  Mapping & Data",
+        "Level 1  ·  Perceived Risks",
+        "Level 2  ·  Technical Analysis",
+    ])
+    with _tab_ext:
+        st.header("Select Infrastructure Types")
+        infra_icons = {
+            "Roads & Highways": "🚗", "Railways": "🚆", "Bridges": "🌉",
+            "Tunnels": "🔩", "Dams & Water Storage": "💧", "Urban Green Spaces": "🌳",
+            "Embankments & Levees": "〰️", "Slope Stabilization": "🛡️",
+            "Buildings": "🏢", "Power & Utilities": "⚡",
+            "Water Bodies & Rivers": "🌊", "Catchment Surface Cover": "🗺️"
+        }
+
+        if "selected_infra_chips" not in st.session_state:
+            st.session_state.selected_infra_chips = []
+            
+        st.markdown("<p style='font-size:0.9rem; font-weight:600; color:#5a7a65;'>Click to toggle Infrastructure Types:</p>", unsafe_allow_html=True)
+        chip_cols = st.columns(4)
+        for i, (infra_name, icon) in enumerate(infra_icons.items()):
+            is_selected = infra_name in st.session_state.selected_infra_chips
+            btn_type = "primary" if is_selected else "secondary"
+            
+            with chip_cols[i % 4]:
+                if st.button(f"{icon} {infra_name}", type=btn_type, key=f"chip_btn_{infra_name}", use_container_width=True):
+                    if is_selected:
+                        st.session_state.selected_infra_chips.remove(infra_name)
+                    else:
+                        st.session_state.selected_infra_chips.append(infra_name)
+                    st.rerun()
+        selected_infras = st.session_state.selected_infra_chips
+
         if len(selected_infras) > 5:
-            st.warning("⚠️ Selecting many infrastructure types may cause timeouts for large areas.")
+            st.warning("⚠️ Selecting many infrastructure types may cause timeouts.")
 
         st.header("Search Location and Draw Polygon")
+
         search_col, _ = st.columns([3, 1])
 
         with search_col:
@@ -1937,76 +1911,49 @@ if current_view == 'custom_analysis':
                     )
 
                 with st.expander("View Extracted Infrastructure Data Tables (OpenStreetMap Raw Data)"):
-                    st.info(
-                        "The raw OpenStreetMap data tables are shown inside the **'View Raw Infrastructure Data Fed to AI'** expander above, directly beneath the Context Report."
-                    )
+                    st.caption("Full OpenStreetMap data extracted for each selected infrastructure category.")
+                    _has_any = False
+                    _selected_infras_report = st.session_state.get("selected_infras_for_report", selected_infras)
+                    for _infra in _selected_infras_report:
+                        if _infra not in infra_options:
+                            continue
+                        _infra_elements = []
+                        for _el in elements:
+                            _tags = _el.get("tags", {})
+                            for _fs in infra_options[_infra]:
+                                _m = re.search(r'\["(.+?)"(?:="(.+?)")?\]', _fs)
+                                if _m:
+                                    _k, _v = _m.groups()
+                                    if _k in _tags and (_v is None or _tags[_k] == _v):
+                                        _infra_elements.append(_el)
+                                        break
+                        if _infra_elements:
+                            _has_any = True
+                            _idf = create_detailed_dataframe(_infra_elements)
+                            st.subheader(f"{_infra} ({len(_infra_elements)} items)")
+                            st.dataframe(
+                                _idf[[col for col in _idf.columns if not col.startswith("geometry")]].head(20),
+                                use_container_width=True,
+                            )
+                    if not _has_any:
+                        st.info("No data found for the selected infrastructure types in this area.")
         pass
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # ── STEP 1: Perceived Risks ────────────────────────────────
-    # ==================== LEVEL 1 (Step 1) ====================
-    elif selected_step == 1:
+    with _tab_l1:
         st.header("Perceived Risks Assessment")
         st.subheader("1. Scope Definition")
-        st.info("Define the location, infrastructure, and hazard for this specific assessment.")
-
-        has_lvl0_polygon = st.session_state.get("last_polygon") is not None
-        use_previous_poly = st.checkbox(
-            "Use same polygon from 'Information Extraction and Mapping' section",
-            value=has_lvl0_polygon,
-            disabled=not has_lvl0_polygon,
-        )
-
-        if use_previous_poly and has_lvl0_polygon:
-            lvl1_poly = st.session_state["last_polygon"]
-            lvl1_center = st.session_state["map_center"]
-            lvl1_zoom = st.session_state["map_zoom"]
-        else:
-            lvl1_center = st.session_state.get("map_center", [51.1657, 10.4515])
-            lvl1_zoom = st.session_state.get("map_zoom", 6)
-            lvl1_poly = st.session_state.get("lvl1_polygon", None)
-
-        m_lvl1 = build_folium_map_object(lvl1_center, lvl1_zoom, lvl1_poly, "lvl1_draw_key")
-
-        if use_previous_poly and has_lvl0_polygon:
-            with st.expander("🗺️ View / Edit Polygon", expanded=False):
-                lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
-        else:
-            lvl1_map_output = st_folium(m_lvl1, height=400, width=1200, key="lvl1_map_editor")
-
-        if lvl1_map_output and lvl1_map_output.get("last_active_drawing"):
-            drawing = lvl1_map_output["last_active_drawing"]
-            if drawing.get("geometry"):
-                st.session_state["lvl1_polygon"] = drawing
+        st.info("Define the infrastructure and hazard for this specific assessment.")
+        if st.session_state.get("last_polygon") is not None:
+            drawing = st.session_state["last_polygon"]
+            st.session_state["lvl1_polygon"] = drawing
+            if drawing.get("geometry") and "coordinates" in drawing["geometry"]:
                 coords = drawing["geometry"]["coordinates"][0]
                 lats = [c[1] for c in coords]
                 lons = [c[0] for c in coords]
                 st.session_state["lvl1_bbox"] = [min(lats), min(lons), max(lats), max(lons)]
+            st.success("✅ **Location Linked**")
+        else:
+            st.warning("⚠️ **No Location Found:** Please go back to the 'Extraction' step and draw a polygon to anchor your project location.")
 
         col_scope1, col_scope2 = st.columns(2)
         with col_scope1:
@@ -2017,15 +1964,13 @@ if current_view == 'custom_analysis':
                     "Road", "Railway", "Tunnels", "Bridges", "green spaces",
                     "Dams", "River training infrastructure", "Torrent control infrastructure"
                 ]
-                
+
             selected_infra_type = st.selectbox(
                 "Select Infrastructure Type",
                 options=dynamic_infras,
             )
         with col_scope2:
             selected_hazard_type = st.selectbox("Select Climate Driver", options=climate_drivers)
-
-        
         if not df_lvl2_base.empty and "Infrastructure" in df_lvl2_base.columns:
             filtered_df_lvl1 = df_lvl2_base[df_lvl2_base["Infrastructure"] == selected_infra_type]
             available_impact_models = sorted(filtered_df_lvl1["Impact model"].dropna().unique().tolist())
@@ -2125,7 +2070,7 @@ if current_view == 'custom_analysis':
             display_df = st.session_state["lvl1_added_items"].copy()
             if "Risk Score" in display_df.columns:
                 display_df = display_df.drop(columns=["Risk Score"])
-                
+
             selection_event = st.dataframe(
                 display_df, 
                 use_container_width=True, 
@@ -2134,9 +2079,9 @@ if current_view == 'custom_analysis':
                 selection_mode="multi-row",
                 key="lvl1_scope_table"
             )
-            
+
             btn_col1, btn_col2, _ = st.columns([1.5, 1.5, 3])
-            
+
             with btn_col1:
                 if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
                     selected_indices = selection_event.selection.rows
@@ -2145,7 +2090,7 @@ if current_view == 'custom_analysis':
                         st.rerun()
                     else:
                         st.warning("Please select at least one row by clicking the checkbox on the left side of the table.")
-                        
+
             with btn_col2:
                 if st.button("🗑️ Clear Scope Table", type="secondary", use_container_width=True):
                     st.session_state["lvl1_added_items"] = pd.DataFrame(columns=[
@@ -2162,7 +2107,7 @@ if current_view == 'custom_analysis':
             scope_options = st.session_state["lvl1_added_items"].apply(
                 lambda r: f"{r['Infrastructure']} | {r['Asset']} | {r['Impact model']} | {r['Climate driver']} | {r.get('NbS Solution', 'None')}", axis=1
             ).tolist()
-            
+
             selected_rating_item = st.selectbox("Select Scope Item to Rate:", options=scope_options)
 
             if "item_risk_matrices" not in st.session_state:
@@ -2173,7 +2118,7 @@ if current_view == 'custom_analysis':
             if selected_rating_item not in st.session_state["item_risk_matrices"]:
                 initial_risk = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
                 st.session_state["item_risk_matrices"][selected_rating_item] = pd.DataFrame(initial_risk, index=kpis).to_dict()
-                
+
             if selected_rating_item not in st.session_state["item_loss_matrices"]:
                 initial_loss = {scenario_key: {k: 3 for k in kpis} for scenario_key in scenarios}
                 st.session_state["item_loss_matrices"][selected_rating_item] = pd.DataFrame(initial_loss, index=kpis).to_dict()
@@ -2243,8 +2188,6 @@ if current_view == 'custom_analysis':
                     temp_df = st.session_state["lvl1_added_items"].copy()
                     if "Risk Score" not in temp_df.columns:
                         temp_df["Risk Score"] = None
-                    
-                    # --- UPDATED: Match logic updated to find the exploded row ---
                     mask = temp_df.apply(
                         lambda r: f"{r['Infrastructure']} | {r['Asset']} | {r['Impact model']} | {r['Climate driver']} | {r.get('NbS Solution', 'None')}",
                         axis=1
@@ -2363,7 +2306,7 @@ if current_view == 'custom_analysis':
 
             st.subheader("Summary: Assessed Risks and Scores")
             st.caption("Overview of all scoped items and their calculated Risk Scores (based on the maximum CI_HN value).")
-            
+
             if "lvl1_added_items" in st.session_state and not st.session_state["lvl1_added_items"].empty:
                 st.dataframe(
                     st.session_state["lvl1_added_items"],
@@ -2372,7 +2315,7 @@ if current_view == 'custom_analysis':
                 )
             else:
                 st.info("No risks have been assessed yet. Add items to the Scope Table and save their risk ratings to see the summary here.")
-            
+
             with st.expander("Interpretation"):
                 if st.session_state.get("gemini_client"):
                     if st.button(
@@ -2422,7 +2365,6 @@ if current_view == 'custom_analysis':
 
             pass
 
-
         st.markdown("---")
         st.subheader("3. NbS Selection and Risk Mitigation")
         st.info("Evaluate potential Nature-based Solutions for your identified hazards across strategic criteria.")
@@ -2435,14 +2377,14 @@ if current_view == 'custom_analysis':
                 nbs_type = row.get("NbS Type", "None")
                 sol = row.get("NbS Solution", "None")
                 hazards_str = str(row.get("Possible Hazards", ""))
-                
+
                 if hazards_str != "None" and hazards_str.strip():
                     has_valid_hazards = True
-                    
+
                 if sol == "None" or not str(sol).strip():
                     continue
                 hazards = [h.strip() for h in hazards_str.split(",") if h.strip() and h.strip() != "None"]
-                
+
                 if nbs_type == "Primary":
                     if sol not in primary_sols:
                         primary_sols[sol] = set()
@@ -2487,7 +2429,7 @@ if current_view == 'custom_analysis':
         if primary_sols:
             st.markdown("##### ✅ Primary NbS Solutions")
             st.caption("Select the criteria that make each primary solution suitable for your project.")
-            
+
             if "lvl1_primary_nbs_df" not in st.session_state or len(st.session_state["lvl1_primary_nbs_df"]) != len(primary_sols):
                 st.session_state["lvl1_primary_nbs_df"] = pd.DataFrame(build_lvl1_nbs_rows(primary_sols))
 
@@ -2499,7 +2441,7 @@ if current_view == 'custom_analysis':
                     use_container_width=True,
                     key="lvl1_primary_nbs_editor"
                 )
-                
+
                 btn_col1, btn_col2, _ = st.columns([2, 2, 4])
                 with btn_col1:
                     save_primary = st.form_submit_button("Save Primary NbS Criteria", type="primary", use_container_width=True)
@@ -2510,7 +2452,7 @@ if current_view == 'custom_analysis':
                     st.session_state["lvl1_primary_nbs_df"] = edited_primary_lvl1
                     st.success("Primary NbS criteria saved!")
                     st.rerun()
-                    
+
                 if remove_primary:
                     remaining_df = edited_primary_lvl1[~edited_primary_lvl1["Include"]].reset_index(drop=True)
                     st.session_state["lvl1_primary_nbs_df"] = remaining_df
@@ -2521,11 +2463,11 @@ if current_view == 'custom_analysis':
         if supp_sols:
             st.markdown("<br>", unsafe_allow_html=True)
             show_lvl1_supp = st.toggle("🔄 View Supportive Solutions", value=False, key="lvl1_supp_toggle")
-            
+
             if show_lvl1_supp:
                 st.markdown("##### 🔄 Supportive NbS Solutions")
                 st.caption("Select the criteria that make each supportive solution suitable for your project.")
-                
+
                 if "lvl1_supp_nbs_df" not in st.session_state or len(st.session_state["lvl1_supp_nbs_df"]) != len(supp_sols):
                     st.session_state["lvl1_supp_nbs_df"] = pd.DataFrame(build_lvl1_nbs_rows(supp_sols))
 
@@ -2537,7 +2479,7 @@ if current_view == 'custom_analysis':
                         use_container_width=True,
                         key="lvl1_supp_nbs_editor"
                     )
-                    
+
                     btn_col1, btn_col2, _ = st.columns([2, 2, 4])
                     with btn_col1:
                         save_supp = st.form_submit_button("Save Supportive NbS Criteria", type="primary", use_container_width=True)
@@ -2548,7 +2490,7 @@ if current_view == 'custom_analysis':
                         st.session_state["lvl1_supp_nbs_df"] = edited_supp_lvl1
                         st.success("Supportive NbS criteria saved!")
                         st.rerun()
-                        
+
                     if remove_supp:
                         remaining_df = edited_supp_lvl1[~edited_supp_lvl1["Include"]].reset_index(drop=True)
                         st.session_state["lvl1_supp_nbs_df"] = remaining_df
@@ -2563,7 +2505,7 @@ if current_view == 'custom_analysis':
         if "lvl1_primary_nbs_df" in st.session_state and not st.session_state["lvl1_primary_nbs_df"].empty:
             active_primary = st.session_state["lvl1_primary_nbs_df"][st.session_state["lvl1_primary_nbs_df"]["Include"] == True]
             approved_primary = set(active_primary["NbS Solution"])
-        
+
         approved_supportive = set()
         if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
             active_supp = st.session_state["lvl1_supp_nbs_df"][st.session_state["lvl1_supp_nbs_df"]["Include"] == True]
@@ -2575,7 +2517,7 @@ if current_view == 'custom_analysis':
         if "lvl1_sei_lookup" not in st.session_state:
             st.session_state.lvl1_sei_lookup = {}
         if "global_site_conditions" not in st.session_state:
-            st.session_state.global_site_conditions = {
+            st.session_state.lvl1_global_site_conditions = {
                 "Slope instability": False,
                 "Limited vegetation and low quality of soil": False,
                 "Limited access for implementation": False,
@@ -2586,7 +2528,7 @@ if current_view == 'custom_analysis':
                 "Exposure to soil, water and/or air pollution": False,
                 "Limitations due to high population density": False
             }
-            
+
         sei_factors_list = [
             "Community Engagement", "Cultural Preferences", "Workforce Availability",
             "Economic Viability", "Long term O&M costs", "Land Ownership", "Regulatory Constraints",
@@ -2611,7 +2553,7 @@ if current_view == 'custom_analysis':
         else:
             selected_nbs_for_sei = None
 
-            
+
         if "lvl1_ssf_lookup" not in st.session_state:
             st.session_state.lvl1_ssf_lookup = {}
 
@@ -2621,7 +2563,7 @@ if current_view == 'custom_analysis':
             st.markdown("##### Edit SSF Rulebook")
             val_to_str = {100: "Highly Feasible", 50: "Moderately Feasible", 0: "Not Feasible"}
             str_to_val = {v: k for k, v in val_to_str.items()}
-            
+
             edit_data = []
             for method in sorted(_lvl1_sei_dropdown_options):
                 row_dict = {"NbS Method": method}
@@ -2630,7 +2572,7 @@ if current_view == 'custom_analysis':
                     val = crit_data.get("Value", 100) if isinstance(crit_data, dict) else 100
                     row_dict[crit] = val_to_str.get(val, "Highly Feasible")
                 edit_data.append(row_dict)
-                
+
             if edit_data:
                 col_config = {"NbS Method": st.column_config.TextColumn(disabled=True)}
                 for crit in ssf_labels.keys():
@@ -2657,13 +2599,13 @@ if current_view == 'custom_analysis':
                     st.markdown("##### 🌍 Site-Specific Conditions (SSF)")
                     st.caption("These physical conditions apply globally to your specific site.")
                     for crit, label in ssf_labels.items():
-                        current_val = st.session_state.global_site_conditions.get(crit, False)
+                        current_val = st.session_state.lvl1_global_site_conditions.get(crit, False)
                         val = st.toggle(
                             label, 
                             value=current_val, 
                             key=f"lvl1_ssf_global_cond_{crit}"
                         )
-                        st.session_state.global_site_conditions[crit] = val
+                        st.session_state.lvl1_global_site_conditions[crit] = val
             with col_input2:
                 with st.container(border=True):
                     st.markdown("##### 👥 Socio-Economic & Institutional (SEI)")
@@ -2684,7 +2626,7 @@ if current_view == 'custom_analysis':
 
         st.session_state.lvl1_filtered_nbs_pool = []
         low_perf_pool = []
-        
+
         unique_pairs = {}
         method_to_hazards = {}
         source_df = st.session_state.get("lvl1_added_items", pd.DataFrame())
@@ -2695,7 +2637,7 @@ if current_view == 'custom_analysis':
                 pri_score = float(raw_pri) if raw_pri is not None and str(raw_pri).strip() not in ["None", ""] else 0.0
             except (ValueError, TypeError):
                 pri_score = 0.0
-                
+
             asset_val = str(row.get("Asset", "")).strip() or "—"
             impact_val = str(row.get("Impact model", "")).strip() or "—"
             infra_val = str(row.get("Infrastructure", "")).strip() or ""
@@ -2713,7 +2655,7 @@ if current_view == 'custom_analysis':
                 nbs_type = str(row.get("NbS Type", "")).strip()
                 row_p_sols = [sol] if nbs_type == "Primary" and sol in approved_primary else []
                 row_s_sols = [sol] if nbs_type == "Supportive" and show_lvl1_supp and sol in approved_supportive else []
-                
+
             all_sols = list(dict.fromkeys(row_p_sols + row_s_sols))
 
             for h in hazards:
@@ -2748,7 +2690,7 @@ if current_view == 'custom_analysis':
             method_base = data["method_only"]
 
             m_ssf_data = st.session_state.lvl1_ssf_lookup.get(method_base, {})
-            method_site_conditions = st.session_state.global_site_conditions
+            method_site_conditions = st.session_state.lvl1_global_site_conditions
             ssf_scores = []
 
             for crit in ssf_labels.keys():
@@ -2770,7 +2712,7 @@ if current_view == 'custom_analysis':
                 all_lvl1_hazards.update([h.strip() for h in raw_h.split(",") if h.strip() and h.strip() != "None"])
 
             relevant_hazards = all_lvl1_hazards
-            
+
             hia_scores = []
             for haz_key in relevant_hazards:
                 haz_data = nbs_db.get(haz_key, {})
@@ -2780,7 +2722,7 @@ if current_view == 'custom_analysis':
                     hia_scores.append(50)
                 else:
                     hia_scores.append(0)
-                    
+
             avg_hia = sum(hia_scores) / len(hia_scores) if hia_scores else 0
             total_score = (avg_ssf + avg_sei + avg_hia) / 3
             if total_score < 10: tech_eff = 1
@@ -2792,7 +2734,7 @@ if current_view == 'custom_analysis':
             af = 1.0 - tech_eff / 5.0
             pri_score = data.get("original_pri", 0)
             rpri = pri_score * af
-            
+
             data.update({
                 "name": name, "method_only": method_base, "ssf": avg_ssf,
                 "sei": avg_sei, "hia": avg_hia, "total": total_score,
@@ -2813,36 +2755,36 @@ if current_view == 'custom_analysis':
             st.subheader("NbS Feasibility Spider Diagram")
             df_final = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool).sort_values(by="total", ascending=False)
             df_final = df_final.drop_duplicates(subset=["name"])
-            
+
             fig = go.Figure()
             for _, r in df_final.head(5).iterrows():
                 fig.add_trace(go.Scatterpolar(
                     r=[r["ssf"], r["sei"], r["hia"], r["ssf"]],
                     theta=["Site Feasibility (SSF)", "Socio-Economic (SEI)", "Hazard Attenuation (HIA)", "Site Feasibility (SSF)"],
-                    fill="toself", name=r["name"]
+                    fill="toself", name=r["method_only"]
                 ))
             fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True)
             st.plotly_chart(fig, use_container_width=True)
 
             with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
                 filt_config = {
-                    "name": st.column_config.TextColumn("NbS Method"),
+                    "method_only": st.column_config.TextColumn("NbS Method"),
                     "ssf": st.column_config.ProgressColumn("SSF (%)", format="%.0f%%", min_value=0, max_value=100),
                     "sei": st.column_config.ProgressColumn("SEI (%)", format="%.0f%%", min_value=0, max_value=100),
                     "hia": st.column_config.ProgressColumn("HIA (%)", format="%.0f%%", min_value=0, max_value=100),
                     "total": st.column_config.ProgressColumn("Final Index (%)", format="%.0f%%", min_value=0, max_value=100),
                 }
-                st.dataframe(df_final[["name", "ssf", "sei", "hia", "total"]], column_config=filt_config, use_container_width=True, hide_index=True)
+                st.dataframe(df_final[["method_only", "ssf", "sei", "hia", "total"]], column_config=filt_config, use_container_width=True, hide_index=True)
 
             if low_perf_pool:
                 st.markdown("##### ⚠️ Threshold Analysis")
                 with st.expander(f"View {len(low_perf_pool)} methods scoring 33.34% or below", expanded=False):
                     for item in low_perf_pool:
-                        st.warning(f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%).")
+                        st.warning(f"**{item['method_only']}** is not recommended (Score: {item['total']:.1f}%).")
         st.markdown("---")
         st.markdown("#### Final NbS Recommendation Strategy")
         st.info("Ranking Based on Suitability Score (Risk Score × Suitability Index)")
-            
+
         method_max_total = {}
         try:
             for data_dict in unique_pairs.values():
@@ -2853,12 +2795,12 @@ if current_view == 'custom_analysis':
                         method_max_total[m_name] = t_score
         except NameError:
             pass 
-        
+
         def get_si_for_method(nbs_name, row_data):
             final_index = method_max_total.get(nbs_name, 100.0) 
             if final_index <= 33.34:
                 return 0.0
-                
+
             factors = [
                 row_data.get("Technical Efficacy", 3),
                 row_data.get("Implementation Costs", 3),
@@ -2869,7 +2811,7 @@ if current_view == 'custom_analysis':
             for f in factors:
                 if f == "Not Acceptable" or pd.isna(f):
                     return 0.0
-                    
+
             try:
                 numeric_factors = [float(f) for f in factors]
                 if any(pd.isna(x) for x in numeric_factors):
@@ -2886,7 +2828,7 @@ if current_view == 'custom_analysis':
                 if row.get("Include"):
                     m_name = str(row.get("NbS Solution", "")).strip()
                     si_dict[m_name] = get_si_for_method(m_name, row)
-                    
+
         if "lvl1_supp_nbs_df" in st.session_state and not st.session_state["lvl1_supp_nbs_df"].empty:
             for _, row in st.session_state["lvl1_supp_nbs_df"].iterrows():
                 if row.get("Include"):
@@ -2899,12 +2841,12 @@ if current_view == 'custom_analysis':
 
         if st.session_state.lvl1_filtered_nbs_pool:
             df_strat = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool)
-            
+
             df_table = df_strat[[
                 "infrastructure", "asset", "impact_model", "method_only", 
                 "original_pri", "si", "suitability_score"
             ]].copy()
-            
+
             df_table.rename(columns={
                 "infrastructure": "Infrastructure",
                 "asset": "Asset",
@@ -2914,9 +2856,9 @@ if current_view == 'custom_analysis':
                 "si": "Suitability Index (SI)",
                 "suitability_score": "Suitability Score (NbS)"
             }, inplace=True)
-            
+
             df_table = df_table.drop_duplicates().reset_index(drop=True)
-            
+
             st.dataframe(
                 df_table,
                 column_config={
@@ -2984,7 +2926,7 @@ if current_view == 'custom_analysis':
                         lbl = item.get("row_label", "")
                         if lbl:
                             row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
-                    
+
                     st.markdown(
                         f"""
                         <div style="
@@ -2999,21 +2941,21 @@ if current_view == 'custom_analysis':
                             gap:16px;
                             box-shadow:0 1px 4px rgba(0,0,0,0.07);
                         ">
-                        <div style="
+                          <div style="
                             background:{bg};color:{tc};
                             border-radius:50%;min-width:40px;height:40px;
                             display:flex;align-items:center;justify-content:center;
                             font-weight:bold;font-size:18px;flex-shrink:0;">
                             {rank}
-                        </div>
-                        <div style="flex:1;color:#212529;">
+                          </div>
+                          <div style="flex:1;color:#212529;">
                             <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
-                            {type_tag}{item["method_only"]}{row_badge_html}
+                              {type_tag}{item["method_only"]}{row_badge_html}
                             </div>
                             <div style="font-size:0.9em;margin-bottom:2px;">
-                            🔹 <b>Suitability Score:</b> {score_val:.2f} &nbsp;|&nbsp;
-                            <b>Total Feasibility: {item["eff_percent"]:.1f}%</b>
-                        </div>
+                              🔹 <b>Suitability Score:</b> {score_val:.2f} &nbsp;|&nbsp;
+                              <b>Total Feasibility: {item["eff_percent"]:.1f}%</b>
+                          </div>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -3066,7 +3008,7 @@ if current_view == 'custom_analysis':
         else:
             st.info("No active NbS solutions found. Ensure you have checked 'Include' and saved your criteria in the tables above.")
 
-    elif selected_step == 2:
+    with _tab_l2:
         st.header("Infrastructure Impact & Hazard Analysis")
 
         infrastructure_col = "Infrastructure"
@@ -3278,7 +3220,12 @@ if current_view == 'custom_analysis':
             )
 
             with btn_col2:
-                if st.button("❌ Remove Selected", type="secondary", use_container_width=True):
+                if st.button(
+                    "❌ Remove Selected",
+                    type="secondary",
+                    use_container_width=True,
+                    key="remove_selected_saved_data_btn"
+                ):
                     selected_indices = selection_event.selection.rows
                     if selected_indices:
                         st.session_state.saved_data = st.session_state.saved_data.drop(
@@ -3287,11 +3234,12 @@ if current_view == 'custom_analysis':
                         st.rerun()
                     else:
                         st.warning("Select rows to remove.")
+
         else:
             st.info("Table is empty. Use filters above or add a custom impact model to populate items.")
 
-        st.divider()
-        st.subheader("3. Hazard Variation Analysis")
+            st.divider()
+            st.subheader("3. Hazard Variation Analysis")
 
         URL = "https://naturedemo-clima-ind.dic-cloudmate.eu/api/calculate"
 
@@ -3657,6 +3605,7 @@ if current_view == 'custom_analysis':
             refresh_asset_list()
 
         exposure_val = 3
+        edited_capex = pd.DataFrame()
 
         if economic_available:
             with st.container(border=True):
@@ -3761,6 +3710,10 @@ if current_view == 'custom_analysis':
                 """
                 st.markdown(html_table, unsafe_allow_html=True)
 
+        if "revenue_input" not in dir():
+            revenue_input = 0.0
+        if "rev_low" not in dir():
+            rev_low, rev_high, cap_low, cap_high = 1.0, 2.5, 5.0, 10.0
         if st.button("Calculate Exposure Indexes", type="primary", use_container_width=True):
             if economic_available and not edited_capex.empty:
                 total_capex = edited_capex["CAPEX (M€/year)"].sum()
@@ -3877,9 +3830,13 @@ if current_view == 'custom_analysis':
                     st.caption(
                         "Configure all asset parameters in one compact table. Changes take effect when you click **Calculate Vulnerability Index**."
                     )
-                    if "ac_editor_df" not in st.session_state or set(
-                        st.session_state.ac_editor_df["Asset"].tolist()
-                    ) != set(unique_assets_list.tolist()):
+                    needs_init = True
+                    if st.session_state.get("ac_editor_df") is not None:
+                        if isinstance(st.session_state.ac_editor_df, pd.DataFrame) and "Asset" in st.session_state.ac_editor_df.columns:
+                            if set(st.session_state.ac_editor_df["Asset"].tolist()) == set(unique_assets_list.tolist()):
+                                needs_init = False
+                                
+                    if needs_init:
                         st.session_state.ac_editor_df = pd.DataFrame(
                             {
                                 "Asset": list(unique_assets_list),
@@ -4328,46 +4285,44 @@ if current_view == 'custom_analysis':
                 st.error("No PRI calculation results available to extract from.")
         if not isinstance(st.session_state.selected_nbs_hazards, list):
             st.session_state.selected_nbs_hazards = []
-
-        current_indices = [
-            all_hazards_for_selector.index(h)
-            for h in st.session_state.selected_nbs_hazards
-            if h in all_hazards_for_selector
-        ]
-        safe_indices = current_indices if len(current_indices) > 0 else None
         if "hazard_transfer_key" not in st.session_state:
             st.session_state.hazard_transfer_key = 0
 
         col_left, col_center, col_right = st.columns([2, 8, 1])
 
         with col_center:
-            selected_hazards = sac.transfer(
-                items=all_hazards_for_selector,
-                label="Select Hazards from Project Scope",
-                index=safe_indices,
-                titles=["Available Hazards", "Active Hazards"],
-                search=True,
-                height=400,
-                width="100%",
-                key=f"hazard_transfer_logic_{st.session_state.hazard_transfer_key}",
+            st.markdown("<br>", unsafe_allow_html=True)
+            default_hazards = [
+                h for h in st.session_state.selected_nbs_hazards 
+                if h in all_hazards_for_selector
+            ]
+            
+            selected_hazards = st.multiselect(
+                label="Select Hazards from Project Scope (Active Hazards):",
+                options=all_hazards_for_selector,
+                default=default_hazards,
+                help="Select hazards manually or use the extraction button above.",
+                key=f"hazard_transfer_logic_{st.session_state.hazard_transfer_key}"
             )
+
         if selected_hazards is not None:
             valid_hazards = [
-                h for h in selected_hazards if isinstance(h, str) and h in all_hazards_for_selector
+                h for h in selected_hazards 
+                if isinstance(h, str) and h in all_hazards_for_selector
             ]
             if sorted(valid_hazards) != sorted(st.session_state.selected_nbs_hazards):
                 st.session_state.selected_nbs_hazards = sorted(valid_hazards)
+                st.rerun()
+
         col_clear, _ = st.columns([1, 4])
         with col_clear:
             if st.button(
                 "🗑️ Clear Hazard Selection",
                 key="clear_hazard_sel",
-                help="Remove all active hazards and reset the NbS panels.",
+                help="Remove all active hazards and reset the NbS panels."
             ):
                 st.session_state.selected_nbs_hazards = []
-                st.session_state.hazard_transfer_key = (
-                    st.session_state.get("hazard_transfer_key", 0) + 1
-                )
+                st.session_state.hazard_transfer_key += 1
                 st.rerun()
 
         dynamic_nbs_list = set()
@@ -4693,7 +4648,7 @@ if current_view == 'custom_analysis':
             "Land Ownership",
             "Regulatory Constraints",
         ]
-        
+
         ssf_labels = {
             "Slope instability": "Unstable/Steep Slopes",
             "Limited vegetation and low quality of soil": "Poor Soil/Low Vegetation",
@@ -5762,13 +5717,13 @@ if current_view == 'custom_analysis':
                 ]
                 avg_sei = sum(sei_scores) / len(sei_scores) if sei_scores else 100
                 relevant_hazards = st.session_state.get("selected_nbs_hazards", [])
-                
+
                 hia_scores = []
                 for haz_key in relevant_hazards:
                     haz_data = nbs_db.get(haz_key, {})
                     yes_list = haz_data.get("Yes", [])
                     supp_list = haz_data.get("Supportive", [])
-                    
+
                     if method_base in yes_list:
                         hia_scores.append(100)
                     elif method_base in supp_list:
@@ -5845,7 +5800,7 @@ if current_view == 'custom_analysis':
                                 "Site Feasibility (SSF)",
                             ],
                             fill="toself",
-                            name=r["name"],
+                            name=r["method_only"],
                         )
                     )
                 fig.update_layout(
@@ -5856,7 +5811,7 @@ if current_view == 'custom_analysis':
 
                 with st.expander("📊 View Full Site-Specific Filtration Summary", expanded=False):
                     filt_config = {
-                        "name": st.column_config.TextColumn("NbS Method"),
+                        "method_only": st.column_config.TextColumn("NbS Method"),
                         "ssf": st.column_config.ProgressColumn(
                             "SSF (%)", format="%.0f%%", min_value=0, max_value=100
                         ),
@@ -5871,7 +5826,7 @@ if current_view == 'custom_analysis':
                         ),
                     }
                     st.dataframe(
-                        df_final[["name", "ssf", "sei", "hia", "total"]],
+                        df_final[["method_only", "ssf", "sei", "hia", "total"]],
                         column_config=filt_config,
                         use_container_width=True,
                         hide_index=True,
@@ -5885,7 +5840,7 @@ if current_view == 'custom_analysis':
                     ):
                         for item in low_perf_pool:
                             st.warning(
-                                f"**{item['name']}** is not recommended (Score: {item['total']:.1f}%)."
+                                f"**{item['method_only']}** is not recommended (Score: {item['total']:.1f}%)."
                             )
 
                 st.divider()
@@ -5894,7 +5849,7 @@ if current_view == 'custom_analysis':
 
                 if st.button("🔢 Calculate RPRI Ranking", type="primary", key="calc_rpri_btn"):
                     st.session_state.rpri_results_ready = True
-                    
+
                 if st.session_state.get("rpri_results_ready", False):
 
                     def get_dynamic_color(rpri_val, eff_percent, min_val, max_val):
@@ -5973,28 +5928,28 @@ if current_view == 'custom_analysis':
                                     gap:16px;
                                     box-shadow:0 1px 4px rgba(0,0,0,0.07);
                                 ">
-                                <div style="
+                                  <div style="
                                     background:{bg};color:{tc};
                                     border-radius:50%;min-width:40px;height:40px;
                                     display:flex;align-items:center;justify-content:center;
                                     font-weight:bold;font-size:18px;flex-shrink:0;">
                                     {rank}
-                                </div>
-                                <div style="flex:1;color:#212529;">
+                                  </div>
+                                  <div style="flex:1;color:#212529;">
                                     <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
-                                    {item["method_only"]}{row_badge_html}
+                                      {item["method_only"]}{row_badge_html}
                                     </div>
                                     <div style="font-size:0.9em;margin-bottom:2px;">
-                                    🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
-                                    <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp;
-                                    <b>Δ RPRI:</b> {delta_val:.2f}
+                                      🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
+                                      <b>RPRI:</b> {rpri_val:.2f} &nbsp;|&nbsp;
+                                      <b>Δ RPRI:</b> {delta_val:.2f}
                                     </div>
                                     <div style="font-size:0.82em;color:#555;">
-                                    Technical Efficiency: {item["tech_eff"]} / 5
-                                    (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp;
-                                    AF: {af_val:.2f}
+                                      Technical Efficiency: {item["tech_eff"]} / 5
+                                      (Total Feasibility: {item["eff_percent"]:.1f}%) &nbsp;|&nbsp;
+                                      AF: {af_val:.2f}
                                     </div>
-                                </div>
+                                  </div>
                                 </div>
                                 """,
                                 unsafe_allow_html=True,
@@ -6009,7 +5964,7 @@ if current_view == 'custom_analysis':
                                     st.markdown(
                                         f'<div style="background-color:#f0f2f6;padding:10px;'
                                         f'border-radius:6px;margin-bottom:8px;border:1px solid #ddd;color:black;">'
-                                        f'<h6 style="margin:0;">- {item["name"]}</h6>'
+                                        f'<h6 style="margin:0;">- {item["method_only"]}</h6>'
                                         f'<p style="margin:0;font-size:0.9em;color:#555;"><i>'
                                         f"Technical efficiency values are not available for this method."
                                         f"</i></p></div>",
@@ -6218,18 +6173,18 @@ if current_view == 'custom_analysis':
                             """
                             <div style="display:flex;gap:10px;flex-wrap:wrap;
                                         margin-top:4px;font-size:0.82em;align-items:center;">
-                            <span style="background:#1b5e20;color:white;padding:2px 8px;
-                                        border-radius:4px;">Very low RPRI</span>
-                            <span style="background:#aed581;color:black;padding:2px 8px;
-                                        border-radius:4px;">Low–medium</span>
-                            <span style="background:#fff176;color:black;padding:2px 8px;
-                                        border-radius:4px;">Medium</span>
-                            <span style="background:#ffb74d;color:black;padding:2px 8px;
-                                        border-radius:4px;">Medium–high</span>
-                            <span style="background:#d32f2f;color:white;padding:2px 8px;
-                                        border-radius:4px;">High RPRI</span>
-                            <span style="background:#f0f0f0;color:#888;padding:2px 8px;
-                                        border-radius:4px;">— Not applicable</span>
+                              <span style="background:#1b5e20;color:white;padding:2px 8px;
+                                           border-radius:4px;">Very low RPRI</span>
+                              <span style="background:#aed581;color:black;padding:2px 8px;
+                                           border-radius:4px;">Low–medium</span>
+                              <span style="background:#fff176;color:black;padding:2px 8px;
+                                           border-radius:4px;">Medium</span>
+                              <span style="background:#ffb74d;color:black;padding:2px 8px;
+                                           border-radius:4px;">Medium–high</span>
+                              <span style="background:#d32f2f;color:white;padding:2px 8px;
+                                           border-radius:4px;">High RPRI</span>
+                              <span style="background:#f0f0f0;color:#888;padding:2px 8px;
+                                           border-radius:4px;">— Not applicable</span>
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -6241,7 +6196,6 @@ if current_view == 'custom_analysis':
                         )
         else:
             st.warning("Please run Step 7.1 first.")
-
 
 else:
     st.session_state['current_view'] = 'specific_site'
@@ -6260,8 +6214,6 @@ else:
         "Level 2: Screening Tool",
         "Level 3: High-resolution risk assessment"
     ])
-
-    # ── Tab: Site Info & Maps ──────────────────────────────────
     with tab_info:
         col1, col2 = st.columns([1, 1])
         with col1:
@@ -6291,8 +6243,6 @@ else:
 
             report = get_climate_report_text(selected_item["github_key"])
             if report: st.markdown(report)
-
-    # ── Tab: Level 1 ──────────────────────────────────────────
     with tab1:
         with st.spinner("Fetching Excel files and syncing with Database..."):
             kpis_original = get_excel_from_github(selected_key, "1KPIs.xlsx")
@@ -6343,7 +6293,6 @@ else:
             if interp: st.markdown(interp)
             else: st.warning("Interpretation text not found.")
 
-    # ── Tab: Level 2 ──────────────────────────────────────────
     with tab2:
         with st.spinner("Scanning Level 2 documents and datasets..."):
             l2_files = get_github_subfolder_contents(selected_key, "level2")
@@ -6390,6 +6339,5 @@ else:
                     st.subheader("NbS")
                     st.markdown(f'<div class="justified-text">{nbs_text}</div>', unsafe_allow_html=True)
 
-    # ── Tab: Level 3 ──────────────────────────────────────────
     with tab3:
         st.write("Under Construction")
