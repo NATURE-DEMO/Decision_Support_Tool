@@ -347,6 +347,19 @@ def init_db():
                 UNIQUE(site_key, table_type, row_name, column_name, username)
             );
         '''))
+        s.execute(text('''
+            CREATE TABLE IF NOT EXISTS custom_site_snapshots (
+                id SERIAL PRIMARY KEY,
+                username TEXT NOT NULL,
+                level TEXT NOT NULL,
+                location_name TEXT,
+                center_lat REAL,
+                center_lon REAL,
+                bbox_json TEXT,
+                snapshot_data TEXT,
+                saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        '''))
         s.commit()
 
 try:
@@ -436,6 +449,106 @@ def verify_login_status_only(username):
     except Exception:
         pass
     return None
+
+def compute_5km2_bbox(lat, lon):
+    """Compute a ~5 km² bounding box around a center lat/lon point."""
+    import math
+    half_side_km = (5 ** 0.5) / 2          # ~1.118 km half-side → 2.236 km side → 5 km²
+    delta_lat    = half_side_km / 111.0
+    delta_lon    = half_side_km / (111.0 * max(abs(math.cos(math.radians(lat))), 0.001))
+    return {
+        "min_lat":    round(lat - delta_lat, 6),
+        "max_lat":    round(lat + delta_lat, 6),
+        "min_lon":    round(lon - delta_lon, 6),
+        "max_lon":    round(lon + delta_lon, 6),
+        "center_lat": round(lat, 6),
+        "center_lon": round(lon, 6),
+        "area_km2":   5.0,
+    }
+
+
+def _serialize_snapshot(data_dict):
+    """Serialize a dict of mixed types (DataFrames, lists, dicts) to a JSON string."""
+    out = {}
+    for k, v in data_dict.items():
+        if isinstance(v, pd.DataFrame):
+            out[k] = {"__type__": "DataFrame", "data": v.to_json(orient="records", default_handler=str)}
+        elif isinstance(v, set):
+            out[k] = {"__type__": "set", "data": list(v)}
+        else:
+            try:
+                json.dumps(v, default=str)   # quick serializability test
+                out[k] = v
+            except Exception:
+                out[k] = str(v)
+    return json.dumps(out, default=str)
+
+
+def _deserialize_snapshot(json_str):
+    """Reverse of _serialize_snapshot — returns a plain dict."""
+    raw = json.loads(json_str)
+    out = {}
+    for k, v in raw.items():
+        if isinstance(v, dict) and v.get("__type__") == "DataFrame":
+            try:
+                out[k] = pd.read_json(v["data"], orient="records")
+            except Exception:
+                out[k] = v["data"]
+        elif isinstance(v, dict) and v.get("__type__") == "set":
+            out[k] = set(v.get("data", []))
+        else:
+            out[k] = v
+    return out
+
+
+def save_custom_snapshot(username, level, location_name, center_lat, center_lon, bbox, snapshot_data_dict):
+    """Persist a Custom Site Analysis snapshot to the database."""
+    global DB_AVAILABLE
+    if not DB_AVAILABLE:
+        return False, "Database is not available."
+    try:
+        bbox_json     = json.dumps(bbox)
+        snapshot_json = _serialize_snapshot(snapshot_data_dict)
+        with conn.session as s:
+            s.execute(text('''
+                INSERT INTO custom_site_snapshots
+                    (username, level, location_name, center_lat, center_lon, bbox_json, snapshot_data)
+                VALUES (:u, :lv, :ln, :clat, :clon, :bbox, :data)
+            '''), params={
+                "u":    username,  "lv":   level,
+                "ln":   location_name,
+                "clat": center_lat, "clon": center_lon,
+                "bbox": bbox_json,  "data": snapshot_json,
+            })
+            s.commit()
+        return True, "Saved successfully."
+    except Exception as e:
+        return False, str(e)
+
+
+def get_latest_snapshot(username, level):
+    """Return the most recent snapshot row (as a pandas Series) for a user/level, or None."""
+    row_df = safe_run_query(
+        "SELECT id, location_name, center_lat, center_lon, bbox_json, snapshot_data, saved_at "
+        "FROM custom_site_snapshots WHERE username = :u AND level = :lv "
+        "ORDER BY saved_at DESC LIMIT 1",
+        {"u": username, "lv": level},
+    )
+    if row_df is not None and not row_df.empty:
+        return row_df.iloc[0]
+    return None
+
+
+def get_all_user_snapshots(username):
+    """Return all snapshot metadata rows for a user (no heavy data column)."""
+    df = safe_run_query(
+        "SELECT id, level, location_name, center_lat, center_lon, saved_at "
+        "FROM custom_site_snapshots WHERE username = :u "
+        "ORDER BY saved_at DESC LIMIT 30",
+        {"u": username},
+    )
+    return df if df is not None else pd.DataFrame()
+
 
 GITHUB_RAW_BASE   = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE   = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
@@ -1939,6 +2052,101 @@ if current_view == 'custom_analysis':
                         st.info("No data found for the selected infrastructure types in this area.")
         pass
 
+        # ── My Saved Analyses (expert / admin only) ─────────────────────────────
+        _cur_user_role = st.session_state.get("user_role", "")
+        _cur_username  = st.session_state.get("username", "")
+        if _cur_user_role in ("expert", "admin") and _cur_username:
+            st.markdown("---")
+            with st.expander("📂 My Saved Analyses (Last Saved per Level)", expanded=False):
+                st.caption(
+                    "These are the most recent snapshots you saved from the "
+                    "**Level 1** and **Level 2** analysis tabs below."
+                )
+                _snap_l1 = get_latest_snapshot(_cur_username, "L1")
+                _snap_l2 = get_latest_snapshot(_cur_username, "L2")
+
+                def _render_snapshot_card(snap, level_label, level_color):
+                    if snap is None:
+                        st.info(f"No saved {level_label} analysis found for your account yet.")
+                        return
+                    _saved_at  = snap.get("saved_at", "—")
+                    _loc_name  = snap.get("location_name") or "—"
+                    _clat      = snap.get("center_lat")
+                    _clon      = snap.get("center_lon")
+                    _bbox_raw  = snap.get("bbox_json")
+                    try:
+                        _bbox = json.loads(_bbox_raw) if _bbox_raw else {}
+                    except Exception:
+                        _bbox = {}
+
+                    st.markdown(
+                        f"""
+                        <div style="background:#f9fafb;border:1px solid #d8e8df;border-left:4px solid {level_color};
+                                    border-radius:8px;padding:12px 16px;margin-bottom:6px;">
+                          <div style="font-weight:700;font-size:1em;color:{level_color};margin-bottom:4px;">
+                            {level_label}
+                          </div>
+                          <div style="font-size:0.88em;color:#444;line-height:1.7;">
+                            📍 <b>Location:</b> {_loc_name}<br>
+                            🌐 <b>Center:</b> {f"{_clat:.5f}, {_clon:.5f}" if _clat is not None else "—"}<br>
+                            📦 <b>~5 km² Box:</b>
+                              Lat [{_bbox.get('min_lat','—')} → {_bbox.get('max_lat','—')}]
+                              &nbsp; Lon [{_bbox.get('min_lon','—')} → {_bbox.get('max_lon','—')}]<br>
+                            🕒 <b>Saved at:</b> {_saved_at}
+                          </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+
+                    # Show key output tables stored in the snapshot
+                    _snap_data_raw = snap.get("snapshot_data")
+                    if _snap_data_raw:
+                        try:
+                            _snap_data = _deserialize_snapshot(_snap_data_raw)
+                        except Exception:
+                            _snap_data = {}
+
+                        if level_label.startswith("Level 1"):
+                            _scope_df_raw = _snap_data.get("lvl1_added_items")
+                            if isinstance(_scope_df_raw, pd.DataFrame) and not _scope_df_raw.empty:
+                                st.markdown("**Scope Table (saved)**")
+                                st.dataframe(
+                                    _scope_df_raw.drop(columns=["Risk Score"], errors="ignore"),
+                                    use_container_width=True, hide_index=True
+                                )
+                            _pool = _snap_data.get("lvl1_filtered_nbs_pool")
+                            if isinstance(_pool, list) and _pool:
+                                _rank_df = pd.DataFrame(_pool)[
+                                    [c for c in ["method_only", "total", "suitability_score", "rpri"]
+                                     if c in pd.DataFrame(_pool).columns]
+                                ].rename(columns={
+                                    "method_only":       "NbS Solution",
+                                    "total":             "Feasibility (%)",
+                                    "suitability_score": "Suitability Score",
+                                    "rpri":              "RPRI",
+                                }).drop_duplicates()
+                                st.markdown("**NbS Ranking (saved)**")
+                                st.dataframe(_rank_df, use_container_width=True, hide_index=True)
+
+                        elif level_label.startswith("Level 2"):
+                            _pri_raw = _snap_data.get("pri_display_df")
+                            if isinstance(_pri_raw, pd.DataFrame) and not _pri_raw.empty:
+                                st.markdown("**PRI Results Table (saved)**")
+                                st.dataframe(_pri_raw, use_container_width=True, hide_index=True)
+                            _hazards = _snap_data.get("selected_nbs_hazards")
+                            _approved = _snap_data.get("approved_nbs_methods")
+                            if isinstance(_hazards, list) and _hazards:
+                                st.markdown(f"**Active Hazards (saved):** {', '.join(_hazards)}")
+                            if isinstance(_approved, list) and _approved:
+                                st.markdown(f"**Approved NbS Methods (saved):** {', '.join(_approved)}")
+
+                col_s1, col_s2 = st.columns(2)
+                with col_s1:
+                    _render_snapshot_card(_snap_l1, "Level 1 · Perceived Risks", "#2d6a4f")
+                with col_s2:
+                    _render_snapshot_card(_snap_l2, "Level 2 · Technical Analysis", "#1565c0")
+
     with _tab_l1:
         st.header("Perceived Risks Assessment")
         st.subheader("1. Scope Definition")
@@ -3007,6 +3215,88 @@ if current_view == 'custom_analysis':
 
         else:
             st.info("No active NbS solutions found. Ensure you have checked 'Include' and saved your criteria in the tables above.")
+
+        # ── Save Level 1 Analysis (expert / admin only) ─────────────────────────
+        _l1_user_role = st.session_state.get("user_role", "")
+        _l1_username  = st.session_state.get("username", "")
+        if _l1_user_role in ("expert", "admin") and _l1_username:
+            st.markdown("---")
+            st.markdown("#### 💾 Save Level 1 Analysis")
+            st.info(
+                "Save a snapshot of your current **Level 1 · Perceived Risks** analysis "
+                "(scope table, risk/loss ratings, NbS criteria and ranking) together with a "
+                "~5 km² bounding box around the map centre you selected."
+            )
+            _l1_center_lat = None
+            _l1_center_lon = None
+            _l1_loc_name   = "Custom Site"
+            if st.session_state.get("extracted_data"):
+                _l1_center_lat = st.session_state["extracted_data"].get("center_lat")
+                _l1_center_lon = st.session_state["extracted_data"].get("center_lon")
+            # Fall back to map_center if polygon not drawn yet
+            if _l1_center_lat is None:
+                _l1_center_lat = st.session_state.get("map_center", [None, None])[0]
+                _l1_center_lon = st.session_state.get("map_center", [None, None])[1]
+            _l1_loc_name = st.session_state.get("_save_location_name_l1", "Custom Site")
+
+            _save_col1, _save_col2 = st.columns([3, 1])
+            with _save_col1:
+                _l1_loc_name = st.text_input(
+                    "Location / project name for this snapshot:",
+                    value=_l1_loc_name,
+                    key="save_loc_name_l1",
+                    placeholder="e.g. Rhine Valley Railway – North Segment",
+                )
+            with _save_col2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                _do_save_l1 = st.button("💾 Save Level 1", type="primary", use_container_width=True, key="save_l1_btn")
+
+            if _l1_center_lat is not None:
+                _l1_bbox = compute_5km2_bbox(_l1_center_lat, _l1_center_lon)
+                st.caption(
+                    f"📦 Snapshot will cover the ~5 km² box: "
+                    f"Lat [{_l1_bbox['min_lat']} → {_l1_bbox['max_lat']}], "
+                    f"Lon [{_l1_bbox['min_lon']} → {_l1_bbox['max_lon']}] "
+                    f"(centre {_l1_bbox['center_lat']}, {_l1_bbox['center_lon']})"
+                )
+            else:
+                st.warning("⚠️ No map centre found. Please draw a polygon in the **Extraction** tab first.")
+
+            if _do_save_l1:
+                if _l1_center_lat is None:
+                    st.error("Cannot save — no location centre available. Please draw a polygon in the Extraction tab.")
+                else:
+                    _l1_bbox = compute_5km2_bbox(_l1_center_lat, _l1_center_lon)
+                    _l1_payload = {
+                        "lvl1_added_items":        st.session_state.get("lvl1_added_items", pd.DataFrame()),
+                        "item_risk_matrices":      st.session_state.get("item_risk_matrices", {}),
+                        "item_loss_matrices":      st.session_state.get("item_loss_matrices", {}),
+                        "lvl1_primary_nbs_df":     st.session_state.get("lvl1_primary_nbs_df", pd.DataFrame()),
+                        "lvl1_supp_nbs_df":        st.session_state.get("lvl1_supp_nbs_df", pd.DataFrame()),
+                        "lvl1_sei_lookup":         st.session_state.get("lvl1_sei_lookup", {}),
+                        "lvl1_ssf_lookup":         st.session_state.get("lvl1_ssf_lookup", {}),
+                        "lvl1_global_site_conditions": st.session_state.get("lvl1_global_site_conditions", {}),
+                        "lvl1_filtered_nbs_pool":  st.session_state.get("lvl1_filtered_nbs_pool", []),
+                        "selected_infras":         st.session_state.get("selected_infra_chips", []),
+                    }
+                    with st.spinner("Saving Level 1 analysis to database..."):
+                        _ok, _msg = save_custom_snapshot(
+                            username      = _l1_username,
+                            level         = "L1",
+                            location_name = _l1_loc_name,
+                            center_lat    = _l1_center_lat,
+                            center_lon    = _l1_center_lon,
+                            bbox          = _l1_bbox,
+                            snapshot_data_dict = _l1_payload,
+                        )
+                    if _ok:
+                        st.success(
+                            f"✅ Level 1 analysis saved successfully! "
+                            f"You can review it in the **Extraction · Mapping & Data** tab under "
+                            f"*My Saved Analyses*."
+                        )
+                    else:
+                        st.error(f"❌ Save failed: {_msg}")
 
     with _tab_l2:
         st.header("Infrastructure Impact & Hazard Analysis")
@@ -6197,6 +6487,87 @@ if current_view == 'custom_analysis':
         else:
             st.warning("Please run Step 7.1 first.")
 
+        # ── Save Level 2 Analysis (expert / admin only) ─────────────────────────
+        _l2_user_role = st.session_state.get("user_role", "")
+        _l2_username  = st.session_state.get("username", "")
+        if _l2_user_role in ("expert", "admin") and _l2_username:
+            st.markdown("---")
+            st.markdown("#### 💾 Save Level 2 Analysis")
+            st.info(
+                "Save a snapshot of your current **Level 2 · Technical Analysis** "
+                "(impact models, hazard/exposure/vulnerability indices, PRI results, NbS mapping) "
+                "together with a ~5 km² bounding box around the map centre you selected."
+            )
+            _l2_center_lat = None
+            _l2_center_lon = None
+            if st.session_state.get("extracted_data"):
+                _l2_center_lat = st.session_state["extracted_data"].get("center_lat")
+                _l2_center_lon = st.session_state["extracted_data"].get("center_lon")
+            if _l2_center_lat is None:
+                _l2_center_lat = st.session_state.get("map_center", [None, None])[0]
+                _l2_center_lon = st.session_state.get("map_center", [None, None])[1]
+
+            _save_col_a, _save_col_b = st.columns([3, 1])
+            with _save_col_a:
+                _l2_loc_name = st.text_input(
+                    "Location / project name for this snapshot:",
+                    value=st.session_state.get("_save_location_name_l2", "Custom Site"),
+                    key="save_loc_name_l2",
+                    placeholder="e.g. Rhine Valley Railway – North Segment",
+                )
+            with _save_col_b:
+                st.markdown("<br>", unsafe_allow_html=True)
+                _do_save_l2 = st.button("💾 Save Level 2", type="primary", use_container_width=True, key="save_l2_btn")
+
+            if _l2_center_lat is not None:
+                _l2_bbox = compute_5km2_bbox(_l2_center_lat, _l2_center_lon)
+                st.caption(
+                    f"📦 Snapshot will cover the ~5 km² box: "
+                    f"Lat [{_l2_bbox['min_lat']} → {_l2_bbox['max_lat']}], "
+                    f"Lon [{_l2_bbox['min_lon']} → {_l2_bbox['max_lon']}] "
+                    f"(centre {_l2_bbox['center_lat']}, {_l2_bbox['center_lon']})"
+                )
+            else:
+                st.warning("⚠️ No map centre found. Please draw a polygon in the **Extraction** tab first.")
+
+            if _do_save_l2:
+                if _l2_center_lat is None:
+                    st.error("Cannot save — no location centre available. Please draw a polygon in the Extraction tab.")
+                else:
+                    _l2_bbox = compute_5km2_bbox(_l2_center_lat, _l2_center_lon)
+                    _l2_payload = {
+                        "saved_data":               st.session_state.get("saved_data", pd.DataFrame()),
+                        "calculated_results":       st.session_state.get("calculated_results", pd.DataFrame()),
+                        "pri_display_df":           st.session_state.get("pri_display_df", pd.DataFrame()),
+                        "selected_nbs_hazards":     st.session_state.get("selected_nbs_hazards", []),
+                        "approved_nbs_methods":     st.session_state.get("approved_nbs_methods", []),
+                        "approved_supportive_methods": st.session_state.get("approved_supportive_methods", []),
+                        "sei_lookup":               st.session_state.get("sei_lookup", {}),
+                        "ssf_lookup":               st.session_state.get("ssf_lookup", {}),
+                        "global_site_conditions":   st.session_state.get("global_site_conditions", {}),
+                        "selected_infras":          st.session_state.get("selected_infra_chips", []),
+                        "nbs_table_excluded":       list(st.session_state.get("nbs_table_excluded", set())),
+                        "nbs_supp_table_excluded":  list(st.session_state.get("nbs_supp_table_excluded", set())),
+                    }
+                    with st.spinner("Saving Level 2 analysis to database..."):
+                        _ok2, _msg2 = save_custom_snapshot(
+                            username      = _l2_username,
+                            level         = "L2",
+                            location_name = _l2_loc_name,
+                            center_lat    = _l2_center_lat,
+                            center_lon    = _l2_center_lon,
+                            bbox          = _l2_bbox,
+                            snapshot_data_dict = _l2_payload,
+                        )
+                    if _ok2:
+                        st.success(
+                            f"✅ Level 2 analysis saved successfully! "
+                            f"You can review it in the **Extraction · Mapping & Data** tab under "
+                            f"*My Saved Analyses*."
+                        )
+                    else:
+                        st.error(f"❌ Save failed: {_msg2}")
+
 else:
     st.session_state['current_view'] = 'specific_site'
 
@@ -6340,4 +6711,40 @@ else:
                     st.markdown(f'<div class="justified-text">{nbs_text}</div>', unsafe_allow_html=True)
 
     with tab3:
-        st.write("Under Construction")
+        st.subheader("Level 3: High-resolution risk assessment")
+        
+        with st.spinner("Processing Level 3 data..."):
+            l3_files = get_github_subfolder_contents(selected_key, "level3")
+            
+            if not l3_files:
+                st.info("No Level 3 data found.")
+            else:
+                grouped_files = {}
+                for f in l3_files:
+                    match = re.match(r"^(\d+)", f["name"])
+                    if match:
+                        file_id = int(match.group(1)) 
+                        if file_id not in grouped_files:
+                            grouped_files[file_id] = []
+                        grouped_files[file_id].append(f)
+                sorted_keys = sorted(grouped_files.keys())
+                for file_id in sorted_keys:
+                    current_group = sorted(grouped_files[file_id], 
+                                        key=lambda x: x["name"].lower().endswith(".xlsx"))
+                    
+                    for f in current_group:
+                        raw_name = f["name"]
+                        url = f["download_url"]
+                        clean_title = re.sub(r"^\d+", "", raw_name)
+                        clean_title = os.path.splitext(clean_title)[0]
+                        clean_title = clean_title.lstrip("_-").replace("_", " ").replace("-", " ").strip()
+                        if raw_name.lower().endswith(".txt"):
+                            content = download_file_bytes(url).decode("utf-8").replace(chr(10), "<br>")
+                            st.markdown(f"### {clean_title}")
+                            st.markdown(f'<div class="justified-text">{content}</div>', unsafe_allow_html=True)
+                            
+                        elif raw_name.lower().endswith(".xlsx"):
+                            data = download_file_bytes(url)
+                            df = pd.read_excel(io.BytesIO(data))
+                            st.write(f"**Data Table: {clean_title}**")
+                            st.dataframe(clean_df_for_display(df), use_container_width=True)
