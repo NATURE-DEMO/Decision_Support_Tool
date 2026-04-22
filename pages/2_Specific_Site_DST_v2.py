@@ -697,7 +697,7 @@ with tab1:
             st.warning(f"No data available for {label}")
             return
         st.subheader(label)
-        st.dataframe(clean_df_for_display(consensus_df), width='stretch')
+        st.dataframe(clean_df_for_display(consensus_df), use_container_width=True)
         
         user_role = st.session_state.get('user_role')
         if user_role in ['expert', 'admin']:
@@ -723,7 +723,7 @@ with tab1:
         st.subheader("KPI Radar Chart")
         if kpis_consensus is not None:
             sel = [s for s in kpis_consensus.columns[1:] if st.checkbox(get_series_display_names().get(s,s), value=True, key=f"chk_{s}")]
-            if sel: st.plotly_chart(create_radar_chart_plotly(kpis_consensus, sel, f"Radar Chart of {selected_item['name']}"), width='stretch')
+            if sel: st.plotly_chart(create_radar_chart_plotly(kpis_consensus, sel, f"Radar Chart of {selected_item['name']}"), use_container_width=True)
         else:
             st.warning("KPI data is missing.")
 
@@ -772,7 +772,7 @@ with tab2:
                     clean_name = f["name"][1:] 
                     display_title = os.path.splitext(clean_name)[0]
                     st.subheader(display_title)
-                    st.dataframe(clean_df_for_display(df), width='stretch')
+                    st.dataframe(clean_df_for_display(df), use_container_width=True)
                 except Exception as e:
                     st.warning(f"Could not load {f['name']}")
 
@@ -787,4 +787,40 @@ with tab2:
                 st.markdown(f'<div class="justified-text">{nbs_text}</div>', unsafe_allow_html=True)
 
 with tab3:
-    st.write("Under Construction")
+    st.subheader("Level 3: High-resolution risk assessment")
+    
+    with st.spinner("Processing Level 3 data..."):
+        l3_files = get_github_subfolder_contents(selected_key, "level3")
+        
+        if not l3_files:
+            st.info("No Level 3 data found.")
+        else:
+            grouped_files = {}
+            for f in l3_files:
+                match = re.match(r"^(\d+)", f["name"])
+                if match:
+                    file_id = int(match.group(1)) 
+                    if file_id not in grouped_files:
+                        grouped_files[file_id] = []
+                    grouped_files[file_id].append(f)
+            sorted_keys = sorted(grouped_files.keys())
+            for file_id in sorted_keys:
+                current_group = sorted(grouped_files[file_id], 
+                                      key=lambda x: x["name"].lower().endswith(".xlsx"))
+                
+                for f in current_group:
+                    raw_name = f["name"]
+                    url = f["download_url"]
+                    clean_title = re.sub(r"^\d+", "", raw_name)
+                    clean_title = os.path.splitext(clean_title)[0]
+                    clean_title = clean_title.lstrip("_-").replace("_", " ").replace("-", " ").strip()
+                    if raw_name.lower().endswith(".txt"):
+                        content = download_file_bytes(url).decode("utf-8").replace(chr(10), "<br>")
+                        st.markdown(f"### {clean_title}")
+                        st.markdown(f'<div class="justified-text">{content}</div>', unsafe_allow_html=True)
+                        
+                    elif raw_name.lower().endswith(".xlsx"):
+                        data = download_file_bytes(url)
+                        df = pd.read_excel(io.BytesIO(data))
+                        st.write(f"**Data Table: {clean_title}**")
+                        st.dataframe(clean_df_for_display(df), use_container_width=True)
