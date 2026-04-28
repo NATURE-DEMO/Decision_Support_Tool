@@ -93,7 +93,9 @@
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="NATURE-DEMO Decision Support Tool" class="md-header__button md-logo" aria-label="NATURE-DEMO Decision Support Tool" data-md-component="logo">
       
@@ -207,14 +209,8 @@
     
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -268,7 +264,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="user_guide/authentication/" class="md-tabs__link">
+        <a href="user_guide/integrated_dst/" class="md-tabs__link">
           
   
   
@@ -360,7 +356,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -773,34 +775,6 @@
   
   
     <li class="md-nav__item">
-      <a href="user_guide/authentication/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Getting started — Authentication
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="user_guide/integrated_dst/" class="md-nav__link">
         
   
@@ -808,7 +782,7 @@
   <span class="md-ellipsis">
     
   
-    Integrated DST
+    Application overview
   
 
     
@@ -829,14 +803,14 @@
   
   
     <li class="md-nav__item">
-      <a href="user_guide/general_dst/" class="md-nav__link">
+      <a href="user_guide/authentication/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    General DST (legacy)
+    Authentication
   
 
     
@@ -857,14 +831,154 @@
   
   
     <li class="md-nav__item">
-      <a href="user_guide/specific_site_dst/" class="md-nav__link">
+      <a href="user_guide/layout/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Specific Site DST (legacy)
+    Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/specific_site/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Specific Site DST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/custom_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/custom_level1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Level 1 (Perceived Risk)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/custom_level2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Level 2 (Technical Analysis)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/exporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exporting results
   
 
     
@@ -1176,6 +1290,14 @@
           
             <div class="md-content" data-md-component="content">
               
+                
+
+
+
+  
+
+
+              
               <article class="md-content__inner md-typeset">
                 
                   
@@ -1242,6 +1364,10 @@
 <p class="admonition-title">Live deployment</p>
 <p>The Integrated DST is publicly accessible at <strong><a href="https://nature-demo-dst.dic-cloudmate.eu">nature-demo-dst.dic-cloudmate.eu</a></strong>. A user account is required — contact the NATURE-DEMO consortium or create one via the sign-up form on the application.</p>
 </div>
+<div class="admonition info">
+<p class="admonition-title">📄 Full deliverable manual</p>
+<p>The D2.3 manual is also available as a single downloadable PDF: <strong><a href="assets/D2.3_DST.pdf">Download D2.3 — Decision Support Tool (PDF)</a></strong> (≈ 16 MB, 63 pages). This is the canonical archived form of the deliverable, on which the content of this website is based.</p>
+</div>
 <hr />
 <h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link">&para;</a></h2>
 <p>The DST covers <strong>twelve classes of European critical infrastructure (CI)</strong>:</p>
@@ -1285,7 +1411,7 @@
 <li>Operationalise the <strong>D2.1 semi-quantitative methodology</strong> (PRI = HI × EI × VI) across twelve CI types, covering the eight CI sectors identified in D2.1 and additional categories</li>
 <li>Enable <strong>NbS vs. grey infrastructure</strong> comparison through MCA-ranked adaptation options</li>
 <li>Deliver <strong>climate data</strong> drawn from EURO-CORDEX ensembles (23 indices, RCP4.5/8.5, three future horizons) via a dedicated API</li>
-<li>Support the <strong>six NATURE-DEMO demonstration sites</strong> across Austria, Romania, Slovenia, Slovakia and North Macedonia</li>
+<li>Support the <strong>five NATURE-DEMO demonstration sites</strong> in Austria, Romania, Slovenia, Slovakia and North Macedonia, exposed as six pre-configured site configurations (the Austrian demonstrator is split into Lattenbach and Brunntal)</li>
 </ul>
 <hr />
 <h2 id="platform-components">Platform components<a class="headerlink" href="#platform-components" title="Permanent link">&para;</a></h2>
@@ -1372,7 +1498,7 @@
 </tr>
 <tr>
 <td><strong>Level 3 — High-resolution assessment</strong></td>
-<td>Integrated for all six demo sites — partner-supplied high-resolution assessments, data tables, and reports rendered via GitHub content system</td>
+<td>Viewer integrated for all six site configurations; renders partner-supplied site-specific assessments, data tables, and reports from the GitHub content system. Depth of available material varies by demonstrator.</td>
 </tr>
 <tr>
 <td><strong>NbS–Hazard matrix</strong></td>
@@ -1412,6 +1538,30 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+        
+          
+          <a href="methodology/framework/" class="md-footer__link md-footer__link--next" aria-label="Next: Framework overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Framework overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1458,7 +1608,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["content.footnote.tooltips", "navigation.tabs", "navigation.sections", "toc.integrate"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["content.footnote.tooltips", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.footer", "toc.integrate"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="assets/javascripts/bundle.79ae519e.min.js"></script>

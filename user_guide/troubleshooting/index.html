@@ -95,7 +95,9 @@
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="../.." title="NATURE-DEMO Decision Support Tool" class="md-header__button md-logo" aria-label="NATURE-DEMO Decision Support Tool" data-md-component="logo">
       
@@ -209,14 +211,8 @@
     
   </nav>
   
-</header>
     
-    <div class="md-container" data-md-component="container">
       
-      
-        
-          
-            
 <nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
   <div class="md-grid">
     <ul class="md-tabs__list">
@@ -270,7 +266,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../authentication/" class="md-tabs__link">
+        <a href="../integrated_dst/" class="md-tabs__link">
           
   
   
@@ -362,7 +358,13 @@
     </ul>
   </div>
 </nav>
-          
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
         
       
       <main class="md-main" data-md-component="main">
@@ -667,34 +669,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../authentication/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Getting started — Authentication
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../integrated_dst/" class="md-nav__link">
         
   
@@ -702,7 +676,7 @@
   <span class="md-ellipsis">
     
   
-    Integrated DST
+    Application overview
   
 
     
@@ -723,14 +697,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../general_dst/" class="md-nav__link">
+      <a href="../authentication/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    General DST (legacy)
+    Authentication
   
 
     
@@ -751,14 +725,154 @@
   
   
     <li class="md-nav__item">
-      <a href="../specific_site_dst/" class="md-nav__link">
+      <a href="../layout/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Specific Site DST (legacy)
+    Layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../specific_site/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Specific Site DST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_extraction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Extraction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_level1/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Level 1 (Perceived Risk)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom_level2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom site — Level 2 (Technical Analysis)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../exporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Exporting results
   
 
     
@@ -1194,6 +1308,54 @@
           
             <div class="md-content" data-md-component="content">
               
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../integrated_dst/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    User Guide
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
               <article class="md-content__inner md-typeset">
                 
                   
@@ -1217,7 +1379,7 @@
 <p>The OpenStreetMap Overpass API has rate limits and may be temporarily overloaded. If the drawn polygon is very large (more than a few square kilometres), reduce its size. Wait 30–60 seconds and click <strong>Extract Information</strong> again without redrawing the polygon.</p>
 <hr />
 <h2 id="level-2-calculate-hazard-variation-level-returns-no-values">Level 2 "Calculate Hazard Variation &amp; Level" returns no values<a class="headerlink" href="#level-2-calculate-hazard-variation-level-returns-no-values" title="Permanent link">&para;</a></h2>
-<p>This occurs when the polygon centroid or manually entered coordinates fall outside the EURO-CORDEX EUR-11 domain (~25°W–45°E, 27°N–72°N), or when the clima-ind-viz API is temporarily unavailable. Verify that the coordinates are within Europe and that <code>https://naturedemo-clima-ind.dic-cloudmate.eu</code> is reachable. Use <strong>Delete rows without climate information</strong> to remove any rows that returned no data before proceeding. If the API is unavailable, use the <a href="../quick_reference/#companion-tool--european-climate-data-visualisation">companion climate data tool</a> to look up indicator values manually and enter them directly into the Hazard Level cells via the double-click override, then commit with <strong>Save Hazard Changes</strong>.</p>
+<p>This occurs when the polygon centroid or manually entered coordinates fall outside the EURO-CORDEX EUR-11 domain (~25°W–45°E, 27°N–72°N), or when the clima-ind-viz API is temporarily unavailable. Verify that the coordinates are within Europe and that <code>https://naturedemo-clima-ind.dic-cloudmate.eu</code> is reachable. Use <strong>Delete rows without climate information</strong> to remove any rows that returned no data before proceeding. If the API is unavailable, use the <a href="../quick_reference/#companion-tool-european-climate-data-visualisation">companion climate data tool</a> to look up indicator values manually and enter them directly into the Hazard Level cells via the double-click override, then commit with <strong>Save Hazard Changes</strong>.</p>
 <hr />
 <h2 id="a-loaded-analysis-snapshot-appears-incomplete-or-causes-errors">A loaded analysis snapshot appears incomplete or causes errors<a class="headerlink" href="#a-loaded-analysis-snapshot-appears-incomplete-or-causes-errors" title="Permanent link">&para;</a></h2>
 <p>Snapshots save the complete session state as JSON. If the application was updated after a snapshot was saved, some session-state keys may no longer match the current schema. Delete the affected snapshot and recreate the analysis from the current step.</p>
@@ -1247,6 +1409,46 @@
       </main>
       
         <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../quick_reference/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Quick reference">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Quick reference
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../architecture/overview/" class="md-footer__link md-footer__link--next" aria-label="Next: Platform overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Platform overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
@@ -1293,7 +1495,7 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.footnote.tooltips", "navigation.tabs", "navigation.sections", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.footnote.tooltips", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.footer", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
