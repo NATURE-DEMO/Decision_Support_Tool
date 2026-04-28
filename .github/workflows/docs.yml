@@ -18,8 +18,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v5
 
-      - run: uv sync --extra docs
+      - run: uv sync --extra docs --no-install-project
 
-      - run: uv run mkdocs gh-deploy --force
+      - run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          uv run mkdocs gh-deploy --force
