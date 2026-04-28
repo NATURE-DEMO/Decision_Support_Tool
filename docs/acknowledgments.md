@@ -56,6 +56,33 @@ We acknowledge the **[CLIMAAX project](https://handbook.climaax.eu/)** (CLIMAte 
 
 ---
 
+## AI-generated content and responsible use
+
+All AI-generated reports in the DST use **Google Gemini** (model: `gemini-2.5-flash-lite`) with a retrieval-augmented generation (RAG) approach using embedded examples. The model operates without internet search capability, ensuring that outputs are grounded exclusively in the data provided by the application — in full accordance with the project Data Management Plan and applicable AI-ethics requirements.
+
+Every AI output is preceded by a yellow-bordered **AI-Generated Content** header banner identifying the content type and displaying the model version. The following disclaimer is shown automatically with every report:
+
+> *AI-generated summaries and interpretations provided by this tool are intended to support understanding and exploration of geospatial and infrastructure data. These outputs are automatically generated and should not be used as the sole basis for any decisions. Users are advised to consult the detailed, tabular data provided within the tool and seek expert advice before making any decisions.*
+
+A collapsible ⚠️ **AI Limitations & Responsible Use** expander is appended to every report, noting that AI-generated content may contain inaccuracies or omissions, that the model does not possess domain expertise, and that the system is not designed for real-time operational decision-making or emergency response without expert validation. A feedback notice at the bottom of every AI output asks users to report any inaccuracies to the project team.
+
+!!! warning "Important"
+    Never use AI-generated reports as the sole basis for infrastructure protection, emergency management, or policy decisions. Always validate AI outputs against the tabular data in the tool and consult qualified domain experts.
+
+### Where AI is used in the application
+
+| Location | Content generated |
+|----------|-------------------|
+| Custom Site — [Extraction tab](user_guide/custom_extraction.md) (C1) | Geographical & Infrastructure Context Report |
+| Custom Site — [Extraction tab](user_guide/custom_extraction.md) (C2) | Köppen-Geiger climate classification interpretation |
+| Custom Site — [Level 1](user_guide/custom_level1.md), Section 2 | Risk and loss matrix interpretation narrative |
+| Custom Site — [Level 2](user_guide/custom_level2.md), Step 6 | PRI assessment report |
+| Specific Site DST — [Site Info / Level 1](user_guide/specific_site.md) | Site description and KPI interpretation narratives |
+
+If the Gemini API key is not configured, all AI buttons are disabled and a warning banner is displayed; the rest of the application functions normally.
+
+---
+
 ## Attribution
 
 When using results derived from this tool in publications, please cite:

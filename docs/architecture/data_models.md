@@ -147,7 +147,7 @@ When the PRI calculation identifies active hazards for an asset, the DST:
 
 ## Köppen-Geiger classification
 
-Local climate zone rasters are stored in `Koppen/`. The General DST overlays the Köppen zone on the asset location to provide context for hazard likelihood and NbS suitability. Rasters follow the Beck et al. (2018) 1991–2020 classification at 1 km resolution.
+The Köppen-Geiger classification raster is stored in `Koppen/` as a GeoTIFF at 0.1° spatial resolution, based on the Beck et al. (2018) 1991–2020 climatology (the source 1 km raster is resampled to the DST grid). Both Specific Site and Custom Site analyses sample the raster at the asset location to provide local climate-zone context for hazard likelihood and NbS suitability.
 
 ---
 

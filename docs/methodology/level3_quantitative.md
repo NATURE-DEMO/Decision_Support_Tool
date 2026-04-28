@@ -52,9 +52,9 @@ $$
 
 ## Implementation in D2.3
 
-The Level 3 tab is integrated in the DST for all six NATURE-DEMO demonstration sites. Partner organisations supply site-specific high-resolution assessments, data tables, and interpretation reports, which are rendered dynamically from the project GitHub repository. This covers on-site conditions and local modelling outputs that go beyond what the regional EURO-CORDEX data can resolve.
+The Specific Site DST exposes a Level 3 tab that renders partner-supplied site-specific assessments, data tables, and interpretation reports from the GitHub content system. Where Level 3 material is not yet available for a site, the application displays a *"No Level 3 data found."* message. The depth of supplied content varies by demonstrator.
 
-The automated quantitative calculation engine (EAD integration, NPV/BCR module, Monte Carlo uncertainty propagation) requires site-specific damage/vulnerability curves compiled from literature and is planned as a future extension of the platform beyond D2.3.
+An automated quantitative engine (EAD integration, NPV/BCR module, Monte Carlo uncertainty propagation) requires site-specific damage/vulnerability curves compiled from literature and is not part of D2.3.
 
 ---
 

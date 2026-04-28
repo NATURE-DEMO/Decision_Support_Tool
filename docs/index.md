@@ -27,6 +27,9 @@ The tool implements the three-level risk assessment methodology defined in **Del
 !!! tip "Live deployment"
     The Integrated DST is publicly accessible at **[nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)**. A user account is required — contact the NATURE-DEMO consortium or create one via the sign-up form on the application.
 
+!!! info "📄 Full deliverable manual"
+    The D2.3 manual is also available as a single downloadable PDF: **[Download D2.3 — Decision Support Tool (PDF)](assets/D2.3_DST.pdf)** (≈ 16 MB, 63 pages). This is the canonical archived form of the deliverable, on which the content of this website is based.
+
 ---
 
 ## Scope
@@ -55,7 +58,7 @@ For each CI type the tool:
 - Operationalise the **D2.1 semi-quantitative methodology** (PRI = HI × EI × VI) across twelve CI types, covering the eight CI sectors identified in D2.1 and additional categories
 - Enable **NbS vs. grey infrastructure** comparison through MCA-ranked adaptation options
 - Deliver **climate data** drawn from EURO-CORDEX ensembles (23 indices, RCP4.5/8.5, three future horizons) via a dedicated API
-- Support the **six NATURE-DEMO demonstration sites** across Austria, Romania, Slovenia, Slovakia and North Macedonia
+- Support the **five NATURE-DEMO demonstration sites** in Austria, Romania, Slovenia, Slovakia and North Macedonia, exposed as six pre-configured site configurations (the Austrian demonstrator is split into Lattenbach and Brunntal)
 
 ---
 
@@ -108,7 +111,7 @@ For a detailed description of each component and their integration see the [Arch
 | **Decision Support Tool** | Authentication-gated web application; six demo site configurations; Custom Site Analysis for any European location |
 | **Level 1 — Qualitative risk perception** | Stakeholder KPI scoring (RAMS SHEEP); multi-expert live consensus; SSF/SEI NbS filtration and feasibility ranking |
 | **Level 2 — Semi-quantitative screening** | 7-step PRI = HI × EI × VI workflow; NbS MCA ranking; RPRI residual risk comparison |
-| **Level 3 — High-resolution assessment** | Integrated for all six demo sites — partner-supplied high-resolution assessments, data tables, and reports rendered via GitHub content system |
+| **Level 3 — High-resolution assessment** | Viewer integrated for all six site configurations; renders partner-supplied site-specific assessments, data tables, and reports from the GitHub content system. Depth of available material varies by demonstrator. |
 | **NbS–Hazard matrix** | 74 NbS types × 29 hazards from the D1.1 catalogue; primary and supportive solution matching |
 | **AI-generated reports** | Google Gemini integration for infrastructure context, climate classification, and PRI interpretation narratives |
 

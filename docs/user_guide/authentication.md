@@ -6,16 +6,20 @@ The Integrated DST is access-controlled. A full-screen login wall is presented b
 
 ## Logging in
 
-Navigate to [nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu). Select **Login**, enter your username and password, and click **Login**. On successful authentication the application loads; your session persists for the duration of the browser session.
+Navigate to [nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu). Select **Login**, enter your username and password, and click **Login**. On successful authentication a 7-day session cookie is set and the application loads.
 
 - If your account is awaiting approval, the message *"Account waiting for Admin approval"* is shown. The account cannot be used until an administrator approves it.
 - Incorrect credentials return *"Invalid username or password."* No automatic account lockout is applied.
+
+![Application authentication screen — Login tab selected with username and password fields.](../assets/manual_figures/auth_login.png)
 
 ---
 
 ## Creating a new account
 
 Select **Sign Up** on the authentication screen. Complete all required fields: Username, First Name, Last Name, Email Address, Job Title, Industry, Requested Role, Password, and Confirm Password.
+
+![New user sign-up form. All fields are required. The Requested Role field allows viewer or expert; the admin role cannot be self-assigned.](../assets/manual_figures/auth_signup.png)
 
 The **Requested Role** dropdown offers **viewer** or **expert** (see role descriptions below). The admin role cannot be self-assigned; it must be assigned by an existing administrator after account approval.
 

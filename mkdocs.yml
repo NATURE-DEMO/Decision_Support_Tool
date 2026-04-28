@@ -16,10 +16,14 @@ nav:
       - Level 2 — Semi-quantitative pre-screening: methodology/level2_prescreening.md
       - Level 3 — Quantitative analysis: methodology/level3_quantitative.md
   - User Guide:
-      - Getting started — Authentication: user_guide/authentication.md
-      - Integrated DST: user_guide/integrated_dst.md
-      - General DST (legacy): user_guide/general_dst.md
-      - Specific Site DST (legacy): user_guide/specific_site_dst.md
+      - Application overview: user_guide/integrated_dst.md
+      - Authentication: user_guide/authentication.md
+      - Layout: user_guide/layout.md
+      - Specific Site DST: user_guide/specific_site.md
+      - Custom site — Extraction: user_guide/custom_extraction.md
+      - Custom site — Level 1 (Perceived Risk): user_guide/custom_level1.md
+      - Custom site — Level 2 (Technical Analysis): user_guide/custom_level2.md
+      - Exporting results: user_guide/exporting.md
       - Quick reference: user_guide/quick_reference.md
       - Troubleshooting: user_guide/troubleshooting.md
   - Architecture:
@@ -57,7 +61,10 @@ theme:
   features:
     - content.footnote.tooltips
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
+    - navigation.path
+    - navigation.footer
     - toc.integrate
   palette:
     - media: "(prefers-color-scheme: light)"

@@ -26,7 +26,7 @@ The OpenStreetMap Overpass API has rate limits and may be temporarily overloaded
 
 ## Level 2 "Calculate Hazard Variation & Level" returns no values
 
-This occurs when the polygon centroid or manually entered coordinates fall outside the EURO-CORDEX EUR-11 domain (~25°W–45°E, 27°N–72°N), or when the clima-ind-viz API is temporarily unavailable. Verify that the coordinates are within Europe and that `https://naturedemo-clima-ind.dic-cloudmate.eu` is reachable. Use **Delete rows without climate information** to remove any rows that returned no data before proceeding. If the API is unavailable, use the [companion climate data tool](quick_reference.md#companion-tool--european-climate-data-visualisation) to look up indicator values manually and enter them directly into the Hazard Level cells via the double-click override, then commit with **Save Hazard Changes**.
+This occurs when the polygon centroid or manually entered coordinates fall outside the EURO-CORDEX EUR-11 domain (~25°W–45°E, 27°N–72°N), or when the clima-ind-viz API is temporarily unavailable. Verify that the coordinates are within Europe and that `https://naturedemo-clima-ind.dic-cloudmate.eu` is reachable. Use **Delete rows without climate information** to remove any rows that returned no data before proceeding. If the API is unavailable, use the [companion climate data tool](quick_reference.md#companion-tool-european-climate-data-visualisation) to look up indicator values manually and enter them directly into the Hazard Level cells via the double-click override, then commit with **Save Hazard Changes**.
 
 ---
 
