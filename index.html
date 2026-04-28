@@ -1291,17 +1291,22 @@
 <h2 id="platform-components">Platform components<a class="headerlink" href="#platform-components" title="Permanent link">&para;</a></h2>
 <p>The DST is the top layer of a three-component platform:</p>
 <pre class="mermaid"><code>flowchart TD
-    CORDEX["☁️ EURO-CORDEX\nClimate Model Ensemble"]
+    CORDEX(["☁️  EURO-CORDEX\nClimate Model Ensemble"])
 
-    CD["clima-data\nCORDEX processing pipeline\n23 climate indices · NetCDF · ~12 km"]
+    CD["🌡️  clima-data\nCORDEX processing pipeline\n23 climate indices · NetCDF · ~12 km"]
 
-    CIV["clima-ind-viz\nInteractive visualisation + JSON REST API\nPOST /api/calculate → index values + uncertainty"]
+    CIV["📊  clima-ind-viz\nClimate visualisation + JSON REST API\nindex values · uncertainty · scenario comparison"]
 
-    DST["Decision Support Tool\nStreamlit web app — this deliverable\nRisk calculator · NbS MCA · scenario comparison"]
+    DST["🌿  Decision Support Tool\nStreamlit web application — this deliverable\nRisk calculator · NbS MCA · scenario comparison"]
 
     CORDEX --&gt;|raw NetCDF| CD
     CD --&gt;|processed NetCDF| CIV
-    CIV --&gt;|JSON API| DST</code></pre>
+    CIV --&gt;|JSON API| DST
+
+    style CORDEX fill:#e8f4f8,stroke:#5b9bd5,stroke-width:2px,color:#1a1a2e
+    style CD    fill:#e8f5e9,stroke:#4caf50,stroke-width:2px,color:#1a1a2e
+    style CIV   fill:#fff8e1,stroke:#ff9800,stroke-width:2px,color:#1a1a2e
+    style DST   fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px,color:#1a1a2e</code></pre>
 <p>For a detailed description of each component and their integration see the <a href="architecture/overview/">Architecture overview</a>.</p>
 <hr />
 <h2 id="document-structure">Document structure<a class="headerlink" href="#document-structure" title="Permanent link">&para;</a></h2>
