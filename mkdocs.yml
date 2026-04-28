@@ -1,0 +1,107 @@
+site_name: "NATURE-DEMO Decision Support Tool"
+repo_url: https://github.com/NATURE-DEMO/Decision_Support_Tool
+site_url: https://NATURE-DEMO.github.io/Decision_Support_Tool
+site_description: >
+  Deliverable D2.3 — Decision Support Tool for climate risk assessment and
+  nature-based solutions planning for European critical infrastructure.
+site_author: NATURE-DEMO Consortium
+edit_uri: edit/main/docs/
+copyright: "NATURE-DEMO Project — EU Horizon Europe Grant Agreement No. 101157448"
+
+nav:
+  - Home: index.md
+  - Methodology:
+      - Framework overview: methodology/framework.md
+      - Level 1 — Qualitative assessment: methodology/level1_qualitative.md
+      - Level 2 — Semi-quantitative pre-screening: methodology/level2_prescreening.md
+      - Level 3 — Quantitative analysis: methodology/level3_quantitative.md
+  - User Guide:
+      - Getting started — Authentication: user_guide/authentication.md
+      - Integrated DST: user_guide/integrated_dst.md
+      - General DST (legacy): user_guide/general_dst.md
+      - Specific Site DST (legacy): user_guide/specific_site_dst.md
+      - Quick reference: user_guide/quick_reference.md
+      - Troubleshooting: user_guide/troubleshooting.md
+  - Architecture:
+      - Platform overview: architecture/overview.md
+      - API integration: architecture/api_integration.md
+      - Data models: architecture/data_models.md
+  - Deployment: deployment.md
+  - Bibliography: bibliography.md
+  - Acknowledgments: acknowledgments.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: ["."]
+          options:
+            show_source: true
+            docstring_style: google
+            show_root_heading: false
+            show_submodules: true
+            show_signature: true
+            heading_level: 3
+  - bibtex:
+      bib_file: docs/references.bib
+      enable_inline_citations: true
+      csl_file: docs/springer-basic-author-date.csl
+
+theme:
+  name: material
+  logo: assets/NATURE-DEMO-logo.png
+  favicon: assets/NATURE-DEMO-logo.png
+  font:
+    text: "Arial, sans-serif"
+  features:
+    - content.footnote.tooltips
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/git-alt
+
+extra:
+  social:
+    - icon: fontawesome/brands/git-alt
+      link: https://github.com/NATURE-DEMO/Decision_Support_Tool
+
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.caret
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - footnotes
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
