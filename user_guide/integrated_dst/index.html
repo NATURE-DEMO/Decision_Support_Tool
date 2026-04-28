@@ -1,0 +1,1699 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Deliverable D2.3 — Decision Support Tool for climate risk assessment and nature-based solutions planning for European critical infrastructure.
+">
+      
+      
+        <meta name="author" content="NATURE-DEMO Consortium">
+      
+      
+        <link rel="canonical" href="https://NATURE-DEMO.github.io/Decision_Support_Tool/user_guide/integrated_dst/">
+      
+      
+        <link rel="prev" href="../authentication/">
+      
+      
+        <link rel="next" href="../general_dst/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/NATURE-DEMO-logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Integrated DST - NATURE-DEMO Decision Support Tool</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Arial,+sans-serif:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Arial, sans-serif";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#integrated-dst" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="NATURE-DEMO Decision Support Tool" class="md-header__button md-logo" aria-label="NATURE-DEMO Decision Support Tool" data-md-component="logo">
+      
+  <img src="../../assets/NATURE-DEMO-logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NATURE-DEMO Decision Support Tool
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Integrated DST
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue-grey" data-md-color-accent="teal"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="teal"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/NATURE-DEMO/Decision_Support_Tool" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../methodology/framework/" class="md-tabs__link">
+          
+  
+  
+  Methodology
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../authentication/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../deployment/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Deployment
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../bibliography/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Bibliography
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../acknowledgments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Acknowledgments
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="NATURE-DEMO Decision Support Tool" class="md-nav__button md-logo" aria-label="NATURE-DEMO Decision Support Tool" data-md-component="logo">
+      
+  <img src="../../assets/NATURE-DEMO-logo.png" alt="logo">
+
+    </a>
+    NATURE-DEMO Decision Support Tool
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/NATURE-DEMO/Decision_Support_Tool" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Methodology
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Methodology
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/framework/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/level1_qualitative/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Level 1 — Qualitative assessment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/level2_prescreening/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Level 2 — Semi-quantitative pre-screening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../methodology/level3_quantitative/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Level 3 — Quantitative analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started — Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrated DST
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integrated DST
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#application-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Application layout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mode-1-specific-site-dst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mode 1 — Specific Site DST
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mode 1 — Specific Site DST">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#demo-sites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo sites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tab-1-site-info-maps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tab 1 — Site Info &amp; Maps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tab-2-level-1-perceived-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tab 2 — Level 1: Perceived Risk
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tab-3-level-2-screening-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tab 3 — Level 2: Screening Tool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tab-4-level-3-high-resolution-assessment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tab 4 — Level 3: High-Resolution Assessment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mode-2-custom-site-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mode 2 — Custom Site Analysis
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Mode 2 — Custom Site Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#extraction-tab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extraction tab
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#level-1-tab-perceived-risks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 1 tab — Perceived Risks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#level-2-tab-technical-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 2 tab — Technical Analysis
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#saving-and-loading-analysis-snapshots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Saving and loading analysis snapshots
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ai-generated-content" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AI-generated content
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../general_dst/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    General DST (legacy)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../specific_site_dst/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Specific Site DST (legacy)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Platform overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/api_integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/data_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../bibliography/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bibliography
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../acknowledgments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acknowledgments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="integrated-dst">Integrated DST<a class="headerlink" href="#integrated-dst" title="Permanent link">&para;</a></h1>
+<p>The <strong>Integrated DST</strong> (<code>pages/integrated_dst.py</code>) is the primary application delivered as Deliverable D2.3. It consolidates the Specific Site DST and Custom Site Analysis into a single authentication-gated Streamlit application:</p>
+<p><strong>Production URL</strong>: <a href="https://nature-demo-dst.dic-cloudmate.eu">https://nature-demo-dst.dic-cloudmate.eu</a></p>
+<p>Access requires a user account — see <a href="../authentication/">Authentication</a> for login, sign-up, and role management.</p>
+<hr />
+<h2 id="application-layout">Application layout<a class="headerlink" href="#application-layout" title="Permanent link">&para;</a></h2>
+<p>After login, the application presents two persistent panels.</p>
+<p><strong>Sidebar (left)</strong> — visible on every view, structured top to bottom:</p>
+<ul>
+<li>NATURE-DEMO project logo (links to the project website)</li>
+<li>Logged-in user's display name and role</li>
+<li>🔐 Change Password expander</li>
+<li>Logout button</li>
+<li>🛡️ Admin Panel expander (admin users only)</li>
+<li><strong>🔬 Custom Site Analysis &amp; NbS Recommendation</strong> button — activates the custom site mode</li>
+<li><strong>Select Site</strong> section — six clickable demo site cards, each with a background photograph and site label; the active card is highlighted with a green border</li>
+</ul>
+<p><strong>Main content area (right)</strong> — switches between two view types depending on sidebar selection:</p>
+<ul>
+<li><strong>Specific Site view</strong> — activated when a demo site card is clicked; four-tab interface: Site Info &amp; Maps, Level 1, Level 2, Level 3</li>
+<li><strong>Custom Site Analysis view</strong> — activated by the 🔬 button; three-tab interface: Extraction · Mapping &amp; Data, Level 1 · Perceived Risks, Level 2 · Technical Analysis</li>
+</ul>
+<hr />
+<h2 id="mode-1-specific-site-dst">Mode 1 — Specific Site DST<a class="headerlink" href="#mode-1-specific-site-dst" title="Permanent link">&para;</a></h2>
+<h3 id="demo-sites">Demo sites<a class="headerlink" href="#demo-sites" title="Permanent link">&para;</a></h3>
+<p>Six pre-configured site configurations are available, covering five NATURE-DEMO demonstration sites. The Austrian demonstrator is split into two sub-sites reflecting distinct locations within the same catchment:</p>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Location</th>
+<th>Primary CI / hazard focus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Demo 1-A</td>
+<td>Lattenbach Valley, Austria</td>
+<td>Torrent control / railway — debris flows, extreme rainfall, slope instability</td>
+</tr>
+<tr>
+<td>Demo 1-B</td>
+<td>Brunntal, Austria</td>
+<td>Alpine roads and paths — slope stability, snowmelt floods</td>
+</tr>
+<tr>
+<td>Demo 2</td>
+<td>Brasov City, Romania</td>
+<td>Urban green infrastructure — heat island, drought, air pollution</td>
+</tr>
+<tr>
+<td>Demo 3</td>
+<td>Slovenia</td>
+<td>River / flood protection — fluvial flooding, river erosion</td>
+</tr>
+<tr>
+<td>Demo 4</td>
+<td>Zvolen, Slovakia</td>
+<td>Road and railway crossroads — wildfire, flooding, extreme weather</td>
+</tr>
+<tr>
+<td>Demo 5</td>
+<td>Globocica, North Macedonia</td>
+<td>Hydropower dams — drought, sedimentation, water resource stress</td>
+</tr>
+</tbody>
+</table>
+<p>Clicking a site card loads all content from the GitHub <code>texts/{site_key}/</code> directory and opens the four-tab interface. Content is fetched dynamically at runtime via the GitHub Contents API — no data files are bundled in the deployment.</p>
+<h3 id="tab-1-site-info-maps">Tab 1 — Site Info &amp; Maps<a class="headerlink" href="#tab-1-site-info-maps" title="Permanent link">&para;</a></h3>
+<p>The tab is divided into two columns.</p>
+<p><strong>Left column — site description</strong><br />
+Text files in <code>texts/{site_key}/</code> are fetched, sorted by numeric filename prefix, and rendered as justified paragraphs under section headings derived from the filename. New description sections can be added by uploading a correctly named <code>.txt</code> file to GitHub without any code changes.</p>
+<p><strong>Right column — interactive map and climate data</strong><br />
+- A Leafmap satellite-imagery map centred on the site at zoom level 15 with a location marker.
+- A Köppen-Geiger Climate Classification map (1991–2020 baseline, 0.1° resolution) sampled at the site coordinates and rendered over an OpenTopoMap basemap. The identified climate class is highlighted in the 30-class colour bar.
+- A pre-written climate report file fetched from GitHub.</p>
+<h3 id="tab-2-level-1-perceived-risk">Tab 2 — Level 1: Perceived Risk<a class="headerlink" href="#tab-2-level-1-perceived-risk" title="Permanent link">&para;</a></h3>
+<p><strong>Consensus data system</strong><br />
+When this tab opens, two Excel files are downloaded from GitHub for the active site: the KPI condition table (5 KPIs × 5 scenarios) and the Extent of Loss table (5 KPIs × 4 scenarios). If expert or admin users have previously submitted their own assessments, all submissions — including the GitHub baseline — are averaged into a live consensus displayed to all users. Administrator submissions override the consensus for their site.</p>
+<p><strong>KPIs and scenarios</strong> — see <a href="../../methodology/level1_qualitative/">Level 1 methodology</a> for full definitions. The five KPIs (SRS, AM, EC, EV, HP) are scored 1 (best) – 5 (worst) across five scenarios (CI, CI_H, CI_HG, CI_HN, CI_HNG).</p>
+<p>Expert and admin users see an editable form below each consensus table, pre-populated with their own previously saved values. After editing any cell, click <strong>Save</strong> to commit values to Supabase via UPSERT; the displayed consensus updates immediately.</p>
+<p><strong>Visualisations</strong></p>
+<ul>
+<li><strong>KPI Radar Chart</strong> — Plotly radar with five axes (one per KPI); per-scenario toggle checkboxes control which scenario polygons are displayed.</li>
+<li><strong>Consequence matrices</strong> — up to four Plotly scatter heat maps, one per hazard scenario, plotting CI condition (y-axis) against Extent of Loss (x-axis) for the five KPIs on a red-green severity background.</li>
+</ul>
+<p><strong>Interpretation expander</strong><br />
+A pre-written narrative fetched from GitHub explains the KPI values for non-specialist readers.</p>
+<h3 id="tab-3-level-2-screening-tool">Tab 3 — Level 2: Screening Tool<a class="headerlink" href="#tab-3-level-2-screening-tool" title="Permanent link">&para;</a></h3>
+<p>Level 2 content is loaded from <code>texts/{site_key}/level2/</code> in a fixed rendering order:</p>
+<ol>
+<li><code>Introduction.txt</code> — context and scope narrative</li>
+<li><code>Methods.txt</code> — methodology notes specific to the site</li>
+<li>Numbered <code>.xlsx</code> files (e.g., <code>01_PRI_results.xlsx</code>) — rendered as interactive sortable data tables</li>
+<li><code>Interpretations.txt</code> — narrative interpretation of the results</li>
+<li><code>NbS.txt</code> — NbS recommendations for the site</li>
+</ol>
+<p>Absent files are silently skipped. Adding content to a site requires only uploading a correctly named file to GitHub.</p>
+<h3 id="tab-4-level-3-high-resolution-assessment">Tab 4 — Level 3: High-Resolution Assessment<a class="headerlink" href="#tab-4-level-3-high-resolution-assessment" title="Permanent link">&para;</a></h3>
+<p>Level 3 files are loaded from <code>texts/{site_key}/level3/</code>. Files are grouped by numeric prefix — within each group, <code>.txt</code> files render first as section headings with justified text, followed by <code>.xlsx</code> files as interactive sortable tables. If no Level 3 files are present the message "No Level 3 data found." is displayed.</p>
+<hr />
+<h2 id="mode-2-custom-site-analysis">Mode 2 — Custom Site Analysis<a class="headerlink" href="#mode-2-custom-site-analysis" title="Permanent link">&para;</a></h2>
+<p>Activated by the <strong>🔬 Custom Site Analysis &amp; NbS Recommendation</strong> button. Three tabs are presented.</p>
+<div class="admonition note">
+<p class="admonition-title">Tab order matters</p>
+<p>Complete the <strong>Extraction</strong> tab first — it defines the polygon geometry and coordinates referenced by the Level 1 and Level 2 save functions. Saved snapshots are geo-referenced to the polygon centroid bounding box.</p>
+</div>
+<h3 id="extraction-tab">Extraction tab<a class="headerlink" href="#extraction-tab" title="Permanent link">&para;</a></h3>
+<p><strong>Infrastructure type selection</strong><br />
+Twelve chip-style toggle buttons in a 4-column grid represent infrastructure categories. Multiple categories can be selected simultaneously; selection persists when switching between tabs.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🚗 Roads &amp; Highways</td>
+<td>🚆 Railways</td>
+<td>🌉 Bridges</td>
+<td>🔩 Tunnels</td>
+</tr>
+<tr>
+<td>💧 Dams &amp; Water Storage</td>
+<td>🌳 Urban Green Spaces</td>
+<td>〰️ Embankments &amp; Levees</td>
+<td>🛡️ Slope Stabilization</td>
+</tr>
+<tr>
+<td>🏢 Buildings</td>
+<td>⚡ Power &amp; Utilities</td>
+<td>🌊 Water Bodies &amp; Rivers</td>
+<td>🗺️ Catchment Surface Cover</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Map and polygon drawing</strong><br />
+- Enter a place name and click <strong>Go</strong> to pan the Folium map to the location (geocoded via Nominatim/OSM).
+- Use the polygon or rectangle drawing tool (top-left toolbar) to define the area of interest.
+- Click <strong>Extract Information</strong> to query the OpenStreetMap Overpass API for all selected CI types within the polygon.</p>
+<p><strong>Extraction outputs</strong><br />
+Three result blocks appear:</p>
+<ul>
+<li><strong>C1 — Geographical &amp; Infrastructure Context Report</strong> — the polygon attributes and OSM data are passed to Google Gemini, which generates a contextual infrastructure report using a retrieval-augmented approach with embedded examples (no external internet search). Displayed with AI disclosure header/footer.</li>
+<li><strong>C2 — Köppen-Geiger Climate Classification Map</strong> — the raster is sampled at the polygon centroid; the climate code and a surrounding tile are rendered over OpenTopoMap. Gemini generates a climate interpretation report, wrapped with the same AI disclosure. A <strong>View Raw Data Fed to AI</strong> expander shows the inputs passed to the model.</li>
+<li><strong>C3 — Raw OSM Data Tables</strong> — an expander shows up to 20 OSM features per selected CI type with all available tag attributes for verification.</li>
+</ul>
+<p>Expert and admin users also see a <strong>📂 My Saved Analyses (Last Saved per Level)</strong> expander listing previously saved Level 1 and Level 2 snapshots with load and delete controls (see <a href="#saving-and-loading-analysis-snapshots">Saving and loading snapshots</a>).</p>
+<h3 id="level-1-tab-perceived-risks">Level 1 tab — Perceived Risks<a class="headerlink" href="#level-1-tab-perceived-risks" title="Permanent link">&para;</a></h3>
+<p>The Level 1 workflow is divided into three sequential sections.</p>
+<p><strong>Section 1 — Scope table definition</strong><br />
+Five cascaded selectors define each row to add to the scope table:</p>
+<ol>
+<li>Infrastructure Type (from the twelve chip categories)</li>
+<li>Climate Driver (overarching climate forcing, e.g., "Change in precipitation")</li>
+<li>Impact Model (filtered by infrastructure type from <code>modules/impact_models/</code>)</li>
+<li>Asset (specific sub-component, filtered by infrastructure type)</li>
+<li>Possible Hazards (multi-select from the canonical 29-item hazard list)</li>
+</ol>
+<p>After hazards are selected, two additional multi-selects appear, populated automatically from the NbS–Hazard matrix:</p>
+<ul>
+<li><strong>Primary NbS Solutions</strong> — solutions that directly address the selected hazards</li>
+<li><strong>Supportive NbS Solutions</strong> — solutions providing indirect risk reduction or co-benefits</li>
+</ul>
+<p>Click <strong>➕ Add to Scope Table</strong> to append the row. Each selected NbS solution creates a separate row. Rows can be removed individually (checkbox + ❌ Remove Selected) or entirely (🗑️ Clear Scope Table).</p>
+<p><strong>Section 2 — Risk rating and Extent of Loss</strong><br />
+For each scope item selected from a dropdown, two editable tables are presented:</p>
+<ul>
+<li><strong>CI Condition table</strong> — 5 KPI rows × 5 scenario columns (CI, CI_H, CI_HG, CI_HN, CI_HNG), rated 1–5 or "Not Available". The Risk Score is auto-computed as the maximum CI_HN value across the five KPIs. Click <strong>Save Risk Ratings</strong> to commit.</li>
+<li><strong>Extent of Loss table</strong> — 5 KPI rows × 4 scenario columns (CI excluded), rated 1–5. Click <strong>Save Loss Ratings</strong> to commit.</li>
+</ul>
+<p>After saving, a KPI radar chart and consequence heat maps update automatically. A summary table at the bottom lists all scope items with their calculated Risk Scores. A <strong>Generate Interpretation Report</strong> button sends the current matrices to Gemini for a narrative analysis.</p>
+<p><strong>Section 3 — NbS solution rating</strong><br />
+For each primary NbS solution in the scope table, five criteria are rated 1–5 (or "Not Acceptable"):</p>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Technical Efficiency</td>
+<td>Expected effectiveness in reducing the hazard impact</td>
+</tr>
+<tr>
+<td>Implementation Cost</td>
+<td>Capital cost relative to alternatives</td>
+</tr>
+<tr>
+<td>Implementation Time</td>
+<td>Time to deploy and achieve risk reduction</td>
+</tr>
+<tr>
+<td>Environmental Impact</td>
+<td>Net environmental effect</td>
+</tr>
+<tr>
+<td>Social Acceptance</td>
+<td>Anticipated community acceptance</td>
+</tr>
+</tbody>
+</table>
+<p>Activate <strong>View Supportive Solutions</strong> to reveal a separate rating table for supportive NbS.</p>
+<p><strong>NbS filtration — SSF, SEI, and HIA</strong><br />
+Three layers refine the NbS ranking:</p>
+<ul>
+<li><strong>Site-Specific Feasibility (SSF)</strong> — nine toggle buttons for physical site constraints: Unstable/Steep Slopes, Poor Soil/Low Vegetation, Difficult Site Access, Cold Temperatures / Frost Risk, Water Scarcity, No Infrastructure/Services Access, Very Limited Space, Polluted Soil/Water/Air, Urban/Densely Populated Area. Enabling a constraint reduces the feasibility score of sensitive solutions.</li>
+<li><strong>Socio-Economic &amp; Institutional (SEI)</strong> — seven sliders per solution: Community Engagement, Cultural Preferences, Workforce Availability, Economic Viability, Long-term O&amp;M Costs, Land Ownership, Regulatory Constraints (1 = Favourable, 2 = Neutral, 3 = Unfavourable).</li>
+<li><strong>Hazard Impact Assessment (HIA)</strong> — confirmation of hazard-to-solution mapping.</li>
+</ul>
+<p>A feasibility spider diagram is auto-generated from the SSF/SEI configuration for each solution. The <strong>Final NbS Recommendation Strategy</strong> table shows Risk Score, Suitability Index, and Suitability Score for every solution, ranked in descending order.</p>
+<p><strong>Saving a Level 1 snapshot</strong> (expert/admin only): enter a descriptive location name and click <strong>💾 Save Level 1</strong>. The complete state — scope table, risk and loss ratings, NbS ratings, SSF/SEI configuration — is saved as JSON to Supabase.</p>
+<h3 id="level-2-tab-technical-analysis">Level 2 tab — Technical Analysis<a class="headerlink" href="#level-2-tab-technical-analysis" title="Permanent link">&para;</a></h3>
+<p>Level 2 is a sequential seven-step quantitative workflow. Steps must be completed in order; each builds on the previous.</p>
+<p><strong>Step 1 — Build impact model scope table</strong><br />
+Three cascaded multi-select dropdowns (Infrastructure → Climate Driver → Type of Impact) progressively filter the impact model database from <code>modules/impact_models/</code>. Click <strong>Add filtered items to Table</strong> to append matched rows. Repeat with different filter combinations to build a full scope.</p>
+<p>Table controls:</p>
+<ul>
+<li><strong>🗑️ Reset Table</strong> — clears all rows and resets all downstream calculations</li>
+<li><strong>➕ Add Custom Impact Model</strong> — popover for manually defining a custom entry: infrastructure type, climate driver, impact description, asset name, climate indicator code, and hazard types</li>
+</ul>
+<p><strong>Step 2 — Review and customise</strong><br />
+Inspect the accumulated rows; remove individual rows via checkbox + delete control. Custom entries are flagged in the table.</p>
+<p><strong>Step 3 — Climate hazard retrieval (Hazard Index)</strong><br />
+For each row, the assigned climate indicator is fetched from the clima-ind-viz API. Inputs required before calculation:</p>
+<ul>
+<li><strong>Location coordinates</strong> — entered manually or transferred from the Extraction tab via <strong>Use Polygon Centre Coordinates</strong></li>
+<li><strong>Climate scenario</strong> — RCP4.5 (moderate) or RCP8.5 (high emissions)</li>
+<li><strong>Time horizon</strong> — Short-term (2011–2040), Medium-term (2041–2070), or Long-term (2071–2100)</li>
+</ul>
+<p>Click <strong>Calculate Hazard Variation &amp; Level</strong> to retrieve data. The <strong>Hazard Index (HI)</strong> is scored 0–5 from the % change vs. the historical baseline per D2.1 Table 19 — see <a href="../../methodology/level2_prescreening/">Level 2 methodology</a> for scoring thresholds. Rows without returned data can be removed with <strong>Delete rows without climate information</strong>. To manually override a retrieved value, double-click the Hazard Level cell and select from the dropdown, then click <strong>Save Hazard Changes</strong> to commit.</p>
+<p><strong>Step 4 — Exposure Index (EI)</strong><br />
+EI (1–5) quantifies financial exposure. Two options:</p>
+<ul>
+<li>Click <strong>Calculate Exposure Index</strong> without entering data to assign the default EI = 3 to all rows (conservative neutral baseline).</li>
+<li>Enable <strong>Economic data for infrastructure assets are available</strong> to enter annual revenue and CAPEX per asset. The <strong>View Exposure Matrix Calculation Logic</strong> expander shows how configured thresholds translate to EI scores. Custom threshold boundaries can be set by disabling <strong>Use default threshold values</strong>.</li>
+</ul>
+<p><strong>Step 5.1 — Sensitivity Index</strong><br />
+A data editor table allows setting the Sensitivity Index (1–5) per row:
+1 = low sensitivity (asset withstands the hazard well) → 5 = high sensitivity (highly susceptible to damage).</p>
+<p><strong>Step 5.2 — Adaptive Capacity (optional)</strong><br />
+Enable <strong>Configure Adaptive Capacity for Assets</strong> to reveal the AC configuration table. For each unique asset:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Options</th>
+<th>Effect on AC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Initial AC₀</td>
+<td>0.0 – 0.4</td>
+<td>Baseline value</td>
+</tr>
+<tr>
+<td>Remaining service life</td>
+<td>Greenfield / Intermediate / End-of-life</td>
+<td>+0.10 / 0 / −0.10</td>
+</tr>
+<tr>
+<td>Maintenance level</td>
+<td>High / Medium / Low</td>
+<td>+0.10 / 0 / −0.10</td>
+</tr>
+<tr>
+<td>Design topology</td>
+<td>Resilient / Acceptable / Not acceptable</td>
+<td>+0.10 / 0 / −0.10</td>
+</tr>
+</tbody>
+</table>
+<p>Final AC = AC₀ + sum of adjustments, capped at 0.4. The Vulnerability Index is:</p>
+<div class="arithmatex">\[\text{VI} = \text{Sensitivity} \times (1 - \text{AC})\]</div>
+<p>Click <strong>Calculate Vulnerability Index</strong> to run the computation.</p>
+<p><strong>Step 6 — Potential Risk Index (PRI)</strong><br />
+Click <strong>Calculate the Potential Risk Index (PRI)</strong>:</p>
+<div class="arithmatex">\[\text{PRI} = \text{HI} \times \text{EI} \times \text{VI}\]</div>
+<p>Results are mapped to a labelled risk tier and added to the results table. A <strong>Generate PRI Assessment Report</strong> button sends the results to Gemini for a structured narrative risk profile.</p>
+<p><strong>Step 7.1 — NbS identification</strong><br />
+Two methods for hazard identification:</p>
+<ul>
+<li><strong>Automatic extraction</strong> — a built-in dictionary maps impact model entries to their most likely specific hazard types (convenient but may miss ambiguous cases; review before proceeding)</li>
+<li><strong>Manual selection</strong> — explicit multi-select from the 29-item hazard list</li>
+</ul>
+<p>The primary NbS solutions for the identified hazards are displayed; deselect irrelevant entries and click <strong>Save Primary NbS Selection</strong>. Supportive solutions can be added via <strong>Configure Supportive Solutions</strong>. An <strong>NbS Implementation Mapping Summary</strong> at the end shows the confirmed NbS assignment per impact model row.</p>
+<p><strong>Step 7.2 — NbS filtration and ranking</strong><br />
+The same SSF and SEI filtration mechanism as Level 1 (see above) refines the NbS candidate pool. Click <strong>Calculate RPRI Ranking</strong> to compute the <strong>Residual Potential Risk Index (RPRI)</strong> — the remaining risk level after the solution has been implemented. RPRI = 0 indicates complete risk elimination; higher values indicate residual risk. Solutions are ranked in ascending order of RPRI and displayed as colour-coded cards. A cross-row RPRI heat map table shows the effectiveness of all shortlisted solutions across every impact model row simultaneously, using a green-to-red colour scale to identify which solutions provide the broadest risk reduction.</p>
+<p><strong>Saving a Level 2 snapshot</strong> (expert/admin only): enter a location name and click <strong>💾 Save Level 2</strong>.</p>
+<hr />
+<h2 id="saving-and-loading-analysis-snapshots">Saving and loading analysis snapshots<a class="headerlink" href="#saving-and-loading-analysis-snapshots" title="Permanent link">&para;</a></h2>
+<p>Expert and admin users can persist Level 1 or Level 2 analyses as named snapshots to Supabase. Snapshots capture the complete session state — scope table, risk and loss ratings, NbS data, map coordinates — as JSON.</p>
+<p>Saved snapshots appear in the <strong>📂 My Saved Analyses (Last Saved per Level)</strong> expander in the Extraction tab. For each snapshot:</p>
+<ul>
+<li><strong>⬆️ Load into Analysis</strong> — restores the complete snapshot to session state; switch to the corresponding Level tab to continue working</li>
+<li><strong>🗑️ Delete Snapshot</strong> — permanently removes the snapshot from the database after a confirmation step</li>
+</ul>
+<p>A preview panel shows snapshot metadata and a data summary before loading.</p>
+<hr />
+<h2 id="ai-generated-content">AI-generated content<a class="headerlink" href="#ai-generated-content" title="Permanent link">&para;</a></h2>
+<p>Google Gemini (<code>gemini-2.5-flash-lite</code>) is used in four places within the Custom Site Analysis:</p>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Content generated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Extraction — C1</td>
+<td>Geographical &amp; Infrastructure Context Report</td>
+</tr>
+<tr>
+<td>Extraction — C2</td>
+<td>Köppen-Geiger climate classification interpretation</td>
+</tr>
+<tr>
+<td>Level 1 — Section 2</td>
+<td>Risk and loss matrix interpretation narrative</td>
+</tr>
+<tr>
+<td>Level 2 — Step 6</td>
+<td>PRI assessment report</td>
+</tr>
+</tbody>
+</table>
+<p>All AI outputs are wrapped with disclosure header and footer banners. A <strong>View Raw Data Fed to AI</strong> expander is available for each report so users can inspect what was passed to the model. AI-generated content is provided as contextual background and should not substitute expert judgement. No external internet searches are performed; all model calls use embedded reference examples consistent with the project's AI-ethics requirements.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      NATURE-DEMO Project — EU Horizon Europe Grant Agreement No. 101157448
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/NATURE-DEMO/Decision_Support_Tool" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.footnote.tooltips", "navigation.tabs", "navigation.sections", "toc.integrate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
