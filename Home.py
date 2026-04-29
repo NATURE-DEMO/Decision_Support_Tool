@@ -362,7 +362,7 @@ with centre:
     st.markdown("""
     <div class="nd-caps">
         <div class="nd-cap">
-            <span class="nd-cap-num">6</span>
+            <span class="nd-cap-num">5</span>
             <span class="nd-cap-lbl">Demo sites<br>across Europe</span>
         </div>
         <div class="nd-cap">
