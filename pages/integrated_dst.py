@@ -550,6 +550,125 @@ def get_all_user_snapshots(username):
     return df if df is not None else pd.DataFrame()
 
 
+def get_snapshot_by_id(snap_id, username):
+    """Fetch a single full snapshot row by id (safety-checks username)."""
+    df = safe_run_query(
+        "SELECT id, level, location_name, center_lat, center_lon, bbox_json, snapshot_data, saved_at "
+        "FROM custom_site_snapshots WHERE id = :sid AND username = :u",
+        {"sid": int(snap_id), "u": username},
+    )
+    if df is not None and not df.empty:
+        return df.iloc[0]
+    return None
+
+
+def delete_snapshot_by_id(snap_id, username):
+    """Delete a snapshot by id; verifies ownership via username."""
+    global DB_AVAILABLE
+    if not DB_AVAILABLE:
+        return False, "Database is not available."
+    try:
+        with conn.session as s:
+            s.execute(
+                text("DELETE FROM custom_site_snapshots WHERE id = :sid AND username = :u"),
+                {"sid": int(snap_id), "u": username},
+            )
+            s.commit()
+        return True, "Deleted."
+    except Exception as e:
+        return False, str(e)
+
+
+def restore_snapshot_to_session(snap_row):
+    """
+    Restore a full snapshot (pandas Series from get_snapshot_by_id) into
+    st.session_state so the user can continue working from where they left off.
+    Returns (level, location_name) for display.
+    """
+    level     = snap_row.get("level", "")
+    loc_name  = snap_row.get("location_name", "")
+    clat      = snap_row.get("center_lat")
+    clon      = snap_row.get("center_lon")
+    bbox_raw  = snap_row.get("bbox_json")
+
+    # Restore map center so the polygon area is re-centred
+    if clat is not None and clon is not None:
+        st.session_state["map_center"] = [clat, clon]
+        st.session_state["map_zoom"]   = 14
+        # Inject into extracted_data so downstream steps find the coordinates
+        if "extracted_data" not in st.session_state or st.session_state["extracted_data"] is None:
+            st.session_state["extracted_data"] = {}
+        st.session_state["extracted_data"]["center_lat"] = clat
+        st.session_state["extracted_data"]["center_lon"] = clon
+
+    # Parse bbox and store as lvl1_bbox
+    try:
+        bbox = json.loads(bbox_raw) if bbox_raw else {}
+    except Exception:
+        bbox = {}
+    if bbox:
+        st.session_state["lvl1_bbox"] = [
+            bbox.get("min_lat", clat), bbox.get("min_lon", clon),
+            bbox.get("max_lat", clat), bbox.get("max_lon", clon),
+        ]
+
+    data_raw = snap_row.get("snapshot_data")
+    if not data_raw:
+        return level, loc_name
+
+    try:
+        data = _deserialize_snapshot(data_raw)
+    except Exception:
+        return level, loc_name
+
+    if level == "L1":
+        _df_keys = ["lvl1_added_items", "lvl1_primary_nbs_df", "lvl1_supp_nbs_df"]
+        for k in _df_keys:
+            v = data.get(k)
+            if isinstance(v, pd.DataFrame):
+                st.session_state[k] = v
+
+        for k in ["item_risk_matrices", "item_loss_matrices",
+                  "lvl1_sei_lookup", "lvl1_ssf_lookup",
+                  "lvl1_global_site_conditions"]:
+            if k in data:
+                st.session_state[k] = data[k]
+
+        pool = data.get("lvl1_filtered_nbs_pool")
+        if isinstance(pool, list):
+            st.session_state["lvl1_filtered_nbs_pool"] = pool
+
+        infras = data.get("selected_infras")
+        if isinstance(infras, list):
+            st.session_state["selected_infra_chips"] = infras
+
+    elif level == "L2":
+        _df_keys = ["saved_data", "calculated_results", "pri_display_df"]
+        for k in _df_keys:
+            v = data.get(k)
+            if isinstance(v, pd.DataFrame):
+                st.session_state[k] = v
+
+        for k in ["selected_nbs_hazards", "approved_nbs_methods",
+                  "approved_supportive_methods", "sei_lookup",
+                  "ssf_lookup", "global_site_conditions"]:
+            if k in data:
+                st.session_state[k] = data[k]
+
+        for k in ["nbs_table_excluded", "nbs_supp_table_excluded"]:
+            v = data.get(k)
+            if isinstance(v, list):
+                st.session_state[k] = set(v)
+            elif isinstance(v, set):
+                st.session_state[k] = v
+
+        infras = data.get("selected_infras")
+        if isinstance(infras, list):
+            st.session_state["selected_infra_chips"] = infras
+
+    return level, loc_name
+
+
 GITHUB_RAW_BASE   = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main"
 GITHUB_API_BASE   = "https://api.github.com/repos/NATURE-DEMO/Decision_Support_Tool/contents/texts"
 GITHUB_IMAGE_BASE_URL = f"{GITHUB_RAW_BASE}/images"
@@ -1041,14 +1160,15 @@ def make_overpass_request(query, max_retries=2):
     overpass_url = "https://overpass-api.de/api/interpreter"
     headers = {
         "User-Agent": "DecisionSupportTool/1.0 (contact@nature-demo.eu)",
-        "Accept": "*/*"
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
     }
     
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(
+            response = requests.post(
                 overpass_url, 
-                params={"data": query}, 
+                data={"data": query}, 
                 headers=headers, 
                 timeout=180
             )
@@ -2057,95 +2177,189 @@ if current_view == 'custom_analysis':
         _cur_username  = st.session_state.get("username", "")
         if _cur_user_role in ("expert", "admin") and _cur_username:
             st.markdown("---")
-            with st.expander("📂 My Saved Analyses (Last Saved per Level)", expanded=False):
+            with st.expander("📂 My Saved Analyses — Load · Preview · Delete", expanded=False):
                 st.caption(
-                    "These are the most recent snapshots you saved from the "
-                    "**Level 1** and **Level 2** analysis tabs below."
+                    "All snapshots you saved from **Level 1** and **Level 2**. "
+                    "Select a snapshot to preview its outputs, then **Load** it back into "
+                    "the analysis tabs or **Delete** it permanently."
                 )
-                _snap_l1 = get_latest_snapshot(_cur_username, "L1")
-                _snap_l2 = get_latest_snapshot(_cur_username, "L2")
 
-                def _render_snapshot_card(snap, level_label, level_color):
-                    if snap is None:
-                        st.info(f"No saved {level_label} analysis found for your account yet.")
-                        return
-                    _saved_at  = snap.get("saved_at", "—")
-                    _loc_name  = snap.get("location_name") or "—"
-                    _clat      = snap.get("center_lat")
-                    _clon      = snap.get("center_lon")
-                    _bbox_raw  = snap.get("bbox_json")
-                    try:
-                        _bbox = json.loads(_bbox_raw) if _bbox_raw else {}
-                    except Exception:
-                        _bbox = {}
+                # ── fetch all snapshots ──────────────────────────────────────
+                _all_snaps = get_all_user_snapshots(_cur_username)
 
-                    st.markdown(
-                        f"""
-                        <div style="background:#f9fafb;border:1px solid #d8e8df;border-left:4px solid {level_color};
-                                    border-radius:8px;padding:12px 16px;margin-bottom:6px;">
-                          <div style="font-weight:700;font-size:1em;color:{level_color};margin-bottom:4px;">
-                            {level_label}
-                          </div>
-                          <div style="font-size:0.88em;color:#444;line-height:1.7;">
-                            📍 <b>Location:</b> {_loc_name}<br>
-                            🌐 <b>Center:</b> {f"{_clat:.5f}, {_clon:.5f}" if _clat is not None else "—"}<br>
-                            📦 <b>~5 km² Box:</b>
-                              Lat [{_bbox.get('min_lat','—')} → {_bbox.get('max_lat','—')}]
-                              &nbsp; Lon [{_bbox.get('min_lon','—')} → {_bbox.get('max_lon','—')}]<br>
-                            🕒 <b>Saved at:</b> {_saved_at}
-                          </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
+                if _all_snaps.empty:
+                    st.info("You have no saved analyses yet. Use the **💾 Save** buttons at the bottom of the Level 1 and Level 2 tabs.")
+                else:
+                    # Build human-readable labels for the selectbox
+                    def _snap_label(row):
+                        lvl_tag  = "L1 · Perceived Risks" if row["level"] == "L1" else "L2 · Technical Analysis"
+                        loc      = row.get("location_name") or "—"
+                        saved_at = str(row.get("saved_at", ""))[:16]
+                        return f"[{lvl_tag}]  {loc}  ({saved_at})"
+
+                    _snap_labels  = [_snap_label(r) for _, r in _all_snaps.iterrows()]
+                    _snap_ids     = _all_snaps["id"].tolist()
+
+                    # Keep the selection stable across reruns
+                    if "saved_snap_select_idx" not in st.session_state:
+                        st.session_state["saved_snap_select_idx"] = 0
+                    _sel_idx = st.session_state.get("saved_snap_select_idx", 0)
+                    _sel_idx = min(_sel_idx, len(_snap_labels) - 1)
+
+                    _chosen_label = st.selectbox(
+                        "Select a snapshot:",
+                        options=_snap_labels,
+                        index=_sel_idx,
+                        key="saved_snap_selectbox",
                     )
+                    _chosen_idx  = _snap_labels.index(_chosen_label)
+                    _chosen_id   = _snap_ids[_chosen_idx]
+                    st.session_state["saved_snap_select_idx"] = _chosen_idx
 
-                    # Show key output tables stored in the snapshot
-                    _snap_data_raw = snap.get("snapshot_data")
-                    if _snap_data_raw:
+                    # ── action buttons ────────────────────────────────────────
+                    _btn_col1, _btn_col2, _ = st.columns([2, 2, 4])
+
+                    with _btn_col1:
+                        _do_load = st.button(
+                            "⬆️ Load into Analysis",
+                            type="primary",
+                            use_container_width=True,
+                            key="load_snap_btn",
+                            help="Restore this snapshot's data into the Level 1 / Level 2 tabs so you can continue working.",
+                        )
+                    with _btn_col2:
+                        _do_delete = st.button(
+                            "🗑️ Delete Snapshot",
+                            type="secondary",
+                            use_container_width=True,
+                            key="delete_snap_btn",
+                            help="Permanently remove this snapshot from the database.",
+                        )
+
+                    # ── confirm-delete guard ──────────────────────────────────
+                    if "pending_delete_id" not in st.session_state:
+                        st.session_state["pending_delete_id"] = None
+
+                    if _do_delete:
+                        st.session_state["pending_delete_id"] = _chosen_id
+
+                    if st.session_state["pending_delete_id"] == _chosen_id:
+                        st.warning(
+                            f"⚠️ Are you sure you want to permanently delete **{_chosen_label}**? "
+                            "This cannot be undone."
+                        )
+                        _confirm_col1, _confirm_col2, _ = st.columns([2, 2, 4])
+                        with _confirm_col1:
+                            if st.button("✅ Yes, Delete", type="primary", use_container_width=True, key="confirm_delete_btn"):
+                                _del_ok, _del_msg = delete_snapshot_by_id(_chosen_id, _cur_username)
+                                st.session_state["pending_delete_id"] = None
+                                if _del_ok:
+                                    # Reset selection index so we don't go out of bounds
+                                    st.session_state["saved_snap_select_idx"] = 0
+                                    st.toast("Snapshot deleted.", icon="🗑️")
+                                    st.rerun()
+                                else:
+                                    st.error(f"Delete failed: {_del_msg}")
+                        with _confirm_col2:
+                            if st.button("❌ Cancel", use_container_width=True, key="cancel_delete_btn"):
+                                st.session_state["pending_delete_id"] = None
+                                st.rerun()
+
+                    # ── load action ───────────────────────────────────────────
+                    if _do_load:
+                        _full_snap = get_snapshot_by_id(_chosen_id, _cur_username)
+                        if _full_snap is not None:
+                            _restored_level, _restored_loc = restore_snapshot_to_session(_full_snap)
+                            _level_name = "Level 1 · Perceived Risks" if _restored_level == "L1" else "Level 2 · Technical Analysis"
+                            st.session_state["pending_delete_id"] = None
+                            st.success(
+                                f"✅ **{_level_name}** snapshot for **{_restored_loc}** has been loaded. "
+                                f"Switch to the corresponding tab below to continue your analysis."
+                            )
+                            st.rerun()
+                        else:
+                            st.error("Could not load the selected snapshot. It may have been deleted.")
+
+                    # ── preview panel ─────────────────────────────────────────
+                    st.markdown("---")
+                    st.markdown("##### 🔍 Snapshot Preview")
+
+                    _full_snap_preview = get_snapshot_by_id(_chosen_id, _cur_username)
+                    if _full_snap_preview is not None:
+                        _prev_level   = _full_snap_preview.get("level", "")
+                        _prev_loc     = _full_snap_preview.get("location_name") or "—"
+                        _prev_lat     = _full_snap_preview.get("center_lat")
+                        _prev_lon     = _full_snap_preview.get("center_lon")
+                        _prev_bbox_raw = _full_snap_preview.get("bbox_json")
+                        _prev_saved   = str(_full_snap_preview.get("saved_at", ""))[:19]
                         try:
-                            _snap_data = _deserialize_snapshot(_snap_data_raw)
+                            _prev_bbox = json.loads(_prev_bbox_raw) if _prev_bbox_raw else {}
                         except Exception:
-                            _snap_data = {}
+                            _prev_bbox = {}
 
-                        if level_label.startswith("Level 1"):
-                            _scope_df_raw = _snap_data.get("lvl1_added_items")
-                            if isinstance(_scope_df_raw, pd.DataFrame) and not _scope_df_raw.empty:
-                                st.markdown("**Scope Table (saved)**")
-                                st.dataframe(
-                                    _scope_df_raw.drop(columns=["Risk Score"], errors="ignore"),
-                                    use_container_width=True, hide_index=True
-                                )
-                            _pool = _snap_data.get("lvl1_filtered_nbs_pool")
-                            if isinstance(_pool, list) and _pool:
-                                _rank_df = pd.DataFrame(_pool)[
-                                    [c for c in ["method_only", "total", "suitability_score", "rpri"]
-                                     if c in pd.DataFrame(_pool).columns]
-                                ].rename(columns={
-                                    "method_only":       "NbS Solution",
-                                    "total":             "Feasibility (%)",
-                                    "suitability_score": "Suitability Score",
-                                    "rpri":              "RPRI",
-                                }).drop_duplicates()
-                                st.markdown("**NbS Ranking (saved)**")
-                                st.dataframe(_rank_df, use_container_width=True, hide_index=True)
+                        _lv_color = "#2d6a4f" if _prev_level == "L1" else "#1565c0"
+                        _lv_label = "Level 1 · Perceived Risks" if _prev_level == "L1" else "Level 2 · Technical Analysis"
+                        st.markdown(
+                            f"""
+                            <div style="background:#f9fafb;border:1px solid #d8e8df;
+                                        border-left:4px solid {_lv_color};
+                                        border-radius:8px;padding:12px 16px;margin-bottom:10px;">
+                              <span style="font-weight:700;font-size:1em;color:{_lv_color};">{_lv_label}</span>
+                              <div style="font-size:0.88em;color:#444;line-height:1.9;margin-top:4px;">
+                                📍 <b>Location:</b> {_prev_loc}<br>
+                                🌐 <b>Centre:</b> {f"{_prev_lat:.5f}, {_prev_lon:.5f}" if _prev_lat is not None else "—"}<br>
+                                📦 <b>~5 km² Box:</b>
+                                  Lat [{_prev_bbox.get('min_lat','—')} → {_prev_bbox.get('max_lat','—')}]
+                                  &nbsp;Lon [{_prev_bbox.get('min_lon','—')} → {_prev_bbox.get('max_lon','—')}]<br>
+                                🕒 <b>Saved:</b> {_prev_saved}
+                              </div>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
 
-                        elif level_label.startswith("Level 2"):
-                            _pri_raw = _snap_data.get("pri_display_df")
-                            if isinstance(_pri_raw, pd.DataFrame) and not _pri_raw.empty:
-                                st.markdown("**PRI Results Table (saved)**")
-                                st.dataframe(_pri_raw, use_container_width=True, hide_index=True)
-                            _hazards = _snap_data.get("selected_nbs_hazards")
-                            _approved = _snap_data.get("approved_nbs_methods")
-                            if isinstance(_hazards, list) and _hazards:
-                                st.markdown(f"**Active Hazards (saved):** {', '.join(_hazards)}")
-                            if isinstance(_approved, list) and _approved:
-                                st.markdown(f"**Approved NbS Methods (saved):** {', '.join(_approved)}")
+                        _prev_data_raw = _full_snap_preview.get("snapshot_data")
+                        if _prev_data_raw:
+                            try:
+                                _prev_data = _deserialize_snapshot(_prev_data_raw)
+                            except Exception:
+                                _prev_data = {}
 
-                col_s1, col_s2 = st.columns(2)
-                with col_s1:
-                    _render_snapshot_card(_snap_l1, "Level 1 · Perceived Risks", "#2d6a4f")
-                with col_s2:
-                    _render_snapshot_card(_snap_l2, "Level 2 · Technical Analysis", "#1565c0")
+                            if _prev_level == "L1":
+                                _scope = _prev_data.get("lvl1_added_items")
+                                if isinstance(_scope, pd.DataFrame) and not _scope.empty:
+                                    st.markdown("**Scope Table**")
+                                    st.dataframe(
+                                        _scope.drop(columns=["Risk Score"], errors="ignore"),
+                                        use_container_width=True, hide_index=True,
+                                    )
+                                _pool = _prev_data.get("lvl1_filtered_nbs_pool")
+                                if isinstance(_pool, list) and _pool:
+                                    _rdf_cols = [c for c in ["method_only","total","suitability_score","rpri"]
+                                                 if c in pd.DataFrame(_pool).columns]
+                                    if _rdf_cols:
+                                        _rdf = pd.DataFrame(_pool)[_rdf_cols].rename(columns={
+                                            "method_only": "NbS Solution",
+                                            "total": "Feasibility (%)",
+                                            "suitability_score": "Suitability Score",
+                                            "rpri": "RPRI",
+                                        }).drop_duplicates()
+                                        st.markdown("**NbS Ranking**")
+                                        st.dataframe(_rdf, use_container_width=True, hide_index=True)
+
+                            elif _prev_level == "L2":
+                                _pri = _prev_data.get("pri_display_df")
+                                if isinstance(_pri, pd.DataFrame) and not _pri.empty:
+                                    st.markdown("**PRI Results**")
+                                    st.dataframe(_pri, use_container_width=True, hide_index=True)
+                                _haz = _prev_data.get("selected_nbs_hazards")
+                                _app = _prev_data.get("approved_nbs_methods")
+                                if isinstance(_haz, list) and _haz:
+                                    st.markdown("**Active Hazards:** " + ", ".join(_haz))
+                                if isinstance(_app, list) and _app:
+                                    st.markdown("**Approved NbS:** " + ", ".join(_app))
+                    else:
+                        st.warning("Could not load preview for the selected snapshot.")
 
     with _tab_l1:
         st.header("Perceived Risks Assessment")
@@ -6696,7 +6910,7 @@ else:
                         clean_name = f["name"][1:]
                         display_title = os.path.splitext(clean_name)[0]
                         st.subheader(display_title)
-                        st.dataframe(clean_df_for_display(df), width='stretch')
+                        st.dataframe(clean_df_for_display(df), use_container_width=True)
                     except Exception:
                         st.warning(f"Could not load {f['name']}")
 
