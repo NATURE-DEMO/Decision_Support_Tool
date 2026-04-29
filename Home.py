@@ -4,569 +4,328 @@ st.set_page_config(
     page_title="NATURE-DEMO — Decision Support Tool",
     page_icon="🌿",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 LOGO_URL = "https://raw.githubusercontent.com/NATURE-DEMO/Decision_Support_Tool/main/images/main_logo.png"
 
-# ── GLOBAL STYLES ─────────────────────────────────────────────────────────────
+# ── STYLES ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@300;400;600&family=Inter:wght@300;400;500;600&display=swap');
 
-[data-testid="stSidebarNav"]      { display: none; }
-[data-testid="stAppViewContainer"]{ background: #f5f7f5; }
-[data-testid="stHeader"]          { background: transparent; }
-html, body, [class*="css"]        { font-family: 'Inter', sans-serif; }
+[data-testid="stSidebarNav"]       { display: none; }
+[data-testid="stAppViewContainer"] { background: #f4f6f4; }
+[data-testid="stHeader"]           { background: transparent; }
+[data-testid="collapsedControl"]   { display: none; }
+html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
+
+/* ── PAGE WRAPPER ── */
+.nd-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 1rem 4rem;
+}
+
+/* ── LOGO AREA ── */
+.nd-logo-wrap {
+    text-align: center;
+    margin-bottom: 2rem;
+}
 
 /* ── HERO ── */
 .nd-hero {
     background: #ffffff;
-    border: 1px solid #d6e4d6;
-    border-top: 4px solid #3a7a3a;
-    border-radius: 12px;
-    padding: 2.5rem 3rem 2.25rem;
-    margin-bottom: 2rem;
+    border: 1px solid #cfdecf;
+    border-top: 4px solid #2e6b2e;
+    border-radius: 14px;
+    padding: 2.75rem 2.5rem 2.5rem;
     text-align: center;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 12px rgba(30,60,30,0.06);
 }
 .nd-hero-title {
     font-family: 'Source Serif 4', serif;
-    font-size: 2.4rem;
+    font-size: 2.2rem;
     font-weight: 300;
-    color: #1c3c1c;
-    letter-spacing: -0.01em;
-    margin: 1.25rem 0 0.6rem;
+    color: #1a3a1a;
     line-height: 1.25;
+    margin: 0 0 0.65rem;
+    letter-spacing: -0.01em;
 }
 .nd-hero-title strong {
     font-weight: 600;
     color: #2e6b2e;
 }
 .nd-hero-sub {
-    font-size: 1rem;
+    font-size: 0.97rem;
     font-weight: 300;
-    color: #5a7a5a;
-    letter-spacing: 0.02em;
-    margin: 0 0 1.75rem;
-}
-.nd-badges {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-.nd-badge {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #3a7a3a;
-    background: #edf5ed;
-    border: 1px solid #c4dcc4;
-    padding: 0.3rem 0.85rem;
-    border-radius: 20px;
+    color: #587058;
+    letter-spacing: 0.01em;
+    margin: 0 0 2rem;
+    line-height: 1.6;
 }
 
-/* ── KPI BAR ── */
-.nd-kpi-row {
+/* ── PRIMARY LAUNCH BUTTON ── */
+.nd-launch-btn {
+    display: inline-block;
+    background: #2e6b2e;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    padding: 0.85rem 2.5rem;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: 0 2px 10px rgba(46,107,46,0.30);
+    transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+    margin-bottom: 0.65rem;
+}
+.nd-launch-btn:hover {
+    background: #1a3a1a;
+    box-shadow: 0 4px 18px rgba(46,107,46,0.35);
+    transform: translateY(-1px);
+    color: #c4dcc4 !important;
+    text-decoration: none !important;
+}
+.nd-launch-note {
+    font-size: 0.74rem;
+    color: #8aaa8a;
+    margin-top: 0.5rem;
+    font-weight: 300;
+}
+
+/* ── CAPABILITIES STRIP ── */
+.nd-caps {
     display: flex;
     gap: 1px;
-    background: #d6e4d6;
+    background: #cfdecf;
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 2rem;
-    border: 1px solid #d6e4d6;
+    border: 1px solid #cfdecf;
+    margin-bottom: 1.5rem;
 }
-.nd-kpi-cell {
+.nd-cap {
     flex: 1;
     background: #ffffff;
-    padding: 1.1rem 0.75rem;
+    padding: 0.9rem 0.6rem;
     text-align: center;
 }
-.nd-kpi-num {
+.nd-cap-num {
     font-family: 'Source Serif 4', serif;
-    font-size: 1.9rem;
+    font-size: 1.6rem;
     font-weight: 600;
     color: #2e6b2e;
     display: block;
     line-height: 1;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
 }
-.nd-kpi-lbl {
-    font-size: 0.68rem;
+.nd-cap-lbl {
+    font-size: 0.66rem;
     font-weight: 400;
     color: #7a9a7a;
     line-height: 1.4;
 }
 
-/* ── SECTION LABELS ── */
-.nd-eyebrow {
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #3a7a3a;
-    margin-bottom: 0.4rem;
-}
-.nd-heading {
-    font-family: 'Source Serif 4', serif;
-    font-size: 1.65rem;
-    font-weight: 400;
-    color: #1c3c1c;
-    margin: 0 0 1.25rem;
-}
-
-/* ── TOOL CARDS ── */
-.nd-card {
+/* ── ABOUT PANEL ── */
+.nd-about {
     background: #ffffff;
-    border: 1px solid #d6e4d6;
+    border: 1px solid #cfdecf;
     border-radius: 12px;
-    padding: 1.75rem 1.75rem 1.5rem;
-    height: 100%;
-    box-shadow: 0 1px 6px rgba(30,60,30,0.05);
-    transition: box-shadow 0.2s, transform 0.2s;
-}
-.nd-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 24px rgba(30,60,30,0.10);
-}
-.nd-card-tag {
-    display: inline-block;
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    background: #edf5ed;
-    color: #2e6b2e;
-    padding: 0.2rem 0.65rem;
-    border-radius: 10px;
-    margin-bottom: 0.75rem;
-}
-.nd-card-title {
-    font-family: 'Source Serif 4', serif;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: #1c3c1c;
-    margin: 0 0 0.5rem;
-    line-height: 1.3;
-}
-.nd-card-desc {
-    font-size: 0.85rem;
-    font-weight: 300;
-    color: #4a6a4a;
-    line-height: 1.75;
-    margin-bottom: 1.25rem;
-}
-.nd-card-divider {
-    border: none;
-    border-top: 1px solid #edf5ed;
-    margin: 0 0 1rem;
-}
-.nd-feat-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 1.5rem;
-}
-.nd-feat-list li {
-    font-size: 0.8rem;
-    color: #3a5a3a;
-    padding: 0.28rem 0;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    line-height: 1.5;
-}
-.nd-feat-list li::before {
-    content: '▸';
-    color: #5aaa5a;
-    font-size: 0.7rem;
-    margin-top: 0.12rem;
-    flex-shrink: 0;
-}
-.nd-btn {
-    display: block;
-    text-align: center;
-    background: #2e6b2e;
-    color: #ffffff !important;
-    text-decoration: none !important;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    transition: background 0.18s;
-}
-.nd-btn:hover {
-    background: #1c3c1c;
-    color: #c4dcc4 !important;
-    text-decoration: none !important;
-}
-.nd-btn-ghost {
-    display: block;
-    text-align: center;
-    background: transparent;
-    color: #2e6b2e !important;
-    text-decoration: none !important;
-    padding: 0.65rem 1.25rem;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    border: 1.5px solid #2e6b2e;
-    transition: all 0.18s;
-}
-.nd-btn-ghost:hover {
-    background: #edf5ed;
-    color: #1c3c1c !important;
-    text-decoration: none !important;
-}
-
-/* ── ABOUT / WORKFLOW PANELS ── */
-.nd-panel {
-    background: #ffffff;
-    border: 1px solid #d6e4d6;
-    border-radius: 12px;
-    padding: 1.75rem 2rem;
+    padding: 1.6rem 2rem;
+    margin-bottom: 1.5rem;
     box-shadow: 0 1px 6px rgba(30,60,30,0.04);
 }
-.nd-panel p {
-    font-size: 0.87rem;
+.nd-about-title {
+    font-family: 'Source Serif 4', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1a3a1a;
+    margin: 0 0 0.75rem;
+}
+.nd-about p {
+    font-size: 0.85rem;
     font-weight: 300;
     color: #3a5a3a;
     line-height: 1.85;
-    margin: 0;
+    margin: 0 0 0.75rem;
 }
-.nd-step {
+.nd-about p:last-child { margin-bottom: 0; }
+
+/* ── SECONDARY LINKS ROW ── */
+.nd-secondary {
     display: flex;
-    gap: 1.1rem;
-    padding: 0.9rem 0;
-    border-bottom: 1px solid #edf5ed;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 2rem;
 }
-.nd-step:last-child { border-bottom: none; }
-.nd-step-num {
-    font-family: 'Source Serif 4', serif;
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: #90c890;
-    min-width: 1.6rem;
-    line-height: 1;
-    margin-top: 0.15rem;
+.nd-sec-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #2e6b2e !important;
+    text-decoration: none !important;
+    background: #ffffff;
+    border: 1px solid #cfdecf;
+    border-radius: 8px;
+    padding: 0.45rem 0.95rem;
+    transition: background 0.15s, border-color 0.15s;
 }
-.nd-step-title {
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #1c3c1c;
-    margin-bottom: 0.2rem;
-}
-.nd-step-desc {
-    font-size: 0.78rem;
-    font-weight: 300;
-    color: #6a8a6a;
-    line-height: 1.6;
-    margin: 0;
+.nd-sec-link:hover {
+    background: #edf5ed;
+    border-color: #90c890;
+    color: #1a3a1a !important;
+    text-decoration: none !important;
 }
 
 /* ── FOOTER ── */
 .nd-footer {
-    background: #1c3c1c;
-    border-radius: 10px;
-    padding: 1.6rem 2.25rem;
-    margin-top: 2rem;
+    border-top: 1px solid #cfdecf;
+    padding-top: 1.25rem;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.75rem;
 }
-.nd-footer-main {
-    font-size: 0.78rem;
-    color: rgba(196,220,196,0.75);
-    line-height: 1.7;
+.nd-footer-left {
+    font-size: 0.74rem;
     font-weight: 300;
+    color: #8aaa8a;
+    line-height: 1.7;
 }
-.nd-footer-main strong {
-    color: rgba(196,220,196,0.95);
+.nd-footer-left strong {
+    color: #587058;
     font-weight: 500;
 }
-.nd-footer-eu {
+.nd-footer-right {
     font-size: 0.7rem;
-    color: rgba(196,220,196,0.45);
+    font-weight: 300;
+    color: #aac4aa;
     text-align: right;
     line-height: 1.6;
 }
-
-/* ── SIDEBAR ── */
-[data-testid="stSidebar"] { background: #1c3c1c !important; }
-[data-testid="stSidebar"] * { color: #c4dcc4 !important; }
-[data-testid="stSidebar"] .stLinkButton > a {
-    background: rgba(255,255,255,0.07) !important;
-    border: 1px solid rgba(144,200,120,0.18) !important;
-    border-radius: 7px !important;
-    color: #c4dcc4 !important;
-    font-size: 0.83rem !important;
-    transition: background 0.18s !important;
-}
-[data-testid="stSidebar"] .stLinkButton > a:hover {
-    background: rgba(144,200,120,0.14) !important;
-}
-.nd-sb-rule {
-    border: none;
-    border-top: 1px solid rgba(144,200,120,0.15);
-    margin: 0.9rem 0;
-}
-.nd-sb-section {
-    font-size: 0.62rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.16em !important;
-    text-transform: uppercase !important;
-    color: rgba(144,200,120,0.45) !important;
-    margin: 1rem 0 0.4rem !important;
-}
-.nd-sb-link {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.65rem 0;
-    border-bottom: 1px solid rgba(144,200,120,0.1);
-    text-decoration: none !important;
-    color: #b4ccb4 !important;
-    font-size: 0.82rem;
-    font-weight: 400;
-    transition: color 0.15s;
-}
-.nd-sb-link:last-child { border-bottom: none; }
-.nd-sb-link:hover { color: #e0f0e0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── HERO — logo via st.image (avoids base64-in-HTML rendering issue) ───────────
-_, logo_col, _ = st.columns([1, 2, 1])
-with logo_col:
+# ── CENTRED NARROW LAYOUT via columns ─────────────────────────────────────────
+_, centre, _ = st.columns([1, 3, 1])
+
+with centre:
+
+    # Logo
     try:
         st.image(LOGO_URL, use_container_width=True)
     except Exception:
-        st.empty()
+        st.markdown("<h2 style='text-align:center;color:#2e6b2e;'>NATURE-DEMO</h2>",
+                    unsafe_allow_html=True)
 
-st.markdown("""
-<div class="nd-hero">
-    <h1 class="nd-hero-title">
-        Nature-Based Solutions for<br><strong>Climate-Resilient Infrastructure</strong>
-    </h1>
-    <p class="nd-hero-sub">
-        A digital decision support platform for risk assessment and NbS evaluation across Europe
-    </p>
-    <div class="nd-badges">
-        <span class="nd-badge">Horizon Europe · Grant 101157448</span>
-        <span class="nd-badge">Work Package 2 · Task 2.3</span>
-        <span class="nd-badge">University of Rostock</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── KPI BAR ───────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="nd-kpi-row">
-    <div class="nd-kpi-cell">
-        <span class="nd-kpi-num">6</span>
-        <span class="nd-kpi-lbl">Demo sites<br>across Europe</span>
-    </div>
-    <div class="nd-kpi-cell">
-        <span class="nd-kpi-num">12</span>
-        <span class="nd-kpi-lbl">Infrastructure<br>categories</span>
-    </div>
-    <div class="nd-kpi-cell">
-        <span class="nd-kpi-num">29</span>
-        <span class="nd-kpi-lbl">Natural hazard<br>types</span>
-    </div>
-    <div class="nd-kpi-cell">
-        <span class="nd-kpi-num">20</span>
-        <span class="nd-kpi-lbl">EURO-CORDEX<br>climate indices</span>
-    </div>
-    <div class="nd-kpi-cell">
-        <span class="nd-kpi-num">3</span>
-        <span class="nd-kpi-lbl">Assessment<br>levels</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── TOOLS ─────────────────────────────────────────────────────────────────────
-st.markdown('<p class="nd-eyebrow">Platform</p><h2 class="nd-heading">Available Tools</h2>',
-            unsafe_allow_html=True)
-
-col_dst, col_clim = st.columns(2, gap="large")
-
-with col_dst:
+    # ── HERO ──────────────────────────────────────────────────────────────────
     st.markdown("""
-    <div class="nd-card">
-        <span class="nd-card-tag">Primary Platform</span>
-        <h3 class="nd-card-title">🌿&nbsp; Decision Support Tool</h3>
-        <p class="nd-card-desc">
-            An integrated web application for multi-level climate risk assessment and
-            Nature-Based Solution recommendation — covering pre-configured demonstration
-            sites and free-form analysis for any location across Europe.
+    <div class="nd-hero">
+        <h1 class="nd-hero-title">
+            Nature-Based Solutions for<br><strong>Climate-Resilient Infrastructure</strong>
+        </h1>
+        <p class="nd-hero-sub">
+            A Horizon Europe decision support platform for climate risk assessment
+            and Nature-Based Solution recommendation across European infrastructure.
         </p>
-        <hr class="nd-card-divider">
-        <ul class="nd-feat-list">
-            <li>Specific Site DST for the 6 NATURE-DEMO demonstration sites with expert consensus</li>
-            <li>Custom Site Analysis for any European location via OpenStreetMap extraction</li>
-            <li>Three assessment levels: Perceived Risk · Regional Screening · High-Resolution</li>
-            <li>Quantitative risk indices (HI, EI, VI, PRI) from EURO-CORDEX climate projections</li>
-            <li>NbS ranking engine with SSF, SEI and HIA scoring under RCP4.5 / RCP8.5</li>
-            <li>AI-generated interpretation reports via Google Gemini</li>
-        </ul>
-        <a href="/integrated_dst" class="nd-btn">Launch Decision Support Tool →</a>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col_clim:
-    st.markdown("""
-    <div class="nd-card">
-        <span class="nd-card-tag">Companion Tool · IBM Research</span>
-        <h3 class="nd-card-title">🌡️&nbsp; European Climate Data Visualisation</h3>
-        <p class="nd-card-desc">
-            An interactive front-end for exploring the EURO-CORDEX climate index dataset
-            that underpins the DST's hazard analysis — useful before or alongside a
-            full Level 2 assessment.
-        </p>
-        <hr class="nd-card-divider">
-        <ul class="nd-feat-list">
-            <li>City- and coordinate-based location search across the EURO-CORDEX EUR-11 domain</li>
-            <li>Interactive time-series for all 20 climate indices: historical and projected to 2100</li>
-            <li>Scenario comparison with ensemble uncertainty bands (RCP4.5 / RCP8.5)</li>
-            <li>Powered by the IBM clima-ind-viz API — same data source as the DST Level 2</li>
-        </ul>
-        <br>
-        <a href="https://naturedemo-clima-ind.dic-cloudmate.eu" target="_blank" class="nd-btn-ghost">
-            Open Climate Visualisation ↗
+        <a href="/integrated_dst" class="nd-launch-btn">
+            Launch the Decision Support Tool &nbsp;→
         </a>
+        <p class="nd-launch-note">Sign-up or log in required &nbsp;·&nbsp; Free for project partners</p>
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<br>", unsafe_allow_html=True)
-
-# ── ABOUT + WORKFLOW ──────────────────────────────────────────────────────────
-col_about, col_flow = st.columns([3, 2], gap="large")
-
-with col_about:
-    st.markdown('<p class="nd-eyebrow">Project</p><h2 class="nd-heading">About NATURE-DEMO</h2>',
-                unsafe_allow_html=True)
+    # ── CAPABILITIES STRIP ────────────────────────────────────────────────────
     st.markdown("""
-    <div class="nd-panel">
+    <div class="nd-caps">
+        <div class="nd-cap">
+            <span class="nd-cap-num">6</span>
+            <span class="nd-cap-lbl">Demo sites<br>across Europe</span>
+        </div>
+        <div class="nd-cap">
+            <span class="nd-cap-num">12</span>
+            <span class="nd-cap-lbl">Infrastructure<br>categories</span>
+        </div>
+        <div class="nd-cap">
+            <span class="nd-cap-num">29</span>
+            <span class="nd-cap-lbl">Natural hazard<br>types</span>
+        </div>
+        <div class="nd-cap">
+            <span class="nd-cap-num">20</span>
+            <span class="nd-cap-lbl">EURO-CORDEX<br>climate indices</span>
+        </div>
+        <div class="nd-cap">
+            <span class="nd-cap-num">3</span>
+            <span class="nd-cap-lbl">Assessment<br>levels</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── ABOUT ─────────────────────────────────────────────────────────────────
+    st.markdown("""
+    <div class="nd-about">
+        <h2 class="nd-about-title">About the platform</h2>
         <p>
-            NATURE-DEMO (Nature-Based Solutions for Demonstrating Climate-Resilient Critical Infrastructure)
-            is a Horizon Europe Innovation Action under Grant Agreement No.&nbsp;101157448. The project
-            develops, validates, and deploys a comprehensive framework for assessing and implementing
-            Nature-Based Solutions (NbS) that protect critical infrastructure against natural hazards
-            and climate change, with a particular focus on the Alpine and peri-Alpine region.
+            NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
+            and validates Nature-Based Solutions (NbS) for protecting critical infrastructure
+            against natural hazards and climate change, with a focus on Alpine and peri-Alpine regions.
         </p>
-        <br>
         <p>
-            This Decision Support Tool is the primary software deliverable of Work Package 2, Task 2.3,
-            developed by the University of Rostock (UROS). It consolidates the multi-level risk
-            assessment framework from T2.1 (IHCantabria / FIHAC) and the EURO-CORDEX climate data
-            from T2.2 (IBM Research) into a single operational platform accessible to infrastructure
-            managers, climate risk experts, and project partners.
+            This Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
+            (University of Rostock) — integrates a multi-level risk assessment framework with
+            EURO-CORDEX climate projections to help infrastructure managers and project partners
+            evaluate and rank NbS interventions under present and future climate scenarios.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-with col_flow:
-    st.markdown('<p class="nd-eyebrow">Getting started</p><h2 class="nd-heading">How It Works</h2>',
-                unsafe_allow_html=True)
+    # ── SECONDARY LINKS ───────────────────────────────────────────────────────
     st.markdown("""
-    <div class="nd-panel" style="padding: 1.4rem 1.6rem;">
-        <div class="nd-step">
-            <span class="nd-step-num">1</span>
-            <div>
-                <p class="nd-step-title">Authenticate</p>
-                <p class="nd-step-desc">Log in or register and request an expert or viewer role pending admin approval.</p>
-            </div>
-        </div>
-        <div class="nd-step">
-            <span class="nd-step-num">2</span>
-            <div>
-                <p class="nd-step-title">Select a mode</p>
-                <p class="nd-step-desc">Choose a pre-configured demo site or use the Custom Site Analysis for any European location.</p>
-            </div>
-        </div>
-        <div class="nd-step">
-            <span class="nd-step-num">3</span>
-            <div>
-                <p class="nd-step-title">Define your scope</p>
-                <p class="nd-step-desc">Select infrastructure types, draw a polygon, and extract OSM data and EURO-CORDEX indicators.</p>
-            </div>
-        </div>
-        <div class="nd-step">
-            <span class="nd-step-num">4</span>
-            <div>
-                <p class="nd-step-title">Run the assessment</p>
-                <p class="nd-step-desc">Compute HI, EI, VI and PRI risk indices, then rank NbS solutions by RPRI under your chosen scenario.</p>
-            </div>
-        </div>
-        <div class="nd-step">
-            <span class="nd-step-num">5</span>
-            <div>
-                <p class="nd-step-title">Save &amp; share</p>
-                <p class="nd-step-desc">Expert users can save named analysis snapshots to the database and reload them at any time.</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-# ── FOOTER ────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="nd-footer">
-    <div class="nd-footer-main">
-        <strong>NATURE-DEMO</strong> · Horizon Europe Programme · Grant Agreement No. 101157448<br>
-        University of Rostock (UROS) · Work Package 2, Task 2.3 · Deliverable D2.3
-    </div>
-    <div class="nd-footer-eu">
-        Funded by the European Union.<br>
-        Views expressed are those of the authors only<br>
-        and do not reflect those of the EU or CINEA.
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# ── SIDEBAR ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    try:
-        st.image(LOGO_URL, use_container_width=True)
-    except Exception:
-        st.markdown("**NATURE-DEMO**")
-
-    st.markdown('<hr class="nd-sb-rule">', unsafe_allow_html=True)
-    st.markdown('<p class="nd-sb-section">Navigation</p>', unsafe_allow_html=True)
-
-    st.link_button("🌿  Decision Support Tool", "/integrated_dst", use_container_width=True)
-    st.link_button("🌡️  Climate Visualisation",
-                   "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
-
-    st.markdown('<hr class="nd-sb-rule">', unsafe_allow_html=True)
-    st.markdown('<p class="nd-sb-section">Resources</p>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="padding: 0 0.1rem;">
-        <a class="nd-sb-link" href="https://www.nature-demo.eu" target="_blank">
+    <div class="nd-secondary">
+        <a class="nd-sec-link"
+           href="https://nature-demo.github.io/Decision_Support_Tool/"
+           target="_blank">
+            📖&nbsp; Documentation
+        </a>
+        <a class="nd-sec-link"
+           href="https://naturedemo-clima-ind.dic-cloudmate.eu"
+           target="_blank">
+            🌡️&nbsp; Climate Data Visualisation
+        </a>
+        <a class="nd-sec-link"
+           href="https://www.nature-demo.eu"
+           target="_blank">
             🌐&nbsp; Project Website
         </a>
-        <a class="nd-sb-link" href="https://github.com/NATURE-DEMO/Decision_Support_Tool" target="_blank">
-            ⌨️&nbsp; GitHub Repository
+        <a class="nd-sec-link"
+           href="https://github.com/NATURE-DEMO/Decision_Support_Tool"
+           target="_blank">
+            ⌨️&nbsp; GitHub
         </a>
-        <a class="nd-sb-link" href="https://naturedemo-clima-ind.dic-cloudmate.eu" target="_blank">
-            📈&nbsp; Climate Data API
-        </a>
-        <a class="nd-sb-link" href="https://nature-demo.eu/contact" target="_blank">
+        <a class="nd-sec-link"
+           href="https://nature-demo.eu/contact"
+           target="_blank">
             📧&nbsp; Contact
         </a>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<hr class="nd-sb-rule">', unsafe_allow_html=True)
+    # ── FOOTER ────────────────────────────────────────────────────────────────
     st.markdown("""
-    <p style="font-size:0.68rem; color:rgba(144,200,120,0.35) !important;
-       line-height:1.65; padding:0 0.1rem;">
-        Horizon Europe · Grant 101157448<br>
-        © 2026 NATURE-DEMO Consortium
-    </p>
+    <div class="nd-footer">
+        <div class="nd-footer-left">
+            <strong>NATURE-DEMO</strong> · Horizon Europe · Grant Agreement No. 101157448<br>
+            University of Rostock (UROS) · WP2 Task 2.3 · Deliverable D2.3
+        </div>
+        <div class="nd-footer-right">
+            Funded by the European Union.<br>
+            Views are those of the authors only<br>
+            and do not reflect those of the EU or CINEA.
+        </div>
+    </div>
     """, unsafe_allow_html=True)
