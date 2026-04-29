@@ -878,9 +878,14 @@ def build_query(coords, selected_infras):
 
 def make_overpass_request(query, max_retries=2):
     overpass_url = "https://overpass-api.de/api/interpreter"
+    headers = {
+        "User-Agent": "DecisionSupportTool/1.0 (contact@nature-demo.eu)",
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(overpass_url, params={"data": query}, timeout=180)
+            response = requests.post(overpass_url, data={"data": query}, headers=headers, timeout=180)
             if response.status_code == 200:
                 return response
             elif response.status_code == 400:
