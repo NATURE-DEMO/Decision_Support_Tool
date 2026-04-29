@@ -299,8 +299,7 @@ with st.sidebar:
     st.markdown("""
     <div class="sb-note">
         <strong>⚠️ Sign-up required</strong><br>
-        The Integrated DST requires an account. Approval may take a few days
-        as the administrator is not automatically notified of new registrations.
+        The Integrated DST requires an account.
     </div>
     """, unsafe_allow_html=True)
     st.link_button("🔐  Integrated DST", "/integrated_dst", use_container_width=True)
