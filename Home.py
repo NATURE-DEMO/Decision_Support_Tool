@@ -374,7 +374,7 @@ with centre:
             <span class="nd-cap-lbl">Natural hazard<br>types</span>
         </div>
         <div class="nd-cap">
-            <span class="nd-cap-num">20</span>
+            <span class="nd-cap-num">23</span>
             <span class="nd-cap-lbl">EURO-CORDEX<br>climate indices</span>
         </div>
         <div class="nd-cap">
