@@ -1664,7 +1664,7 @@ with col2:
     </style>
 
     <div class="tooltip-container">
-        <a href="/Specific_Site_DST_v2" class="nd-launch-btn">
+        <a href="/integrated_dst" class="nd-launch-btn">
             🔍 High Resolution DST &nbsp;→
         </a>
         <div class="tooltip-text">
