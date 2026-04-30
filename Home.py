@@ -441,6 +441,25 @@ with centre:
             A Horizon Europe decision support platform for climate risk assessment
             and Nature-Based Solution recommendation across European infrastructure.
         </p>
+
+        <!-- NEW INSERTION POINT -->
+        <div style="text-align: left; margin: 1.8rem auto; padding: 1.25rem; background: #f9fbf9; border: 1px solid #cfdecf; border-radius: 10px; max-width: 90%;">
+            <h2 style="font-family: 'Source Serif 4', serif; font-size: 1.1rem; font-weight: 600; color: #1a3a1a; margin: 0 0 0.6rem;">About the Decision Support Tool</h2>
+            <p style="font-size: 0.85rem; color: #3a5a3a; line-height: 1.7; margin-bottom: 0.7rem;">
+                NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
+                and validates Nature-Based Solutions for protecting critical infrastructure against natural
+                hazards and climate change, with a focus on Alpine and peri-Alpine regions.
+            </p>
+            <p style="font-size: 0.85rem; color: #3a5a3a; line-height: 1.7; margin: 0;">
+                The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
+                (University of Rostock) — integrates a multi-level risk assessment framework with
+                EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites
+                or run a custom assessment for any European location, and receive ranked NbS
+                recommendations under present and future climate scenarios.
+            </p>
+        </div>
+        <!-- END OF INSERTION -->
+
         <a href="/General_DST" class="nd-launch-btn">
             Open the Decision Support Tool &nbsp;→
         </a>
@@ -478,24 +497,6 @@ with centre:
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div class="nd-panel" style="margin-bottom:1.25rem;">
-        <h2 class="nd-panel-title">About the Decision Support Tool</h2>
-        <p>
-            NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
-            and validates Nature-Based Solutions for protecting critical infrastructure against natural
-            hazards and climate change, with a focus on Alpine and peri-Alpine regions.
-        </p>
-        <p>
-            The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
-            (University of Rostock) — integrates a multi-level risk assessment framework with
-            EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites
-            or run a custom assessment for any European location, and receive ranked NbS
-            recommendations under present and future climate scenarios.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="nd-viz-card" style="margin-bottom:1.5rem;">
