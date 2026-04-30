@@ -1591,7 +1591,7 @@ with st.sidebar:
     st.markdown('<p class="sb-section">Tools</p>', unsafe_allow_html=True)
 
     # Main DST button — Integrated DST (has documentation)
-    st.link_button("🌿  NATURE-DEMO's DST", "/integrated_dst",
+    st.link_button("🌿  High Resolution DST", "/integrated_dst",
                    use_container_width=True)
     st.markdown(f"""
     <a class="sb-doc-link" href="{DOCS_URL}" target="_blank">
