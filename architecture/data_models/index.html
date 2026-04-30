@@ -1201,6 +1201,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#adding-a-new-ci-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a new CI type
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1241,10 +1252,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#backwards-compatible-nbs_list" class="md-nav__link">
+  <a href="#derived-nbs_list" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Backwards-compatible NbS_list
+        Derived NbS_list
       
     </span>
   </a>
@@ -1256,6 +1267,17 @@
     <span class="md-ellipsis">
       
         How it is used in the DST
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extending-the-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending the matrix
       
     </span>
   </a>
@@ -1455,9 +1477,16 @@
 
 
 <h1 id="data-models">Data Models<a class="headerlink" href="#data-models" title="Permanent link">&para;</a></h1>
+<p>The DST data layer is intentionally separated from the application code. Two of the most heavily used tables — the <strong>impact model registry</strong> and the <strong>NbS–Hazard matrix</strong> — live as standalone data modules, designed around three properties:</p>
+<ul>
+<li><strong>Modular</strong> — each table is a self-contained file (or set of files) with no dependencies on UI or risk-calculation code, and can be edited or reviewed in isolation.</li>
+<li><strong>Inspectable</strong> — domain experts can read the data directly without tracing it through Python logic: impact models are plain YAML, and the NbS matrix is a flat mapping of 3-letter codes to names together with per-hazard lists of applicable codes.</li>
+<li><strong>Extensible</strong> — both tables are picked up automatically by the app. New impact YAML files are auto-discovered at module import time; new NbS codes or hazards added to the matrix data structures propagate through the derived <code>NbS_list</code> without any further changes.</li>
+</ul>
+<p>This makes it possible to update the underlying climate-impact and adaptation knowledge base — including by non-developers — without touching the calculation engine or the Streamlit UI.</p>
 <h2 id="impact-model-registry">Impact model registry<a class="headerlink" href="#impact-model-registry" title="Permanent link">&para;</a></h2>
 <h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
-<p>The <strong>impact model registry</strong> (<code>modules/impact_models/</code>) maps each CI type to the set of climate-driven impacts it may experience. The registry is YAML-file-driven: one file per CI type, auto-discovered at startup — no manual registration is required.</p>
+<p>The <strong>impact model registry</strong> (<code>modules/impact_models/</code>) maps each critical-infrastructure (CI) type to the set of climate-driven impacts it may experience. The registry is YAML-file-driven: one file per CI type, auto-discovered at module import time — no manual registration is required.</p>
 <h3 id="supported-ci-types">Supported CI types<a class="headerlink" href="#supported-ci-types" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -1517,6 +1546,7 @@
 </tr>
 </tbody>
 </table>
+<p>The registry covers eight of the nine CI typologies in D2.1 Table 6 (Roads, Railways, Tunnels, Bridges, Dams, River training, Torrent control, Green spaces) and additionally provides Buildings, Industrial buildings, Water infrastructure, and Energy infrastructures to support the demonstrator-site analyses. Electricity distribution networks are listed in D2.1 Table 6 but are a planned addition rather than part of the current registry.</p>
 <h3 id="yaml-schema">YAML schema<a class="headerlink" href="#yaml-schema" title="Permanent link">&para;</a></h3>
 <p>Each YAML file has the following structure:</p>
 <div class="highlight"><pre><span></span><code><span class="nt">infrastructure</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Road</span><span class="w">   </span><span class="c1"># Optional — defaults to filename stem</span>
@@ -1597,7 +1627,7 @@
 <tbody>
 <tr>
 <td>Operations</td>
-<td>Revenues loss</td>
+<td>Revenue loss</td>
 </tr>
 <tr>
 <td>Maintenance</td>
@@ -1620,10 +1650,17 @@
 <span class="n">road_impacts</span> <span class="o">=</span> <span class="n">get_impact_data_for_infrastructure</span><span class="p">(</span><span class="s2">&quot;Road&quot;</span><span class="p">)</span>
 <span class="n">all_impacts</span> <span class="o">=</span> <span class="n">get_all_impact_data</span><span class="p">()</span>
 </code></pre></div>
+<h3 id="adding-a-new-ci-type">Adding a new CI type<a class="headerlink" href="#adding-a-new-ci-type" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Drop a new file <code>&lt;ci_name&gt;.yaml</code> in <code>modules/impact_models/data/</code> following the schema above (a complete template lives in <code>modules/impact_models/README.md</code>).</li>
+<li>Restart the app — the loader auto-discovers the file; no registration code to edit.</li>
+<li>The new CI type immediately appears in <code>get_ci_type_names()</code> and in the DST's CI-type selector, with its impacts available to the PRI calculation.</li>
+</ol>
+<p>Existing CI types can be inspected or revised the same way: open the YAML file, edit the rows, restart.</p>
 <hr />
 <h2 id="nbshazard-matrix">NbS–Hazard matrix<a class="headerlink" href="#nbshazard-matrix" title="Permanent link">&para;</a></h2>
 <h3 id="overview_1">Overview<a class="headerlink" href="#overview_1" title="Permanent link">&para;</a></h3>
-<p>The <strong>NbS–Hazard matrix</strong> (<code>modules/nbs/</code>) encodes the effectiveness of 74 Nature-Based Solutions against 29 climate hazards, drawn from the D1.1 NbS Catalogue (Kuschel et al., 2025).</p>
+<p>The <strong>NbS–Hazard matrix</strong> (<code>modules/nbs/</code>) classifies 74 Nature-Based Solutions (NbS) as primary (direct) or supportive (indirect) solutions against 29 natural hazards. The matrix in <code>nbs_hazard_matrix.py</code> is reproduced from the peer-reviewed framework of Kuschel et al. (2025, <em>Infrastructures</em> 10(12), 318, <a href="https://doi.org/10.3390/infrastructures10120318">DOI:10.3390/infrastructures10120318</a>), produced within the NATURE-DEMO project context, with corrections noted in the module docstring (transposition error, 3-letter-code corrections, LFA typo). Quantitative effectiveness is <strong>not</strong> encoded here; it is handled separately via the MCA criteria.</p>
 <h3 id="data-format">Data format<a class="headerlink" href="#data-format" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="c1"># 74 NbS types, keyed by 3-letter code</span>
 <span class="n">NBS_CODES</span> <span class="o">=</span> <span class="p">{</span>
@@ -1633,7 +1670,7 @@
     <span class="c1"># ...</span>
 <span class="p">}</span>
 
-<span class="c1"># 29 hazard types</span>
+<span class="c1"># 29 natural hazards</span>
 <span class="n">HAZARD_CODES</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">&quot;EHT&quot;</span><span class="p">:</span> <span class="s2">&quot;Extreme high temperatures (Heatwave)&quot;</span><span class="p">,</span>
     <span class="s2">&quot;DRT&quot;</span><span class="p">:</span> <span class="s2">&quot;Drought&quot;</span><span class="p">,</span>
@@ -1653,8 +1690,8 @@
     <span class="c1"># ...</span>
 <span class="p">}</span>
 </code></pre></div>
-<h3 id="backwards-compatible-nbs_list">Backwards-compatible <code>NbS_list</code><a class="headerlink" href="#backwards-compatible-nbs_list" title="Permanent link">&para;</a></h3>
-<p>Pages access NbS data through the auto-generated <code>NbS_list</code> dict:</p>
+<h3 id="derived-nbs_list">Derived <code>NbS_list</code><a class="headerlink" href="#derived-nbs_list" title="Permanent link">&para;</a></h3>
+<p>Pages access NbS data through the <code>NbS_list</code> dict, derived at import time from the four data structures above:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">modules.nbs</span><span class="w"> </span><span class="kn">import</span> <span class="n">NbS_list</span>
 
 <span class="c1"># Structure:</span>
@@ -1664,26 +1701,37 @@
 <span class="n">primary_nbs</span> <span class="o">=</span> <span class="n">NbS_list</span><span class="p">[</span><span class="s2">&quot;Extreme high temperatures (Heatwave)&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Yes&quot;</span><span class="p">,</span> <span class="p">[])</span>
 </code></pre></div>
 <h3 id="how-it-is-used-in-the-dst">How it is used in the DST<a class="headerlink" href="#how-it-is-used-in-the-dst" title="Permanent link">&para;</a></h3>
-<p>When the PRI calculation identifies active hazards for an asset, the DST:</p>
+<p>When the Potential Risk Index (PRI) calculation identifies active hazards for an asset, the DST:</p>
 <ol>
-<li>Looks up each hazard in <code>NbS_list</code> to retrieve candidate NbS</li>
-<li>Joins with MCA scores from the D1.1 catalogue</li>
-<li>Ranks candidates by weighted MCA score</li>
-<li>Presents the ranked list for user selection</li>
+<li>Looks up each hazard in <code>NbS_list</code> to retrieve candidate NbS (primary and supportive).</li>
+<li>Presents the candidates to the user, who weights them against the D1.1 / D2.1 Multi-Criteria Analysis (MCA) criteria — technical efficiency, implementation cost, implementation time, environmental impact, and social acceptance.</li>
+<li>Computes a weighted suitability score per option and ranks the list.</li>
+<li>Returns the ranked list for user selection and downstream Residual-PRI (RPRI) calculation.</li>
 </ol>
+<p>A pre-scored MCA database from WP1 is anticipated; until it is integrated, the DST collects MCA inputs interactively from the user (see <code>pages/integrated_dst.py</code>).</p>
+<h3 id="extending-the-matrix">Extending the matrix<a class="headerlink" href="#extending-the-matrix" title="Permanent link">&para;</a></h3>
+<p>The matrix is decoupled from the rest of the codebase: only the four data structures above are exposed, and <code>NbS_list</code> is regenerated at import time from <code>NBS_CODES</code>, <code>HAZARD_CODES</code>, <code>NBS_MATRIX</code>, and <code>NBS_MATRIX_SUPPORTIVE</code>.</p>
+<ul>
+<li><strong>Add a new NbS method</strong> — insert <code>"&lt;3-letter code&gt;": "&lt;name&gt;"</code> into <code>NBS_CODES</code>, then list the code under each applicable hazard in <code>NBS_MATRIX</code> (primary) and/or <code>NBS_MATRIX_SUPPORTIVE</code> (supportive).</li>
+<li><strong>Add a new hazard</strong> — insert <code>"&lt;3-letter code&gt;": "&lt;name&gt;"</code> into <code>HAZARD_CODES</code>, then add the hazard's key with its NbS list to the matrix data structures.</li>
+<li><strong>Revise an existing entry</strong> — edit the relevant lists directly; pages reading <code>NbS_list</code> pick up the change without modification.</li>
+</ul>
+<p>When extending the matrix, also align hazard names with the <code>possible_hazards</code> strings used in the impact-model YAML files so that the PRI → NbS lookup remains consistent.</p>
 <hr />
 <h2 id="koppen-geiger-classification">Köppen-Geiger classification<a class="headerlink" href="#koppen-geiger-classification" title="Permanent link">&para;</a></h2>
-<p>The Köppen-Geiger classification raster is stored in <code>Koppen/</code> as a GeoTIFF at 0.1° spatial resolution, based on the Beck et al. (2018) 1991–2020 climatology (the source 1 km raster is resampled to the DST grid). Both Specific Site and Custom Site analyses sample the raster at the asset location to provide local climate-zone context for hazard likelihood and NbS suitability.</p>
+<p>The Köppen-Geiger classification rasters are stored in <code>Koppen/</code> as GeoTIFFs at 0.1° spatial resolution, derived from the Beck et al. (2023) 1 km Köppen-Geiger dataset. The repository bundles a 1991–2020 historical baseline plus mid- and end-of-century projection layers to support climate-zone framing across the time horizons used elsewhere in the DST. Both Specific Site and Custom Site analyses sample the raster at the asset location to inform hazard likelihood and NbS suitability; the layer is contextual and is not consumed as input to the PRI calculation.</p>
 <hr />
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>modules/impact_models/README.md</code> — schema documentation and template</li>
-<li>D2.1 Appendix A — impact model source tables</li>
-<li>D2.1 Appendix B — sensitivity index lookup tables</li>
-<li>D1.1 Tables 2.1, 5.1–5.8 — NbS catalogue and hazard-NbS matrix</li>
-<li>Kuschel et al. (2025) — NbS effectiveness data (<code>nbs_hazard_matrix.py</code>)</li>
-<li>Beck et al. (2018) — Köppen-Geiger climate classification 1991–2020</li>
+<li><code>modules/impact_models/README.md</code> — schema documentation and template for adding a new CI type.</li>
+<li>D2.1 <em>Risk Assessment Framework</em>, Appendix A — impact model source tables.</li>
+<li>D2.1 <em>Risk Assessment Framework</em>, Appendix B — sensitivity index lookup tables.</li>
+<li>D2.1 <em>Risk Assessment Framework</em>, Table 6 — CI typology covered by the registry.</li>
+<li>D1.1 <em>NbS Catalogue for Critical Infrastructure</em>, Tables 2.1 and 5.1–5.8 — NbS catalogue and hazard–NbS relationships.</li>
+<li>Kuschel, E. et al. (2025). <em>A Systematic Framework for Assessing the Temporally Variable Protective Capacity of Nature-Based Solutions Against Natural Hazards.</em> <em>Infrastructures</em>, 10(12), 318. <a href="https://doi.org/10.3390/infrastructures10120318">DOI:10.3390/infrastructures10120318</a> — source matrix reproduced (with documented corrections) in <code>modules/nbs/nbs_hazard_matrix.py</code>.</li>
+<li>Beck, H.E. et al. (2023). <em>High-resolution (1 km) Köppen-Geiger maps for 1901–2099 based on constrained CMIP6 projections.</em> <em>Scientific Data</em>, 10, 724. <a href="https://doi.org/10.1038/s41597-023-02549-6">DOI:10.1038/s41597-023-02549-6</a> — source dataset for <code>Koppen/</code>.</li>
 </ul>
+<p>For the consolidated bibliography, see <a href="../../bibliography/"><code>bibliography.md</code></a>.</p>
 
 
 
