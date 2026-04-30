@@ -49,6 +49,30 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     line-height: 1.65;
 }
 
+/* ── ABOUT BOX (INSIDE HERO) ── */
+.nd-about-box {
+    text-align: left; 
+    margin: 1.8rem auto; 
+    padding: 1.5rem; 
+    background: #f9fbf9; 
+    border: 1px solid #cfdecf; 
+    border-radius: 10px; 
+    max-width: 85%;
+}
+.nd-about-box h2 {
+    font-family: 'Source Serif 4', serif; 
+    font-size: 1.1rem; 
+    font-weight: 600; 
+    color: #1a3a1a; 
+    margin: 0 0 0.7rem;
+}
+.nd-about-box p {
+    font-size: 0.85rem; 
+    color: #3a5a3a; 
+    line-height: 1.7; 
+    margin-bottom: 0.7rem;
+}
+
 /* ── PRIMARY BUTTON ── */
 .nd-launch-btn {
     display: inline-block;
@@ -91,11 +115,6 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     padding-bottom: 1px;
     transition: color 0.15s, border-color 0.15s;
 }
-.nd-docs-link:hover {
-    color: #1a3a1a !important;
-    border-color: #2e6b2e;
-    text-decoration: none !important;
-}
 
 /* ── CAPABILITIES STRIP ── */
 .nd-caps {
@@ -124,30 +143,6 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
 }
 .nd-cap-lbl { font-size: 0.65rem; color: #7a9a7a; line-height: 1.4; }
 
-/* ── ABOUT PANEL ── */
-.nd-panel {
-    background: #ffffff;
-    border: 1px solid #cfdecf;
-    border-radius: 12px;
-    padding: 1.5rem 1.75rem;
-    box-shadow: 0 1px 6px rgba(30,60,30,0.04);
-}
-.nd-panel-title {
-    font-family: 'Source Serif 4', serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1a3a1a;
-    margin: 0 0 0.7rem;
-}
-.nd-panel p {
-    font-size: 0.84rem;
-    font-weight: 300;
-    color: #3a5a3a;
-    line-height: 1.85;
-    margin: 0 0 0.65rem;
-}
-.nd-panel p:last-child { margin-bottom: 0; }
-
 /* ── CLIMATE VIZ CARD ── */
 .nd-viz-card {
     background: #f8fbf8;
@@ -159,13 +154,7 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     gap: 1rem;
     align-items: flex-start;
 }
-.nd-viz-icon {
-    font-size: 1.6rem;
-    line-height: 1;
-    flex-shrink: 0;
-    margin-top: 0.1rem;
-}
-.nd-viz-body {}
+.nd-viz-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; margin-top: 0.1rem; }
 .nd-viz-title {
     font-family: 'Source Serif 4', serif;
     font-size: 1rem;
@@ -200,18 +189,8 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     letter-spacing: 0.03em;
     text-transform: uppercase;
 }
-.nd-viz-indicators ul {
-    margin: 0;
-    padding-left: 1.15rem;
-}
-.nd-viz-indicators ul li {
-    margin-bottom: 0.1rem;
-}
-.nd-viz-links {
-    display: flex;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
+.nd-viz-indicators ul { margin: 0; padding-left: 1.15rem; }
+.nd-viz-links { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 .nd-viz-btn {
     display: inline-flex;
     align-items: center;
@@ -226,11 +205,6 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     padding: 0.3rem 0.7rem;
     transition: background 0.15s;
 }
-.nd-viz-btn:hover {
-    background: #edf5ed;
-    color: #1a3a1a !important;
-    text-decoration: none !important;
-}
 
 /* ── FOOTER ── */
 .nd-footer {
@@ -242,33 +216,17 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     flex-wrap: wrap;
     gap: 0.6rem;
 }
-.nd-footer-left {
-    font-size: 0.72rem;
-    font-weight: 300;
-    color: #8aaa8a;
-    line-height: 1.7;
-}
+.nd-footer-left { font-size: 0.72rem; font-weight: 300; color: #8aaa8a; line-height: 1.7; }
 .nd-footer-left strong { color: #587058; font-weight: 500; }
-.nd-footer-right {
-    font-size: 0.68rem;
-    font-weight: 300;
-    color: #aac4aa;
-    text-align: right;
-    line-height: 1.6;
-}
+.nd-footer-right { font-size: 0.68rem; font-weight: 300; color: #aac4aa; text-align: right; line-height: 1.6; }
 
-/* ── SIDEBAR ── */
-/* ── SIDEBAR ── */
+/* ── SIDEBAR (HEATMAP GRADIENT) ── */
 [data-testid="stSidebar"] { 
-    /* Gradient starts at Gray (#707070) and ends at your Green (#3a6e3a) */
     background: linear-gradient(180deg, #707070 0%, #3a6e3a 100%) !important; 
     background-attachment: fixed !important;
 }
 
-[data-testid="stSidebar"] * { 
-    /* Brightened text for better contrast against the gray top */
-    color: #fdfdfd !important; 
-}
+[data-testid="stSidebar"] * { color: #fdfdfd !important; }
 
 [data-testid="stSidebar"] .stLinkButton > a {
     background: rgba(255,255,255,0.12) !important;
@@ -283,12 +241,7 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     background: rgba(255,255,255,0.25) !important;
 }
 
-.sb-rule { 
-    border: none; 
-    border-top: 1px solid rgba(255,255,255,0.2); 
-    margin: 0.8rem 0; 
-}
-
+.sb-rule { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 0.8rem 0; }
 .sb-section {
     font-size: 0.6rem !important;
     font-weight: 600 !important;
@@ -307,12 +260,8 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     font-weight: 400;
     padding: 0.45rem 0 0.6rem;
     transition: color 0.15s;
-    letter-spacing: 0.01em;
 }
-
-.sb-doc-link:hover {
-    color: #ffffff !important;
-}
+.sb-doc-link:hover { color: #ffffff !important; }
 
 .sb-link {
     display: flex;
@@ -327,54 +276,6 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
 }
 .sb-link:last-child { border-bottom: none; }
 .sb-link:hover { color: #ffffff !important; }
-[data-testid="stSidebar"] .stLinkButton > a {
-    background: rgba(255,255,255,0.10) !important;
-    border: 1px solid rgba(180,230,160,0.3) !important;
-    border-radius: 7px !important;
-    color: #e0f0e0 !important;
-    font-size: 0.82rem !important;
-    transition: background 0.18s !important;
-}
-[data-testid="stSidebar"] .stLinkButton > a:hover {
-    background: rgba(180,230,160,0.18) !important;
-}
-.sb-rule { border: none; border-top: 1px solid rgba(180,230,160,0.2); margin: 0.8rem 0; }
-.sb-section {
-    font-size: 0.6rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.16em !important;
-    text-transform: uppercase !important;
-    color: rgba(180,230,160,0.55) !important;
-    margin: 0.9rem 0 0.35rem !important;
-}
-.sb-doc-link {
-    display: block;
-    text-align: center;
-    text-decoration: none !important;
-    color: rgba(210,240,210,0.85) !important;
-    font-size: 0.8rem;
-    font-weight: 400;
-    padding: 0.45rem 0 0.6rem;
-    transition: color 0.15s;
-    letter-spacing: 0.01em;
-}
-.sb-doc-link:hover {
-    color: #e8f6e8 !important;
-    text-decoration: none !important;
-}
-.sb-link {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.55rem 0;
-    border-bottom: 1px solid rgba(180,230,160,0.12);
-    text-decoration: none !important;
-    color: #c8e0c8 !important;
-    font-size: 0.8rem;
-    transition: color 0.15s;
-}
-.sb-link:last-child { border-bottom: none; }
-.sb-link:hover { color: #e8f6e8 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -387,21 +288,11 @@ with st.sidebar:
     st.markdown('<hr class="sb-rule">', unsafe_allow_html=True)
     st.markdown('<p class="sb-section">Tools</p>', unsafe_allow_html=True)
 
-    # Main DST button — Integrated DST (has documentation)
     st.link_button("🌿  NATURE-DEMO's DST", "/integrated_dst", use_container_width=True)
-    st.markdown(f"""
-    <a class="sb-doc-link" href="{DOCS_URL}" target="_blank">
-        📖&nbsp; Documentation
-    </a>
-    """, unsafe_allow_html=True)
+    st.markdown(f'<a class="sb-doc-link" href="{DOCS_URL}" target="_blank">📖&nbsp; Documentation</a>', unsafe_allow_html=True)
 
-    # Climate Data Visualisation button + docs
     st.link_button("🌡️  Climate Data Visualisation", "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
-    st.markdown(f"""
-    <a class="sb-doc-link" href="{CLIMA_DOCS_URL}" target="_blank">
-        📖&nbsp; Documentation
-    </a>
-    """, unsafe_allow_html=True)
+    st.markdown(f'<a class="sb-doc-link" href="{CLIMA_DOCS_URL}" target="_blank">📖&nbsp; Documentation</a>', unsafe_allow_html=True)
 
     st.markdown('<hr class="sb-rule">', unsafe_allow_html=True)
     st.markdown('<p class="sb-section">Resources</p>', unsafe_allow_html=True)
@@ -416,7 +307,7 @@ with st.sidebar:
 
     st.markdown('<hr class="sb-rule">', unsafe_allow_html=True)
     st.markdown("""
-    <p style="font-size:0.66rem; color:rgba(180,230,160,0.4) !important; line-height:1.65; padding:0 0.1rem;">
+    <p style="font-size:0.66rem; color:rgba(255,255,255,0.4) !important; line-height:1.65; padding:0 0.1rem;">
         Horizon Europe · Grant 101157448<br>© 2026 NATURE-DEMO Consortium
     </p>
     """, unsafe_allow_html=True)
@@ -424,7 +315,6 @@ with st.sidebar:
 _, centre, _ = st.columns([1, 4, 1])
 
 with centre:
-
     _, lc, _ = st.columns([1, 2, 1])
     with lc:
         try:
@@ -441,16 +331,16 @@ with centre:
             A Horizon Europe decision support platform for climate risk assessment
             and Nature-Based Solution recommendation across European infrastructure.
         </p>
-
-        <!-- NEW INSERTION POINT -->
-        <div style="text-align: left; margin: 1.8rem auto; padding: 1.25rem; background: #f9fbf9; border: 1px solid #cfdecf; border-radius: 10px; max-width: 90%;">
-            <h2 style="font-family: 'Source Serif 4', serif; font-size: 1.1rem; font-weight: 600; color: #1a3a1a; margin: 0 0 0.6rem;">About the Decision Support Tool</h2>
-            <p style="font-size: 0.85rem; color: #3a5a3a; line-height: 1.7; margin-bottom: 0.7rem;">
+        
+        <!-- MOVED ABOUT SECTION -->
+        <div class="nd-about-box">
+            <h2>About the Decision Support Tool</h2>
+            <p>
                 NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
                 and validates Nature-Based Solutions for protecting critical infrastructure against natural
                 hazards and climate change, with a focus on Alpine and peri-Alpine regions.
             </p>
-            <p style="font-size: 0.85rem; color: #3a5a3a; line-height: 1.7; margin: 0;">
+            <p style="margin-bottom:0;">
                 The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
                 (University of Rostock) — integrates a multi-level risk assessment framework with
                 EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites
@@ -458,7 +348,6 @@ with centre:
                 recommendations under present and future climate scenarios.
             </p>
         </div>
-        <!-- END OF INSERTION -->
 
         <a href="/General_DST" class="nd-launch-btn">
             Open the Decision Support Tool &nbsp;→
@@ -473,26 +362,11 @@ with centre:
 
     st.markdown("""
     <div class="nd-caps">
-        <div class="nd-cap">
-            <span class="nd-cap-num">5</span>
-            <span class="nd-cap-lbl">Demo sites<br>across Europe</span>
-        </div>
-        <div class="nd-cap">
-            <span class="nd-cap-num">12</span>
-            <span class="nd-cap-lbl">Infrastructure<br>categories</span>
-        </div>
-        <div class="nd-cap">
-            <span class="nd-cap-num">29</span>
-            <span class="nd-cap-lbl">Natural hazard<br>types</span>
-        </div>
-        <div class="nd-cap">
-            <span class="nd-cap-num">23</span>
-            <span class="nd-cap-lbl">EURO-CORDEX<br>climate indices</span>
-        </div>
-        <div class="nd-cap">
-            <span class="nd-cap-num">3</span>
-            <span class="nd-cap-lbl">Assessment<br>levels</span>
-        </div>
+        <div class="nd-cap"><span class="nd-cap-num">5</span><span class="nd-cap-lbl">Demo sites<br>across Europe</span></div>
+        <div class="nd-cap"><span class="nd-cap-num">12</span><span class="nd-cap-lbl">Infrastructure<br>categories</span></div>
+        <div class="nd-cap"><span class="nd-cap-num">29</span><span class="nd-cap-lbl">Natural hazard<br>types</span></div>
+        <div class="nd-cap"><span class="nd-cap-num">23</span><span class="nd-cap-lbl">EURO-CORDEX<br>indices</span></div>
+        <div class="nd-cap"><span class="nd-cap-num">3</span><span class="nd-cap-lbl">Assessment<br>levels</span></div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -506,32 +380,18 @@ with centre:
             <p class="nd-viz-desc">
                 An interactive companion tool — developed by IBM Research — for exploring the
                 EURO-CORDEX climate index dataset that underpins the DST's hazard analysis.
-                Search any European city or coordinate and visualise historical trends and
-                scenario projections (RCP4.5 / RCP8.5) for all 23 climate indices to 2100.
             </p>
             <div class="nd-viz-indicators">
                 <strong>📊 Available Climate Indicators</strong>
                 <ul>
-                    <li><b>Temperature</b> — mean, min, max, diurnal range, growing degree days, frost/ice/tropical days, warm/cold spells</li>
-                    <li><b>Precipitation</b> — total, heavy rainfall days (R10mm / R20mm), consecutive dry/wet days, max 1-day &amp; 5-day precipitation</li>
+                    <li><b>Temperature</b> — mean, min, max, frost/ice/tropical days, warm/cold spells</li>
+                    <li><b>Precipitation</b> — total, heavy rainfall days, consecutive dry/wet days</li>
                     <li><b>Wind &amp; Humidity</b> — wind speed indices, relative humidity extremes</li>
-                    <li><b>Scenarios</b> — RCP4.5 and RCP8.5 projections to 2100 · Historical baseline from 1971</li>
                 </ul>
-                <a class="nd-docs-link" href="{CLIMA_DOCS_URL}" target="_blank" style="font-size:0.76rem; margin-top:0.35rem; display:inline-flex;">
-                    📖 Full indicator documentation →
-                </a>
             </div>
             <div class="nd-viz-links">
-                <a class="nd-viz-btn"
-                   href="https://naturedemo-clima-ind.dic-cloudmate.eu"
-                   target="_blank">
-                    ↗ Open tool
-                </a>
-                <a class="nd-viz-btn"
-                   href="{CLIMA_DOCS_URL}"
-                   target="_blank">
-                    📖 Indicators documentation
-                </a>
+                <a class="nd-viz-btn" href="https://naturedemo-clima-ind.dic-cloudmate.eu" target="_blank">↗ Open tool</a>
+                <a class="nd-viz-btn" href="{CLIMA_DOCS_URL}" target="_blank">📖 Documentation</a>
             </div>
         </div>
     </div>
@@ -544,9 +404,7 @@ with centre:
             University of Rostock (UROS) · WP2 Task 2.3 · Deliverable D2.3
         </div>
         <div class="nd-footer-right">
-            Funded by the European Union.<br>
-            Views are those of the authors only<br>
-            and do not reflect those of the EU or CINEA.
+            Funded by the European Union.<br>© 2026 NATURE-DEMO Consortium
         </div>
     </div>
     """, unsafe_allow_html=True)
