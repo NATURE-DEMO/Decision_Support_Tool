@@ -280,36 +280,19 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     color: rgba(180,230,160,0.55) !important;
     margin: 0.9rem 0 0.35rem !important;
 }
-.sb-note {
-    font-size: 0.74rem !important;
-    font-weight: 300 !important;
-    color: rgba(224,240,224,0.7) !important;
-    line-height: 1.65 !important;
-    padding: 0.6rem 0.75rem !important;
-    background: rgba(255,255,255,0.06) !important;
-    border: 1px solid rgba(180,230,160,0.18) !important;
-    border-radius: 7px !important;
-    margin-bottom: 0.4rem !important;
-    margin-top: 0.4rem !important;
-}
-.sb-note strong { color: rgba(224,240,224,0.9) !important; font-weight: 500 !important; }
-.sb-sub-link {
-    display: flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.3rem 0.1rem 0.3rem 0.5rem;
+.sb-doc-link {
+    display: block;
+    text-align: center;
     text-decoration: none !important;
-    color: rgba(200,230,200,0.75) !important;
-    font-size: 0.74rem;
-    font-weight: 300;
-    border-left: 2px solid rgba(180,230,160,0.2);
-    margin-left: 0.3rem;
-    margin-top: 0.3rem;
-    transition: color 0.15s, border-color 0.15s;
+    color: rgba(210,240,210,0.85) !important;
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 0.45rem 0 0.6rem;
+    transition: color 0.15s;
+    letter-spacing: 0.01em;
 }
-.sb-sub-link:hover {
+.sb-doc-link:hover {
     color: #e8f6e8 !important;
-    border-color: rgba(180,230,160,0.6);
     text-decoration: none !important;
 }
 .sb-link {
@@ -337,22 +320,18 @@ with st.sidebar:
     st.markdown('<hr class="sb-rule">', unsafe_allow_html=True)
     st.markdown('<p class="sb-section">Tools</p>', unsafe_allow_html=True)
 
-    # General DST — no login, main tool
-    st.link_button("🌿  General DST", "/General_DST", use_container_width=True)
-
-    st.markdown('<hr class="sb-rule">', unsafe_allow_html=True)
-    st.markdown('<p class="sb-section">Extended Access</p>', unsafe_allow_html=True)
-
-    # Integrated DST — login required, with warning
-    st.markdown("""
-    <div class="sb-note">
-        <strong>⚠️ Sign-up required</strong><br>
-        The Integrated DST requires an account.
-    </div>
-    """, unsafe_allow_html=True)
-    st.link_button("🔐  Integrated DST", "/integrated_dst", use_container_width=True)
+    # Main DST button — Integrated DST (has documentation)
+    st.link_button("🌿  NATURE-DEMO's DST", "/integrated_dst", use_container_width=True)
     st.markdown(f"""
-    <a class="sb-sub-link" href="{DOCS_URL}" target="_blank">
+    <a class="sb-doc-link" href="{DOCS_URL}" target="_blank">
+        📖&nbsp; Documentation
+    </a>
+    """, unsafe_allow_html=True)
+
+    # Climate Data Visualisation button + docs
+    st.link_button("🌡️  Climate Data Visualisation", "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
+    st.markdown(f"""
+    <a class="sb-doc-link" href="{CLIMA_DOCS_URL}" target="_blank">
         📖&nbsp; Documentation
     </a>
     """, unsafe_allow_html=True)
@@ -362,17 +341,6 @@ with st.sidebar:
 
     st.markdown(f"""
     <div style="padding: 0 0.1rem;">
-        <a class="sb-link" href="https://naturedemo-clima-ind.dic-cloudmate.eu" target="_blank">🌡️&nbsp; Climate Data Visualisation</a>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown(f"""
-    <a class="sb-sub-link" href="{CLIMA_DOCS_URL}" target="_blank">
-        📖&nbsp; Documentation
-    </a>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div style="padding: 0.4rem 0.1rem 0;">
         <a class="sb-link" href="https://www.nature-demo.eu" target="_blank">🌐&nbsp; Project Website</a>
         <a class="sb-link" href="https://github.com/NATURE-DEMO/Decision_Support_Tool" target="_blank">⌨️&nbsp; GitHub</a>
         <a class="sb-link" href="https://nature-demo.eu/contact" target="_blank">📧&nbsp; Contact</a>
