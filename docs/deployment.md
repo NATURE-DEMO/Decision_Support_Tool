@@ -9,7 +9,7 @@
 
 ---
 
-## Public access (Streamlit Community Cloud)
+## Public access
 
 The production deployment is publicly accessible at **[nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)**. No local installation is required for end users — open the URL in a browser. The application's landing page exposes two access tiers: the **General DST** (public, no sign-up required) and the **Integrated DST** (sign-up required — see [Authentication](user_guide/authentication.md) — which adds the pre-configured demonstrator-site configurations).
 
