@@ -755,7 +755,7 @@
   <span class="md-ellipsis">
     
   
-    Specific Site DST
+    Demonstrator sites
   
 
     
@@ -1404,8 +1404,8 @@
     end
 
     subgraph dst["Decision Support Tool  (Streamlit)"]
-        DST3["Integrated DST\nSign-up tier\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
-        DST1["General DST\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
+        DST3["High Resolution DST\nSign-up tier\nDemonstrator sites + Custom Site Analysis\nLevel 1 + Level 2 + Level 3 (Demonstrator sites)"]
+        DST1["Decision Support Tool\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
         MOD1["modules/impact_models/\nYAML-driven impact model registry"]
         MOD2["modules/nbs/\nNbS–Hazard matrix (74 NbS × 29 hazards)"]
     end
@@ -1446,9 +1446,9 @@
 <h3 id="decision-support-tool-this-deliverable">Decision Support Tool (this deliverable)<a class="headerlink" href="#decision-support-tool-this-deliverable" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Role</strong>: User-facing risk assessment and NbS decision support platform</li>
-<li><strong>Access tiers</strong> (both reachable from the application landing page):<ul>
-<li><strong>Integrated DST</strong> — sign-up required; full feature set including the pre-configured demonstrator-site configurations and the Custom Site Analysis workflow.</li>
-<li><strong>General DST</strong> — public, no sign-up required; Custom Site Analysis for any European location.</li>
+<li><strong>Access tiers</strong>:<ul>
+<li><strong>Decision Support Tool</strong> — public, no sign-up required; Custom Site Analysis for any European location.</li>
+<li><strong>High Resolution DST</strong> — sign-up required; adds the pre-evaluated demonstrator-site configurations alongside the same Custom Site Analysis.</li>
 </ul>
 </li>
 <li><strong>Inputs</strong>: Climate index values (from clima-ind-viz API), user-provided asset and financial data</li>
@@ -1497,7 +1497,7 @@
 </table>
 <hr />
 <h2 id="session-state-and-data-flow-within-the-dst">Session state and data flow within the DST<a class="headerlink" href="#session-state-and-data-flow-within-the-dst" title="Permanent link">&para;</a></h2>
-<p>The DST uses <strong>Streamlit session state</strong> to thread data across workflow steps within a session. The Integrated DST persists analysis results beyond the session using <strong>Supabase snapshots</strong> (Level 1 and Level 2 states saved and loaded as JSON). Static data from <code>modules/impact_models/</code> and <code>modules/nbs/</code> is read-only and shared across all analysis steps.</p>
+<p>The DST uses <strong>Streamlit session state</strong> to thread data across workflow steps within a session. The High Resolution DST persists analysis results beyond the session using <strong>Supabase snapshots</strong> (Level 1 and Level 2 states saved and loaded as JSON). Static data from <code>modules/impact_models/</code> and <code>modules/nbs/</code> is read-only and shared across all analysis steps.</p>
 <hr />
 <h2 id="security-and-privacy">Security and privacy<a class="headerlink" href="#security-and-privacy" title="Permanent link">&para;</a></h2>
 <ul>

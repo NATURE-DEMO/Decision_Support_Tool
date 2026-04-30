@@ -755,7 +755,7 @@
   <span class="md-ellipsis">
     
   
-    Specific Site DST
+    Demonstrator sites
   
 
     
@@ -1708,7 +1708,7 @@
 <li>Computes a weighted suitability score per option and ranks the list.</li>
 <li>Returns the ranked list for user selection and downstream Residual-PRI (RPRI) calculation.</li>
 </ol>
-<p>A pre-scored MCA database from WP1 is anticipated; until it is integrated, the DST collects MCA inputs interactively from the user (see <code>pages/integrated_dst.py</code>).</p>
+<p>A pre-scored MCA database from WP1 is anticipated; until it is integrated, the DST collects MCA inputs interactively from the user.</p>
 <h3 id="extending-the-matrix">Extending the matrix<a class="headerlink" href="#extending-the-matrix" title="Permanent link">&para;</a></h3>
 <p>The matrix is decoupled from the rest of the codebase: only the four data structures above are exposed, and <code>NbS_list</code> is regenerated at import time from <code>NBS_CODES</code>, <code>HAZARD_CODES</code>, <code>NBS_MATRIX</code>, and <code>NBS_MATRIX_SUPPORTIVE</code>.</p>
 <ul>
@@ -1719,7 +1719,7 @@
 <p>When extending the matrix, also align hazard names with the <code>possible_hazards</code> strings used in the impact-model YAML files so that the PRI → NbS lookup remains consistent.</p>
 <hr />
 <h2 id="koppen-geiger-classification">Köppen-Geiger classification<a class="headerlink" href="#koppen-geiger-classification" title="Permanent link">&para;</a></h2>
-<p>The Köppen-Geiger classification rasters are stored in <code>Koppen/</code> as GeoTIFFs at 0.1° spatial resolution, derived from the Beck et al. (2023) 1 km Köppen-Geiger dataset. The repository bundles a 1991–2020 historical baseline plus mid- and end-of-century projection layers to support climate-zone framing across the time horizons used elsewhere in the DST. Both Specific Site and Custom Site analyses sample the raster at the asset location to inform hazard likelihood and NbS suitability; the layer is contextual and is not consumed as input to the PRI calculation.</p>
+<p>The Köppen-Geiger classification rasters are stored in <code>Koppen/</code> as GeoTIFFs at 0.1° spatial resolution, derived from the Beck et al. (2023) 1 km Köppen-Geiger dataset. The repository bundles a 1991–2020 historical baseline plus mid- and end-of-century projection layers to support climate-zone framing across the time horizons used elsewhere in the DST. Both demonstrator-site and Custom Site analyses sample the raster at the asset location to inform hazard likelihood and NbS suitability; the layer is contextual and is not consumed as input to the PRI calculation.</p>
 <hr />
 <h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
 <ul>
