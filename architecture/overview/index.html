@@ -1404,9 +1404,8 @@
     end
 
     subgraph dst["Decision Support Tool  (Streamlit)"]
-        DST3["integrated_dst.py  ← primary deliverable\nAuth-gated unified app\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
-        DST1["1_General_DST.py  (legacy)\nStandalone — Level 1 + Level 2"]
-        DST2["2_Specific_Site_DST_v2.py  (legacy)\nStandalone Specific Site viewer"]
+        DST3["Integrated DST\nSign-up tier\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
+        DST1["General DST\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
         MOD1["modules/impact_models/\nYAML-driven impact model registry"]
         MOD2["modules/nbs/\nNbS–Hazard matrix (74 NbS × 29 hazards)"]
     end
@@ -1447,8 +1446,11 @@
 <h3 id="decision-support-tool-this-deliverable">Decision Support Tool (this deliverable)<a class="headerlink" href="#decision-support-tool-this-deliverable" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Role</strong>: User-facing risk assessment and NbS decision support platform</li>
-<li><strong>Primary application</strong>: <code>pages/integrated_dst.py</code> — authentication-gated, Specific Site + Custom Site modes</li>
-<li><strong>Legacy applications</strong>: <code>pages/1_General_DST.py</code> and <code>pages/2_Specific_Site_DST_v2.py</code> — standalone modes without authentication</li>
+<li><strong>Access tiers</strong> (both reachable from the application landing page):<ul>
+<li><strong>Integrated DST</strong> — sign-up required; full feature set including the pre-configured demonstrator-site configurations and the Custom Site Analysis workflow.</li>
+<li><strong>General DST</strong> — public, no sign-up required; Custom Site Analysis for any European location.</li>
+</ul>
+</li>
 <li><strong>Inputs</strong>: Climate index values (from clima-ind-viz API), user-provided asset and financial data</li>
 <li><strong>Outputs</strong>: PRI heat maps, MCA-ranked NbS, RPRI comparison, AI-generated context reports</li>
 <li><strong>Technology</strong>: Streamlit 1.50+, Leafmap, Plotly, Google Gemini, Supabase</li>
