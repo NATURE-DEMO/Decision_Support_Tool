@@ -51,17 +51,18 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
 
 /* ── ABOUT BLURB ── */
 .nd-hero-about {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 300;
-    color: #4a6a4a;
-    line-height: 1.75;
-    max-width: 680px;
-    margin: 0 auto 1.75rem;
+    color: #3a5a3a;
+    line-height: 1.85;
+    max-width: 100%;
+    margin: 1.75rem 0 1.75rem;
     text-align: left;
-    background: #f3f8f3;
-    border: 1px solid #cfdecf;
-    border-radius: 10px;
-    padding: 1rem 1.4rem;
+    background: transparent;
+    border: none;
+    border-top: 1px solid #cfdecf;
+    border-radius: 0;
+    padding: 1.5rem 0 0;
 }
 .nd-hero-about strong {
     font-weight: 600;
@@ -69,12 +70,13 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
 }
 .nd-hero-about-title {
     font-family: 'Source Serif 4', serif;
-    font-size: 0.78rem;
+    font-size: 1.05rem;
     font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #587058;
-    margin-bottom: 0.5rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #1a3a1a;
+    margin-bottom: 0.75rem;
+    display: block;
 }
 
 /* ── PRIMARY BUTTON ── */
