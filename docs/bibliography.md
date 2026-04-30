@@ -1,46 +1,46 @@
 # Bibliography
 
-This page lists key references underpinning the NATURE-DEMO Decision Support Tool and the D2.1 risk assessment methodology.
+This page indexes the key references underpinning the NATURE-DEMO Decision Support Tool and the D2.1 risk assessment methodology, grouped by theme. The single source of truth for citation metadata is the BibTeX file [`references.bib`](references.bib); inline citations across the documentation use the keys defined there.
 
 ---
 
 ## Project deliverables
 
-- **D2.1** — *Risk Assessment Framework for Nature-Based Solutions-enhanced Critical Infrastructure*, NATURE-DEMO Consortium, 2024.
-- **D2.1b** — *Risk Assessment Framework — Worked Examples*, NATURE-DEMO Consortium, 2024.
-- **D1.1** — *NbS Catalogue for Critical Infrastructure*, NATURE-DEMO Consortium, 2024.
+- [@D2_1] — risk assessment framework, the methodological backbone of the DST.
+- [@D2_1b] — worked examples accompanying D2.1; used for validation.
+- [@D1_1] — NbS catalogue and hazard–NbS relationships.
 
 ---
 
 ## Methodology
 
 - IHCantabria / FIHAC semi-quantitative risk pre-screening methodology, adapted for EURO-CORDEX (see D2.1 §5.3).
-- Nirandjan, S. et al. (2024) — Damage functions for European critical infrastructure assets.
-- IPCC AR6 Working Group II — Vulnerability and exposure assessment for European regions.
+- [@Nirandjan2024] — physical vulnerability database for European critical infrastructure assets.
+- [@IPCC2022_WGII] — IPCC AR6 WGII contribution; reference framework for vulnerability and exposure assessment, including the European regional chapter.
 
 ---
 
 ## Climate data
 
-- Kotlarski, S. et al. (2014). Regional climate modelling on European scales: a joint standard evaluation of the EURO-CORDEX RCM ensemble. *Geoscientific Model Development*, 7(4), 1297–1333.
-- Beck, H.E. et al. (2018). Present and future Köppen-Geiger climate classification maps at 1-km resolution. *Scientific Data*, 5, 180214. [https://doi.org/10.1038/sdata.2018.214](https://doi.org/10.1038/sdata.2018.214)
+- [@Kotlarski2014] — joint standard evaluation of the EURO-CORDEX RCM ensemble.
+- [@Beck2023] — source dataset for the Köppen-Geiger rasters under `Koppen/`.
 
 ---
 
 ## NbS effectiveness
 
-- Kuschel, E. et al. (2025). NbS effectiveness matrix for European critical infrastructure hazards. NATURE-DEMO internal report (`modules/nbs/nbs_hazard_matrix.py`).
+- [@Kuschel2025] — source NbS–Hazard matrix reproduced (with documented corrections) in `modules/nbs/nbs_hazard_matrix.py`.
 
 ---
 
 ## Software
 
-- Harris, C.R. et al. (2020). Array programming with NumPy. *Nature*, 585, 357–362.
-- Hoyer, S. & Hamman, J. (2017). xarray: N-D labelled arrays and datasets in Python. *Journal of Open Research Software*, 5(1), 10.
-- Logan, T. et al. (2024). xclim: Climate indices computation library. *Journal of Open Source Software*.
+- [@Harris2020] — NumPy: array programming foundation.
+- [@Hoyer2017] — xarray: N-D labelled arrays and datasets used throughout the climate-data layer.
+- [@Bourgault2023_xclim] — xclim: climate-indices computation library.
 
 ---
 
 ## Full bibliography
 
-The full bibliography in BibTeX format is available at [`docs/references.bib`](references.bib).
+The full bibliography in BibTeX format is available at [`references.bib`](references.bib).
