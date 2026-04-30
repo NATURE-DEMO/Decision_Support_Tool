@@ -24,8 +24,8 @@ flowchart TD
     end
 
     subgraph dst["Decision Support Tool  (Streamlit)"]
-        DST3["Integrated DST\nSign-up tier\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
-        DST1["General DST\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
+        DST3["High Resolution DST\nSign-up tier\nDemonstrator sites + Custom Site Analysis\nLevel 1 + Level 2 + Level 3 (Demonstrator sites)"]
+        DST1["Decision Support Tool\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
         MOD1["modules/impact_models/\nYAML-driven impact model registry"]
         MOD2["modules/nbs/\nNbS–Hazard matrix (74 NbS × 29 hazards)"]
     end
@@ -70,9 +70,9 @@ flowchart TD
 ### Decision Support Tool (this deliverable)
 
 - **Role**: User-facing risk assessment and NbS decision support platform
-- **Access tiers** (both reachable from the application landing page):
-    - **Integrated DST** — sign-up required; full feature set including the pre-configured demonstrator-site configurations and the Custom Site Analysis workflow.
-    - **General DST** — public, no sign-up required; Custom Site Analysis for any European location.
+- **Access tiers**:
+    - **Decision Support Tool** — public, no sign-up required; Custom Site Analysis for any European location.
+    - **High Resolution DST** — sign-up required; adds the pre-evaluated demonstrator-site configurations alongside the same Custom Site Analysis.
 - **Inputs**: Climate index values (from clima-ind-viz API), user-provided asset and financial data
 - **Outputs**: PRI heat maps, MCA-ranked NbS, RPRI comparison, AI-generated context reports
 - **Technology**: Streamlit 1.50+, Leafmap, Plotly, Google Gemini, Supabase
@@ -95,7 +95,7 @@ flowchart TD
 
 ## Session state and data flow within the DST
 
-The DST uses **Streamlit session state** to thread data across workflow steps within a session. The Integrated DST persists analysis results beyond the session using **Supabase snapshots** (Level 1 and Level 2 states saved and loaded as JSON). Static data from `modules/impact_models/` and `modules/nbs/` is read-only and shared across all analysis steps.
+The DST uses **Streamlit session state** to thread data across workflow steps within a session. The High Resolution DST persists analysis results beyond the session using **Supabase snapshots** (Level 1 and Level 2 states saved and loaded as JSON). Static data from `modules/impact_models/` and `modules/nbs/` is read-only and shared across all analysis steps.
 
 ---
 

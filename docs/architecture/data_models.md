@@ -161,7 +161,7 @@ When the Potential Risk Index (PRI) calculation identifies active hazards for an
 3. Computes a weighted suitability score per option and ranks the list.
 4. Returns the ranked list for user selection and downstream Residual-PRI (RPRI) calculation.
 
-A pre-scored MCA database from WP1 is anticipated; until it is integrated, the DST collects MCA inputs interactively from the user (see `pages/integrated_dst.py`).
+A pre-scored MCA database from WP1 is anticipated; until it is integrated, the DST collects MCA inputs interactively from the user.
 
 ### Extending the matrix
 
@@ -177,7 +177,7 @@ When extending the matrix, also align hazard names with the `possible_hazards` s
 
 ## Köppen-Geiger classification
 
-The Köppen-Geiger classification rasters are stored in `Koppen/` as GeoTIFFs at 0.1° spatial resolution, derived from the Beck et al. (2023) 1 km Köppen-Geiger dataset. The repository bundles a 1991–2020 historical baseline plus mid- and end-of-century projection layers to support climate-zone framing across the time horizons used elsewhere in the DST. Both Specific Site and Custom Site analyses sample the raster at the asset location to inform hazard likelihood and NbS suitability; the layer is contextual and is not consumed as input to the PRI calculation.
+The Köppen-Geiger classification rasters are stored in `Koppen/` as GeoTIFFs at 0.1° spatial resolution, derived from the Beck et al. (2023) 1 km Köppen-Geiger dataset. The repository bundles a 1991–2020 historical baseline plus mid- and end-of-century projection layers to support climate-zone framing across the time horizons used elsewhere in the DST. Both demonstrator-site and Custom Site analyses sample the raster at the asset location to inform hazard likelihood and NbS suitability; the layer is contextual and is not consumed as input to the PRI calculation.
 
 ---
 

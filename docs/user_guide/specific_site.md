@@ -1,16 +1,16 @@
-# Specific Site DST
+# Demonstrator sites
 
-!!! note "Integrated DST only"
-    The Specific Site mode is part of the Integrated DST tier (sign-up required). The General DST tier exposes only the Custom Site Analysis workflow.
+!!! note "Sign-up required"
+    The demonstrator sites are part of the High Resolution DST and require a user account — see [Authentication](authentication.md). The public Decision Support Tool exposes only the Custom Site Analysis workflow.
 
-The **Specific Site DST** is a pre-configured assessment environment for the six NATURE-DEMO demonstration site configurations, covering all three levels of risk assessment (Level 1: Perceived Risk, Level 2: Screening Tool, Level 3: High-Resolution Assessment). All site data is loaded automatically from the project GitHub repository at runtime — no static content is bundled in the deployed application.
+The **demonstrator-site browser** is a pre-configured assessment environment for the six NATURE-DEMO demonstration site configurations, covering all three levels of risk assessment (Level 1: Perceived Risk, Level 2: Screening Tool, Level 3: High-Resolution Assessment). All site data is loaded automatically from the project GitHub repository at runtime — no static content is bundled in the deployed application.
 
-Clicking a site card in the sidebar loads the Specific Site view and opens a four-tab interface.
+Clicking a site card in the sidebar loads the demonstrator-site view and opens a four-tab interface.
 
-![Specific Site DST tab flow. The four tabs (Site Info & Maps, Level 1, Level 2, Level 3) and their data connections from GitHub, Supabase DB, and the Köppen-Geiger TIFF raster.](../assets/manual_figures/flow_specific_site.png)
+![Demonstrator-site tab flow. The four tabs (Site Info & Maps, Level 1, Level 2, Level 3) and their data connections from GitHub, Supabase DB, and the Köppen-Geiger TIFF raster.](../assets/manual_figures/flow_specific_site.png)
 
 !!! note "AI-generated content on this page"
-    Several Specific Site features call Google Gemini for narrative interpretation. See [AI-generated content & responsible use](../acknowledgments.md#ai-generated-content-and-responsible-use) for the project's AI-ethics policy.
+    Several demonstrator-site features call Google Gemini for narrative interpretation. See [AI-generated content & responsible use](../acknowledgments.md#ai-generated-content-and-responsible-use) for the project's AI-ethics policy.
 
 ---
 

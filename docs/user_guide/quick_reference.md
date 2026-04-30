@@ -1,11 +1,11 @@
 # Quick Reference
 
-!!! note "Tier scope"
-    This reference primarily covers features of the Integrated DST. The General DST exposes only the *Custom Site Analysis* column below; the snapshot saving and role-gated controls noted there require the Integrated tier.
+!!! note "Scope"
+    This reference primarily covers features of the High Resolution DST. The public Decision Support Tool exposes only the *Custom Site Analysis* column below; the snapshot saving and role-gated controls noted there require sign-up.
 
 ## Analysis mode comparison
 
-| | Specific Site DST | Custom Site Analysis |
+| | Demonstrator sites | Custom Site Analysis |
 |--|------------------|---------------------|
 | **Entry point** | Click a demo site card in the sidebar | Click 🔬 in the sidebar |
 | **Location** | Pre-configured (6 demo site configurations) | User-drawn polygon, any location in Europe |
@@ -58,7 +58,7 @@ If economic data are not available, a default EI = 3 (neutral conservative basel
 
 ---
 
-## GitHub content update reference (Specific Site DST)
+## GitHub content update reference (Demonstrator sites)
 
 | Tab | GitHub path | File naming convention | Rendered as |
 |-----|-------------|------------------------|-------------|

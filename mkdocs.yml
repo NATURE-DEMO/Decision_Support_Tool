@@ -19,7 +19,7 @@ nav:
       - Application overview: user_guide/integrated_dst.md
       - Authentication: user_guide/authentication.md
       - Layout: user_guide/layout.md
-      - Specific Site DST: user_guide/specific_site.md
+      - Demonstrator sites: user_guide/specific_site.md
       - Custom site — Extraction: user_guide/custom_extraction.md
       - Custom site — Level 1 (Perceived Risk): user_guide/custom_level1.md
       - Custom site — Level 2 (Technical Analysis): user_guide/custom_level2.md

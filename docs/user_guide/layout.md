@@ -1,6 +1,6 @@
 # Application layout
 
-This page describes the layout of the **Integrated DST**. The General DST presents a similar sidebar + main-content layout but without the authentication, user-account, or admin-panel elements.
+This page describes the layout of the **High Resolution DST**. The public Decision Support Tool has its own sidebar with cross-links to the High Resolution DST and to the Climate Data Visualisation companion tool, and no authentication or admin-panel elements.
 
 After successful authentication the application presents a persistent sidebar on the left and a dynamic main content area on the right. The sidebar is visible on every page and contains all navigation controls.
 
@@ -12,7 +12,7 @@ After successful authentication the application presents a persistent sidebar on
 
 The sidebar uses a dark-green nature-themed background and is structured top to bottom:
 
-- NATURE-DEMO project logo (links to the project website)
+- NATURE-DEMO project logo
 - Logged-in user's display name and role (e.g., *"Jane Smith — Role: expert"*)
 - 🔐 **Change Password** expander
 - **Logout** button
@@ -26,7 +26,7 @@ The sidebar uses a dark-green nature-themed background and is structured top to 
 
 The main area renders one of two view types based on the sidebar selection:
 
-- **[Specific Site view](specific_site.md)** — activated when a demo site card is clicked. A page title (e.g., *"Risk assessment for Demo site 1-A: Lattenbach Valley, Austria"*) is followed by a four-tab interface: Site Info & Maps, Level 1, Level 2, Level 3.
+- **[Demonstrator-site view](specific_site.md)** — activated when a demo site card is clicked. A page title (e.g., *"Risk assessment for Demo site 1-A: Lattenbach Valley, Austria"*) is followed by a four-tab interface: Site Info & Maps, Level 1, Level 2, Level 3.
 - **Custom Site Analysis view** — activated by the 🔬 button. The page title *"Custom Site Analysis & NbS Recommendation"* is followed by a three-tab interface: [Extraction · Mapping & Data](custom_extraction.md), [Level 1 · Perceived Risks](custom_level1.md), and [Level 2 · Technical Analysis](custom_level2.md).
 
 ---

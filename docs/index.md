@@ -24,11 +24,8 @@ The tool implements the three-level risk assessment methodology defined in **Del
 
 ---
 
-!!! tip "Live deployment — two access tiers"
-    The DST is hosted at **[nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)**, where the landing page exposes two access tiers:
-
-    - **General DST** — public, no sign-up required.
-    - **Integrated DST** — sign-up required; adds the pre-configured demonstrator-site configurations. Contact the NATURE-DEMO consortium or create an account via the sign-up form on the application.
+!!! tip "Live deployment"
+    The DST is hosted at **[nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)** and runs in any browser without installation. The application provides a public **Decision Support Tool** (no sign-up required) and a **High Resolution DST** upgrade that adds the pre-evaluated demonstrator-site configurations. Contact the NATURE-DEMO consortium or create an account via the sign-up form on the application.
 
 !!! info "📄 Full deliverable manual"
     The D2.3 manual is also available as a single downloadable PDF: **[Download D2.3 — Decision Support Tool (PDF)](assets/D2.3_DST.pdf)** (≈ 16 MB, 63 pages). This is the canonical archived form of the deliverable, on which the content of this website is based.
@@ -111,8 +108,8 @@ For a detailed description of each component and their integration see the [Arch
 | Feature | Notes |
 |---------|-------|
 | **clima-data pipeline** | 23 climate indices from EURO-CORDEX ensembles; RCP4.5/8.5; 1951–2100; deployed at `naturedemo-clima-ind.dic-cloudmate.eu` |
-| **Decision Support Tool** | Two access tiers (General DST — public; Integrated DST — sign-up); six demo site configurations; Custom Site Analysis for any European location |
-| **Level 1 — Qualitative risk perception** | Stakeholder KPI scoring (RAMS SHEEP); multi-expert live consensus (Integrated tier); SSF/SEI NbS filtration and feasibility ranking |
+| **Decision Support Tool** | Public Custom Site Analysis for any European location; sign-up unlocks the High Resolution DST with six demonstrator-site configurations |
+| **Level 1 — Qualitative risk perception** | Stakeholder KPI scoring (RAMS SHEEP); multi-expert live consensus (High Resolution DST); SSF/SEI NbS filtration and feasibility ranking |
 | **Level 2 — Semi-quantitative screening** | 7-step PRI = HI × EI × VI workflow; NbS MCA ranking; RPRI residual risk comparison |
 | **Level 3 — High-resolution assessment** | Viewer integrated for all six site configurations; renders partner-supplied site-specific assessments, data tables, and reports from the GitHub content system. Depth of available material varies by demonstrator. |
 | **NbS–Hazard matrix** | 74 NbS types × 29 hazards from the D1.1 catalogue; primary and supportive solution matching |

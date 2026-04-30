@@ -1,6 +1,6 @@
 # Authentication and User Management
 
-The Integrated DST is access-controlled. A full-screen login wall is presented before any application content is rendered. Access is managed via a **Supabase PostgreSQL** database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.
+The High Resolution DST is access-controlled. A full-screen login wall is presented before any application content is rendered. Access is managed via a **Supabase PostgreSQL** database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.
 
 ---
 

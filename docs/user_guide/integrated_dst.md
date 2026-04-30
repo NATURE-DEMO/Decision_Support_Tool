@@ -1,10 +1,10 @@
 # Application overview
 
-The **Integrated DST** is the sign-up tier of the Deliverable D2.3 application; it provides the full feature set, including the pre-configured demonstrator-site configurations (Specific Site mode) and the Custom Site Analysis workflow within a single Streamlit application. The companion **General DST** offers the Custom Site Analysis workflow without sign-up; both tiers are reachable from the application landing page.
+The application provides a public **Decision Support Tool** with the Custom Site Analysis workflow, and a sign-up **High Resolution DST** that adds the pre-evaluated demonstrator-site configurations alongside the same Custom Site Analysis.
 
 **Production URL**: [https://nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)
 
-Access to the Integrated tier requires a user account — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
+Access to the High Resolution DST requires a user account — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
 
 ---
 
@@ -14,10 +14,10 @@ The application provides two distinct analysis modes from a single unified inter
 
 | Mode | Scope | Levels covered | Where to start |
 |------|-------|----------------|----------------|
-| **[Specific Site DST](specific_site.md)** | Six pre-configured site configurations covering the five NATURE-DEMO demonstration sites | Level 1 · Level 2 · Level 3 | Click any demo site card in the sidebar |
+| **[Demonstrator sites](specific_site.md)** | Six pre-configured site configurations covering the five NATURE-DEMO demonstration sites | Level 1 · Level 2 · Level 3 | Click any demo site card in the sidebar |
 | **Custom Site Analysis** | Any user-defined location in Europe via polygon drawing | Level 1 · Level 2 (with NbS scoring and ranking) | Click the 🔬 button in the sidebar, then complete the [Extraction tab](custom_extraction.md) |
 
-Specific Site content is loaded from the project GitHub repository at runtime — no static data is bundled in the deployed app. Custom Site analyses extract OpenStreetMap data via the Overpass API and call the IBM clima-ind-viz API for climate indicator values.
+Demonstrator-site content is loaded from the project GitHub repository at runtime — no static data is bundled in the deployed app. Custom Site analyses extract OpenStreetMap data via the Overpass API and call the IBM clima-ind-viz API for climate indicator values.
 
 ---
 
@@ -27,7 +27,7 @@ Specific Site content is loaded from the project GitHub repository at runtime �
 |------|----------------|
 | [Authentication](authentication.md) | Login, sign-up, user roles, password management, admin panel |
 | [Layout](layout.md) | Sidebar contents, main content area, application startup flow |
-| [Specific Site DST](specific_site.md) | Demo sites, Site Info tab, Level 1, Level 2, Level 3 |
+| [Demonstrator sites](specific_site.md) | Demo sites, Site Info tab, Level 1, Level 2, Level 3 |
 | [Custom site — Extraction](custom_extraction.md) | Infrastructure selection, polygon drawing, OSM extraction, AI context report |
 | [Custom site — Level 1](custom_level1.md) | Scope table, perceived risk rating, NbS solution scoring with SSF/SEI |
 | [Custom site — Level 2](custom_level2.md) | 7-step PRI = HI × EI × VI workflow, NbS ranking, RPRI residual risk |

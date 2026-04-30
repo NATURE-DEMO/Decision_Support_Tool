@@ -52,7 +52,7 @@ $$
 
 ## Implementation in D2.3
 
-The Specific Site DST exposes a Level 3 tab that renders partner-supplied site-specific assessments, data tables, and interpretation reports from the GitHub content system. Where Level 3 material is not yet available for a site, the application displays a *"No Level 3 data found."* message. The depth of supplied content varies by demonstrator.
+The High Resolution DST exposes a Level 3 tab on each demonstrator-site view that renders partner-supplied site-specific assessments, data tables, and interpretation reports from the GitHub content system. Where Level 3 material is not yet available for a site, the application displays a *"No Level 3 data found."* message. The depth of supplied content varies by demonstrator.
 
 An automated quantitative engine (EAD integration, NPV/BCR module, Monte Carlo uncertainty propagation) requires site-specific damage/vulnerability curves compiled from literature and is not part of D2.3.
 

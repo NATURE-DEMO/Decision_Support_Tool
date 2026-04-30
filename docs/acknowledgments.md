@@ -77,7 +77,7 @@ A collapsible ⚠️ **AI Limitations & Responsible Use** expander is appended t
 | Custom Site — [Extraction tab](user_guide/custom_extraction.md) (C2) | Köppen-Geiger climate classification interpretation |
 | Custom Site — [Level 1](user_guide/custom_level1.md), Section 2 | Risk and loss matrix interpretation narrative |
 | Custom Site — [Level 2](user_guide/custom_level2.md), Step 6 | PRI assessment report |
-| Specific Site DST — [Site Info / Level 1](user_guide/specific_site.md) | Site description and KPI interpretation narratives |
+| Demonstrator sites — [Site Info / Level 1](user_guide/specific_site.md) | Site description and KPI interpretation narratives |
 
 If the Gemini API key is not configured, all AI buttons are disabled and a warning banner is displayed; the rest of the application functions normally.
 

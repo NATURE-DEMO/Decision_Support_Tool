@@ -1,14 +1,14 @@
 # Custom Site Analysis — Extraction
 
-!!! note "Available in both tiers"
-    The Custom Site Analysis workflow is exposed by both the General DST (public) and the Integrated DST (sign-up). Snapshot persistence to Supabase requires the Integrated tier.
+!!! note "Available in both"
+    The Custom Site Analysis workflow is exposed by both the public Decision Support Tool and the sign-up High Resolution DST. Snapshot persistence to Supabase requires sign-up.
 
 The Custom Site Analysis is a free-form analysis tool applicable to any location across Europe, covering Levels 1 and 2 and including NbS scoring and ranking. The user defines the site by drawing a polygon on an interactive map.
 
-Activate this mode by clicking the 🔬 **Custom Site Analysis & NbS Recommendation** button in the sidebar. The main content area shows three tabs.
+The Custom Site Analysis presents three tabs.
 
 !!! warning "Tab order matters"
-    The Extraction tab must be completed first — it defines the polygon geometry and coordinates referenced by both the [Level 1](custom_level1.md) and [Level 2](custom_level2.md) save functions. The Custom Site Analysis was developed to facilitate exploratory data access using OpenStreetMap public data, complementing rather than replacing the structured T2.1 methodology applied in the [Specific Site DST](specific_site.md).
+    The Extraction tab must be completed first — it defines the polygon geometry and coordinates referenced by both the [Level 1](custom_level1.md) and [Level 2](custom_level2.md) save functions. The Custom Site Analysis was developed to facilitate exploratory data access using OpenStreetMap public data, complementing rather than replacing the structured T2.1 methodology applied to the [demonstrator sites](specific_site.md).
 
 !!! note "AI-generated content on this page"
     The Extraction tab uses Google Gemini for the Geographical & Infrastructure Context Report and the Köppen-Geiger interpretation. See [AI-generated content & responsible use](../acknowledgments.md#ai-generated-content-and-responsible-use) for the project's AI-ethics policy.
