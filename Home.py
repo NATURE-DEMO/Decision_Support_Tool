@@ -49,6 +49,34 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
     line-height: 1.65;
 }
 
+/* ── ABOUT BLURB ── */
+.nd-hero-about {
+    font-size: 0.85rem;
+    font-weight: 300;
+    color: #4a6a4a;
+    line-height: 1.75;
+    max-width: 680px;
+    margin: 0 auto 1.75rem;
+    text-align: left;
+    background: #f3f8f3;
+    border: 1px solid #cfdecf;
+    border-radius: 10px;
+    padding: 1rem 1.4rem;
+}
+.nd-hero-about strong {
+    font-weight: 600;
+    color: #2e6b2e;
+}
+.nd-hero-about-title {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #587058;
+    margin-bottom: 0.5rem;
+}
+
 /* ── PRIMARY BUTTON ── */
 .nd-launch-btn {
     display: inline-block;
@@ -441,6 +469,18 @@ with centre:
             A Horizon Europe decision support platform for climate risk assessment
             and Nature-Based Solution recommendation across European infrastructure.
         </p>
+        <div class="nd-hero-about">
+            <div class="nd-hero-about-title">About the Decision Support Tool</div>
+            <strong>NATURE-DEMO</strong> is a Horizon Europe Innovation Action (Grant No. 101157448)
+            that develops and validates Nature-Based Solutions for protecting critical infrastructure
+            against natural hazards and climate change, with a focus on Alpine and peri-Alpine regions.
+            <br><br>
+            The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
+            (University of Rostock) — integrates a multi-level risk assessment framework with
+            EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites or
+            run a custom assessment for any European location, and receive ranked NbS recommendations
+            under present and future climate scenarios.
+        </div>
         <a href="/General_DST" class="nd-launch-btn">
             Open the Decision Support Tool &nbsp;→
         </a>
