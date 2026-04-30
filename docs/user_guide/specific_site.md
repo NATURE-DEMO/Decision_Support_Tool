@@ -1,5 +1,8 @@
 # Specific Site DST
 
+!!! note "Integrated DST only"
+    The Specific Site mode is part of the Integrated DST tier (sign-up required). The General DST tier exposes only the Custom Site Analysis workflow.
+
 The **Specific Site DST** is a pre-configured assessment environment for the six NATURE-DEMO demonstration site configurations, covering all three levels of risk assessment (Level 1: Perceived Risk, Level 2: Screening Tool, Level 3: High-Resolution Assessment). All site data is loaded automatically from the project GitHub repository at runtime — no static content is bundled in the deployed application.
 
 Clicking a site card in the sidebar loads the Specific Site view and opens a four-tab interface.

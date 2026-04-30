@@ -1,5 +1,8 @@
 # Quick Reference
 
+!!! note "Tier scope"
+    This reference primarily covers features of the Integrated DST. The General DST exposes only the *Custom Site Analysis* column below; the snapshot saving and role-gated controls noted there require the Integrated tier.
+
 ## Analysis mode comparison
 
 | | Specific Site DST | Custom Site Analysis |

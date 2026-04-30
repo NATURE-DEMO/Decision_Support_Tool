@@ -2,13 +2,13 @@
 
 ## Application shows a loading spinner for more than 60 seconds
 
-The Streamlit Community Cloud server enters sleep mode after approximately 30 minutes of inactivity. Wait up to 90 seconds for the server to restart — the page will load automatically once it wakes. If it does not load after two minutes, refresh the browser. Persistent failures may also indicate a temporary Supabase outage or a network issue; verify that `https://nature-demo-dst.dic-cloudmate.eu` is reachable.
+The hosting server may enter sleep mode after a period of inactivity. Wait up to 90 seconds for the server to restart — the page will load automatically once it wakes. If it does not load after two minutes, refresh the browser. Persistent failures may also indicate a temporary Supabase outage or a network issue; verify that `https://nature-demo-dst.dic-cloudmate.eu` is reachable.
 
 ---
 
 ## "Database initialisation failed" warning at startup
 
-The application could not connect to Supabase. For locally deployed instances, verify that `SUPABASE_URL` and `SUPABASE_KEY` are correctly set in `.streamlit/secrets.toml`. For Streamlit Community Cloud, check the Secrets settings panel in the Streamlit dashboard. See [Deployment](../deployment.md) for the full secrets configuration.
+The application could not connect to Supabase. For locally deployed instances, verify that `SUPABASE_URL` and `SUPABASE_KEY` are correctly set in `.streamlit/secrets.toml`. For hosted deployments, check the platform's secrets-management configuration. See [Deployment](../deployment.md) for the full secrets configuration.
 
 ---
 

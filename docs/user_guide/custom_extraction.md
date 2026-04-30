@@ -1,5 +1,8 @@
 # Custom Site Analysis — Extraction
 
+!!! note "Available in both tiers"
+    The Custom Site Analysis workflow is exposed by both the General DST (public) and the Integrated DST (sign-up). Snapshot persistence to Supabase requires the Integrated tier.
+
 The Custom Site Analysis is a free-form analysis tool applicable to any location across Europe, covering Levels 1 and 2 and including NbS scoring and ranking. The user defines the site by drawing a polygon on an interactive map.
 
 Activate this mode by clicking the 🔬 **Custom Site Analysis & NbS Recommendation** button in the sidebar. The main content area shows three tabs.

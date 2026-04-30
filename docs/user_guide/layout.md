@@ -1,5 +1,7 @@
 # Application layout
 
+This page describes the layout of the **Integrated DST**. The General DST presents a similar sidebar + main-content layout but without the authentication, user-account, or admin-panel elements.
+
 After successful authentication the application presents a persistent sidebar on the left and a dynamic main content area on the right. The sidebar is visible on every page and contains all navigation controls.
 
 ![Main internal layout of the DST after login. The sidebar (left) contains navigation, user settings, and site selection. The main content area (right) renders the active view with its tab bar.](../assets/manual_figures/layout_main.png)
