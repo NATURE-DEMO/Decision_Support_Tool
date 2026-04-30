@@ -258,8 +258,75 @@ html, body, [class*="css"]         { font-family: 'Inter', sans-serif; }
 }
 
 /* ── SIDEBAR ── */
-[data-testid="stSidebar"] { background: #3a6e3a !important; }
-[data-testid="stSidebar"] * { color: #e0f0e0 !important; }
+/* ── SIDEBAR ── */
+[data-testid="stSidebar"] { 
+    /* Gradient starts at Gray (#707070) and ends at your Green (#3a6e3a) */
+    background: linear-gradient(180deg, #707070 0%, #3a6e3a 100%) !important; 
+    background-attachment: fixed !important;
+}
+
+[data-testid="stSidebar"] * { 
+    /* Brightened text for better contrast against the gray top */
+    color: #fdfdfd !important; 
+}
+
+[data-testid="stSidebar"] .stLinkButton > a {
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 7px !important;
+    color: #ffffff !important;
+    font-size: 0.82rem !important;
+    transition: background 0.18s !important;
+}
+
+[data-testid="stSidebar"] .stLinkButton > a:hover {
+    background: rgba(255,255,255,0.25) !important;
+}
+
+.sb-rule { 
+    border: none; 
+    border-top: 1px solid rgba(255,255,255,0.2); 
+    margin: 0.8rem 0; 
+}
+
+.sb-section {
+    font-size: 0.6rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+    color: rgba(255,255,255,0.6) !important;
+    margin: 0.9rem 0 0.35rem !important;
+}
+
+.sb-doc-link {
+    display: block;
+    text-align: center;
+    text-decoration: none !important;
+    color: rgba(255,255,255,0.85) !important;
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 0.45rem 0 0.6rem;
+    transition: color 0.15s;
+    letter-spacing: 0.01em;
+}
+
+.sb-doc-link:hover {
+    color: #ffffff !important;
+}
+
+.sb-link {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+    text-decoration: none !important;
+    color: #e0eee0 !important;
+    font-size: 0.8rem;
+    transition: color 0.15s;
+}
+.sb-link:last-child { border-bottom: none; }
+.sb-link:hover { color: #ffffff !important; }
 [data-testid="stSidebar"] .stLinkButton > a {
     background: rgba(255,255,255,0.10) !important;
     border: 1px solid rgba(180,230,160,0.3) !important;
