@@ -1,10 +1,10 @@
 # Application overview
 
-The **Integrated DST** (`pages/integrated_dst.py`) is the primary application delivered as Deliverable D2.3. It consolidates the former Specific Site DST (`2_Specific_Site_DST_v2.py`) and General DST (`1_General_DST.py`) into a single authentication-gated Streamlit application.
+The **Integrated DST** is the sign-up tier of the Deliverable D2.3 application; it provides the full feature set, including the pre-configured demonstrator-site configurations (Specific Site mode) and the Custom Site Analysis workflow within a single Streamlit application. The companion **General DST** offers the Custom Site Analysis workflow without sign-up; both tiers are reachable from the application landing page.
 
 **Production URL**: [https://nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)
 
-Access requires a user account — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
+Access to the Integrated tier requires a user account — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
 
 ---
 

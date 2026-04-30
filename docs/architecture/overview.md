@@ -24,9 +24,8 @@ flowchart TD
     end
 
     subgraph dst["Decision Support Tool  (Streamlit)"]
-        DST3["integrated_dst.py  ← primary deliverable\nAuth-gated unified app\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
-        DST1["1_General_DST.py  (legacy)\nStandalone — Level 1 + Level 2"]
-        DST2["2_Specific_Site_DST_v2.py  (legacy)\nStandalone Specific Site viewer"]
+        DST3["Integrated DST\nSign-up tier\nSpecific Site + Custom Site modes\nLevel 1 + Level 2 + Level 3 (Specific Sites)"]
+        DST1["General DST\nPublic tier\nCustom Site Analysis — Level 1 + Level 2"]
         MOD1["modules/impact_models/\nYAML-driven impact model registry"]
         MOD2["modules/nbs/\nNbS–Hazard matrix (74 NbS × 29 hazards)"]
     end
@@ -71,8 +70,9 @@ flowchart TD
 ### Decision Support Tool (this deliverable)
 
 - **Role**: User-facing risk assessment and NbS decision support platform
-- **Primary application**: `pages/integrated_dst.py` — authentication-gated, Specific Site + Custom Site modes
-- **Legacy applications**: `pages/1_General_DST.py` and `pages/2_Specific_Site_DST_v2.py` — standalone modes without authentication
+- **Access tiers** (both reachable from the application landing page):
+    - **Integrated DST** — sign-up required; full feature set including the pre-configured demonstrator-site configurations and the Custom Site Analysis workflow.
+    - **General DST** — public, no sign-up required; Custom Site Analysis for any European location.
 - **Inputs**: Climate index values (from clima-ind-viz API), user-provided asset and financial data
 - **Outputs**: PRI heat maps, MCA-ranked NbS, RPRI comparison, AI-generated context reports
 - **Technology**: Streamlit 1.50+, Leafmap, Plotly, Google Gemini, Supabase
