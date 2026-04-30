@@ -416,7 +416,8 @@ with st.sidebar:
     st.markdown('<p class="sb-section">Tools</p>', unsafe_allow_html=True)
 
     # Main DST button — Integrated DST (has documentation)
-    st.link_button("🌿  NATURE-DEMO's DST", "/integrated_dst", use_container_width=True)
+    st.link_button("🌿  NATURE-DEMO's DST", "/General_DST",
+                   use_container_width=True)
     st.markdown(f"""
     <a class="sb-doc-link" href="{DOCS_URL}" target="_blank">
         📖&nbsp; Documentation
@@ -424,7 +425,8 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
     # Climate Data Visualisation button + docs
-    st.link_button("🌡️  Climate Data Visualisation", "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
+    st.link_button("🌡️  Climate Data Visualisation",
+                   "https://naturedemo-clima-ind.dic-cloudmate.eu", use_container_width=True)
     st.markdown(f"""
     <a class="sb-doc-link" href="{CLIMA_DOCS_URL}" target="_blank">
         📖&nbsp; Documentation
@@ -485,9 +487,11 @@ with centre:
             Open the Decision Support Tool &nbsp;→
         </a>
         <div class="nd-docs-row">
-            <a class="nd-docs-link" href="/integrated_dst">
-                🔐 Integrated DST (sign-up required)
-            </a>
+            <a class="nd-viz-btn"
+                   href="{DOCS_URL}"
+                   target="_blank">
+                    📖 Tool's full documentation
+                </a>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -519,23 +523,23 @@ with centre:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div class="nd-panel" style="margin-bottom:1.25rem;">
-        <h2 class="nd-panel-title">About the Decision Support Tool</h2>
-        <p>
-            NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
-            and validates Nature-Based Solutions for protecting critical infrastructure against natural
-            hazards and climate change, with a focus on Alpine and peri-Alpine regions.
-        </p>
-        <p>
-            The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
-            (University of Rostock) — integrates a multi-level risk assessment framework with
-            EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites
-            or run a custom assessment for any European location, and receive ranked NbS
-            recommendations under present and future climate scenarios.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+    # st.markdown(f"""
+    # <div class="nd-panel" style="margin-bottom:1.25rem;">
+    #     <h2 class="nd-panel-title">About the Decision Support Tool</h2>
+    #     <p>
+    #         NATURE-DEMO is a Horizon Europe Innovation Action (Grant No.&nbsp;101157448) that develops
+    #         and validates Nature-Based Solutions for protecting critical infrastructure against natural
+    #         hazards and climate change, with a focus on Alpine and peri-Alpine regions.
+    #     </p>
+    #     <p>
+    #         The Decision Support Tool — the primary software deliverable of Work Package 2, Task 2.3
+    #         (University of Rostock) — integrates a multi-level risk assessment framework with
+    #         EURO-CORDEX climate projections. Users can explore pre-configured demonstration sites
+    #         or run a custom assessment for any European location, and receive ranked NbS
+    #         recommendations under present and future climate scenarios.
+    #     </p>
+    # </div>
+    # """, unsafe_allow_html=True)
 
     st.markdown(f"""
     <div class="nd-viz-card" style="margin-bottom:1.5rem;">
