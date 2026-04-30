@@ -417,7 +417,7 @@ with centre:
                 An interactive companion tool — developed by IBM Research — for exploring the
                 EURO-CORDEX climate index dataset that underpins the DST's hazard analysis.
                 Search any European city or coordinate and visualise historical trends and
-                scenario projections (RCP4.5 / RCP8.5) for all 20 climate indices to 2100.
+                scenario projections (RCP4.5 / RCP8.5) for all 23 climate indices to 2100.
             </p>
             <div class="nd-viz-links">
                 <a class="nd-viz-btn"
