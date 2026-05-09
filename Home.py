@@ -416,7 +416,7 @@ with st.sidebar:
     st.markdown('<p class="sb-section">Tools</p>', unsafe_allow_html=True)
 
     # Main DST button — Integrated DST (has documentation)
-    st.link_button("🌿  NATURE-DEMO's DST", "/General_DST",
+    st.link_button("🌿  NATURE-DEMO's DST", "/integrated_dst",
                    use_container_width=True)
     st.markdown(f"""
     <a class="sb-doc-link" href="{DOCS_URL}" target="_blank">
@@ -483,7 +483,7 @@ with centre:
             run a custom assessment for any European location, and receive ranked NbS recommendations
             under present and future climate scenarios.
         </div>
-        <a href="/General_DST" class="nd-launch-btn">
+        <a href="/integrated_dst" class="nd-launch-btn">
             Open the Decision Support Tool &nbsp;→
         </a>
         <div class="nd-docs-row">
