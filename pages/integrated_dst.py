@@ -31,6 +31,154 @@ from google.genai.errors import APIError
 from modules.impact_models import get_all_impact_data
 from modules.nbs import NbS_list
 
+NBS_FACTSHEET_URLS = {
+
+    "Agroforestry":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU1_Agroforestry.pdf",
+    "Green corridors & tree rows":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU5_Green-Corridor.pdf",
+    "Biodiverse hedgerows":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU6_Biodiverse-hedgerows.pdf",
+    "Vegetated buffer zones":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU8_Vegetated-buffer-zones.pdf",
+    "Controlled grazing":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU9_Controlled-Grazing.pdf",
+    "Fire-smart agriculture":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU10_Fire-smart-agriculture.pdf",
+    "Conservation tillage":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU12_Conservation-Tillage.pdf",
+    "Mulching":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU13_Soil-Mulching.pdf",
+    "Cover cropping":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU14_Cover-cropping.pdf",
+    "Soil amendments (previosly organic amendments)":
+        "https://nature-demo.eu/wp-content/uploads/2026/03/SLU15_Soil-Amendments.pdf",
+
+    "Shoreline reforestation & living shorelines (mangroves)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM1_Living-shorelines_NEW.pdf",
+    "Dune restoration and coastal vegetation":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM2_Dune-restoration-and-coastal-vegetation_NEW.pdf",
+    "Sand dune stabilization":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM3_Sand-dune-stabilisation_NEW.pdf",
+    "Seagrass bed restoration":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM4_Seagrass-bed-restoration_NEW.pdf",
+    "Coral reef conservation and restoration":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM5_Coral-Reef-Conservation-and-Restoration_NEW.pdf",
+    "Salt marsh restoration":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/CZM6_Salt-Marsh-Restoration_NEW.pdf",
+
+    "Afforestation and reforestation":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW1_Afforestation-Reforestation_NEW.pdf",
+    "Protection forest management":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW2_Protection-forest-management_NEW.pdf",
+    "Retention forest":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW3_Retention-Forest_NEW.pdf",
+    "Buffer vegetation strips and coppice management":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW5_Buffer-vegetation-strips-and-coppice_NEW.pdf",
+    "Firebreaks and firestrips":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW6_Firebreaks-and-Firestrips_NEW.pdf",
+    "Fire-resistant tree species & plants":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/FW7_Fire-resistant-trees-and-plants-_NEW.pdf",
+
+    "Riparian buffer zones":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW1_Riparian-buffer-zones_NEW.pdf",
+    "Floodplain restoration":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW2_Floodplain-restoration_NEW.pdf",
+    "Meandering channel planform":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW3_Meandering-channel-planform_NEW.pdf",
+    "Channel widening":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW4_Channel-Widening_NEW.pdf",
+    "Sills":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW5_Sills_NEW.pdf",
+    "Groynes (vegetated)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW6_Groynes-vegetated_NEW.pdf",
+    "Vegetated flood protection dams, dikes & levees":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW7_Vegetated-levee_NEW.pdf",
+    "Water retention basins and ponds (storage ponds)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW8_Water-retention-basins-and-ponds_NEW.pdf",
+    "Wetland conservation and restoration":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW9_Wetland-conservation-and-restoration_NEW.pdf",
+    "Constructed rural wetlands":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW10_Constructed-wetlands_NEW.pdf",
+    "Constructed urban wetlands":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/RW10_Constructed-wetlands_NEW.pdf",
+
+    "Terracing (slope shaping - reduction of slope inclination)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SE1_Terracing_NEW.pdf",
+    "Earth dams and barriers (vegetated)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SE2_Earth-dams-and-barriers_NEW.pdf",
+
+    "Hydro and mulch seeding":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB1_Hydro-seeding-and-mulch-seeding_wo_NEW_Use-this.pdf",
+    "Vegetated biodegradeable erosion control meshes":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB2_Vegetated-biodegradable-erosion-control-meshes-_NEW.pdf",
+    "Vegetated biodegradeable erosion control mats and blankets (renamed from NTNU)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB3_Vegetated-biodeg-erosion-mats-blankets.pdf",
+    "Live staking":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB5_Live-staking_NEW.pdf",
+    "Live layered techniques":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB8_Live-layered-techniques_NEW.pdf",
+    "Vegetated cribwall (layer-based design)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB9_Vegetated-cribwall-_NEW.pdf",
+    "Vegetated crib wall (fascine-based design)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB9_Vegetated-cribwall-_NEW.pdf",
+    "Wattle fence (for water enginering)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB11_Wattle-fence_NEW.pdf",
+    "Tree revetment (tree spurs)":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB12_Tree-revetment_NEW.pdf",
+    "Vegetated riprap":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB13_Vegetated-riprap-_NEW.pdf",
+    "Root wad":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB14_Root-wad-_NEW.pdf",
+    "Live fascines":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB16_Live-fascines_NEW.pdf",
+    "Brush mattress":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB17_Brush-mattress_NEW.pdf",
+    "Vegetated log/stone barriers and live/rock check dams":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB19_Vegetated-log-stone-barriers_NEW.pdf",
+    "Wooden log fences":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/SWB20_Wooden-log-fences-_NEW.pdf",
+
+    "Open green spaces":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI1_Open-green-spaces_NEW.pdf",
+    "Green pavers":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI2_Green-pavers_NEW.pdf",
+    "Green roofs":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI3_Green-roofs_NEW.pdf",
+    "Vertical greenery":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI4_Vertical-Greenery_NEW.pdf",
+    "Urban forests":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI5_Urban-Forests_NEW.pdf",
+    "Rain gardens":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI6_Rain-Gardens_NEW.pdf",
+    "Bio-retention cells, basins and ponds":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI7_Bioretention-cells_NEW.pdf",
+    "Infiltration trenches":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI8_Infiltration-trenches_NEW.pdf",
+    "Bioswales":
+        "https://nature-demo.eu/wp-content/uploads/2025/06/UGI9_Bioswale_NEW.pdf",
+}
+
+_NBS_FACTSHEET_NORMALISED = {
+    re.sub(r"[^a-z0-9]+", "", k.lower()): v
+    for k, v in NBS_FACTSHEET_URLS.items()
+}
+
+def get_factsheet_url(method_name: str):
+    """Return the public Fact Sheet PDF URL for an NbS method, or None.
+
+    Lookup is case-insensitive and ignores punctuation/whitespace, so small
+    cosmetic differences in the source NbS_list won't break the link.
+    """
+    if not method_name:
+        return None
+    url = NBS_FACTSHEET_URLS.get(method_name)
+    if url:
+        return url
+    key = re.sub(r"[^a-z0-9]+", "", str(method_name).lower())
+    return _NBS_FACTSHEET_NORMALISED.get(key)
+
+
 st.set_page_config(page_title="Decision Support Tool", layout="wide",
                    initial_sidebar_state="expanded")
 st.markdown("""
@@ -318,7 +466,6 @@ def safe_run_query(query_str, params=None):
             return df
     except Exception as e:
         DB_AVAILABLE = False
-        # Optional: log error silently
         return pd.DataFrame()
 def init_db():
     with conn.session as s:
@@ -453,7 +600,7 @@ def verify_login_status_only(username):
 def compute_5km2_bbox(lat, lon):
     """Compute a ~5 km² bounding box around a center lat/lon point."""
     import math
-    half_side_km = (5 ** 0.5) / 2          # ~1.118 km half-side → 2.236 km side → 5 km²
+    half_side_km = (5 ** 0.5) / 2
     delta_lat    = half_side_km / 111.0
     delta_lon    = half_side_km / (111.0 * max(abs(math.cos(math.radians(lat))), 0.001))
     return {
@@ -477,7 +624,7 @@ def _serialize_snapshot(data_dict):
             out[k] = {"__type__": "set", "data": list(v)}
         else:
             try:
-                json.dumps(v, default=str)   # quick serializability test
+                json.dumps(v, default=str)
                 out[k] = v
             except Exception:
                 out[k] = str(v)
@@ -591,17 +738,13 @@ def restore_snapshot_to_session(snap_row):
     clon      = snap_row.get("center_lon")
     bbox_raw  = snap_row.get("bbox_json")
 
-    # Restore map center so the polygon area is re-centred
     if clat is not None and clon is not None:
         st.session_state["map_center"] = [clat, clon]
         st.session_state["map_zoom"]   = 14
-        # Inject into extracted_data so downstream steps find the coordinates
         if "extracted_data" not in st.session_state or st.session_state["extracted_data"] is None:
             st.session_state["extracted_data"] = {}
         st.session_state["extracted_data"]["center_lat"] = clat
         st.session_state["extracted_data"]["center_lon"] = clon
-
-    # Parse bbox and store as lvl1_bbox
     try:
         bbox = json.loads(bbox_raw) if bbox_raw else {}
     except Exception:
@@ -1428,7 +1571,7 @@ if 'user_role'       not in st.session_state: st.session_state['user_role']     
 if 'username'        not in st.session_state: st.session_state['username']         = None
 if 'user_name_full'  not in st.session_state: st.session_state['user_name_full']   = None
 
-if 'current_view'    not in st.session_state: st.session_state['current_view']     = 'specific_site'
+if 'current_view'    not in st.session_state: st.session_state['current_view']     = 'custom_analysis'
 
 query_params = st.query_params
 if "item" in query_params:
@@ -1436,6 +1579,13 @@ if "item" in query_params:
     st.session_state['current_view']      = 'specific_site'
 elif 'selected_site_key' not in st.session_state:
     st.session_state['selected_site_key'] = "demo1a"
+
+if "view" in query_params:
+    _v_param = query_params["view"]
+    if _v_param in ("custom_analysis", "login", "signup", "specific_site"):
+        st.session_state['current_view'] = _v_param
+if st.session_state.get('logged_in') and st.session_state.get('current_view') in ('login', 'signup'):
+    st.session_state['current_view'] = 'custom_analysis'
 
 if "map_center"     not in st.session_state: st.session_state["map_center"]     = [51.1657, 10.4515]
 if "map_zoom"       not in st.session_state: st.session_state["map_zoom"]       = 6
@@ -1532,7 +1682,7 @@ if not st.session_state['logged_in'] and cookie_user:
         st.session_state['user_name_full']   = f"{user_data['name']} {user_data['lastname']}"
         st.rerun()
 
-if not st.session_state['logged_in']:
+if not st.session_state['logged_in'] and st.session_state.get('current_view') in ('login', 'signup'):
     auth_bg_b64 = cached_base64_image(f"{GITHUB_IMAGE_BASE_URL}/background.png")
     if auth_bg_b64:
         st.markdown(f"""
@@ -1573,13 +1723,28 @@ if not st.session_state['logged_in']:
     div[data-testid="stRadio"] label p {
         color: white !important; font-size: 18px; font-weight: bold;
     }
+    .auth-back-link a {
+        color: white !important;
+        font-size: 16px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .auth-back-link a:hover { text-decoration: underline; }
     </style>""", unsafe_allow_html=True)
 
+    st.markdown(
+        '<div class="auth-back-link">'
+        '<a href="?view=custom_analysis" target="_self">← Back to Custom Site Analysis</a>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<h1 style="font-size:4rem;color:white;-webkit-text-fill-color:white;">Decision Support Tool</h1>',
                 unsafe_allow_html=True)
 
+    _auth_default_idx = 1 if st.session_state.get('current_view') == 'signup' else 0
     auth_choice = st.radio("Authentication", ["Login","Sign Up"],
-                           horizontal=True, label_visibility="collapsed")
+                           horizontal=True, label_visibility="collapsed",
+                           index=_auth_default_idx)
 
     if auth_choice == "Login":
         with st.form("login_form"):
@@ -1598,6 +1763,11 @@ if not st.session_state['logged_in']:
                     st.session_state['user_role']       = user_data["role"]
                     st.session_state['username']        = user
                     st.session_state['user_name_full']  = f"{user_data['name']} {user_data['lastname']}"
+                    st.session_state['current_view']    = 'custom_analysis'
+                    try:
+                        st.query_params["view"] = "custom_analysis"
+                    except Exception:
+                        pass
                     time.sleep(0.5)
                     st.rerun()
 
@@ -1635,33 +1805,64 @@ with st.sidebar:
                     f'<img src="data:image/png;base64,{logo_b64}" style="width:100%;"></div>',
                     unsafe_allow_html=True)
 
-    if st.session_state.get('user_name_full'):
-        st.markdown(f"**{st.session_state['user_name_full']}**")
-        st.markdown(f"Role: **{st.session_state.get('user_role','None')}**")
-        with st.expander("🔐 Change Password"):
-            curr_pass = st.text_input("Current Password", type="password", key="cp_curr")
-            new_pass  = st.text_input("New Password",     type="password", key="cp_new")
-            conf_pass = st.text_input("Confirm New Password", type="password", key="cp_conf")
-            if st.button("Update Password"):
-                if new_pass != conf_pass:
-                    st.error("New passwords do not match.")
-                elif check_password_strength(new_pass) == "Weak ⚠️":
-                    st.error("New password is too weak.")
-                else:
-                    success, msg = change_user_password(st.session_state['username'], curr_pass, new_pass)
-                    if success: st.success(msg)
-                    else:       st.error(msg)
-    else:
-        st.markdown(f"User: **{st.session_state.get('username','Unknown')}** "
-                    f"({st.session_state.get('user_role','None')})")
+    if st.session_state.get('logged_in'):
+        if st.session_state.get('user_name_full'):
+            st.markdown(f"**{st.session_state['user_name_full']}**")
+            st.markdown(f"Role: **{st.session_state.get('user_role','None')}**")
+            with st.expander("🔐 Change Password"):
+                curr_pass = st.text_input("Current Password", type="password", key="cp_curr")
+                new_pass  = st.text_input("New Password",     type="password", key="cp_new")
+                conf_pass = st.text_input("Confirm New Password", type="password", key="cp_conf")
+                if st.button("Update Password"):
+                    if new_pass != conf_pass:
+                        st.error("New passwords do not match.")
+                    elif check_password_strength(new_pass) == "Weak ⚠️":
+                        st.error("New password is too weak.")
+                    else:
+                        success, msg = change_user_password(st.session_state['username'], curr_pass, new_pass)
+                        if success: st.success(msg)
+                        else:       st.error(msg)
+        else:
+            st.markdown(f"User: **{st.session_state.get('username','Unknown')}** "
+                        f"({st.session_state.get('user_role','None')})")
 
-    if st.button("Logout"):
-        try: cookie_manager.delete("dst_username")
-        except KeyError: pass
-        st.session_state.clear()
-        st.query_params["logout"] = "true"
-        time.sleep(0.5)
-        st.rerun()
+        if st.button("Logout"):
+            try: cookie_manager.delete("dst_username")
+            except KeyError: pass
+            st.session_state.clear()
+            st.query_params["logout"] = "true"
+            time.sleep(0.5)
+            st.rerun()
+    else:
+        st.markdown(
+            '<div style="background:rgba(27,67,50,0.85);padding:12px;border-radius:8px;'
+            'margin-bottom:10px;color:white;font-size:13px;line-height:1.4;">'
+            '👋 You are browsing as a <b>guest</b>. Log in to save analyses and to '
+            'access demo site data.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<style>'
+            '.guest-auth-btns a {'
+            '  display:block; text-align:center; text-decoration:none;'
+            '  padding:8px 12px; border-radius:6px; margin-bottom:8px;'
+            '  font-weight:bold; color:white !important;'
+            '}'
+            '.guest-auth-btns a.login-btn {'
+            '  background:linear-gradient(135deg,#1b4332,#2d6a4f,#52b788);'
+            '}'
+            '.guest-auth-btns a.signup-btn {'
+            '  background:linear-gradient(135deg,#2c3e50,#3498db);'
+            '}'
+            '.guest-auth-btns a:hover { opacity:0.9; }'
+            '</style>'
+            '<div class="guest-auth-btns">'
+            '<a class="login-btn" href="?view=login" target="_self">🔑 Login</a>'
+            '<a class="signup-btn" href="?view=signup" target="_self">✍️ Sign Up</a>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
     # Admin panel
     if st.session_state.get('user_role') == 'admin':
@@ -2172,7 +2373,6 @@ if current_view == 'custom_analysis':
                         st.info("No data found for the selected infrastructure types in this area.")
         pass
 
-        # ── My Saved Analyses (expert / admin only) ─────────────────────────────
         _cur_user_role = st.session_state.get("user_role", "")
         _cur_username  = st.session_state.get("username", "")
         if _cur_user_role in ("expert", "admin") and _cur_username:
@@ -2184,13 +2384,12 @@ if current_view == 'custom_analysis':
                     "the analysis tabs or **Delete** it permanently."
                 )
 
-                # ── fetch all snapshots ──────────────────────────────────────
                 _all_snaps = get_all_user_snapshots(_cur_username)
 
                 if _all_snaps.empty:
                     st.info("You have no saved analyses yet. Use the **💾 Save** buttons at the bottom of the Level 1 and Level 2 tabs.")
                 else:
-                    # Build human-readable labels for the selectbox
+
                     def _snap_label(row):
                         lvl_tag  = "L1 · Perceived Risks" if row["level"] == "L1" else "L2 · Technical Analysis"
                         loc      = row.get("location_name") or "—"
@@ -2200,7 +2399,6 @@ if current_view == 'custom_analysis':
                     _snap_labels  = [_snap_label(r) for _, r in _all_snaps.iterrows()]
                     _snap_ids     = _all_snaps["id"].tolist()
 
-                    # Keep the selection stable across reruns
                     if "saved_snap_select_idx" not in st.session_state:
                         st.session_state["saved_snap_select_idx"] = 0
                     _sel_idx = st.session_state.get("saved_snap_select_idx", 0)
@@ -2216,7 +2414,6 @@ if current_view == 'custom_analysis':
                     _chosen_id   = _snap_ids[_chosen_idx]
                     st.session_state["saved_snap_select_idx"] = _chosen_idx
 
-                    # ── action buttons ────────────────────────────────────────
                     _btn_col1, _btn_col2, _ = st.columns([2, 2, 4])
 
                     with _btn_col1:
@@ -2235,8 +2432,6 @@ if current_view == 'custom_analysis':
                             key="delete_snap_btn",
                             help="Permanently remove this snapshot from the database.",
                         )
-
-                    # ── confirm-delete guard ──────────────────────────────────
                     if "pending_delete_id" not in st.session_state:
                         st.session_state["pending_delete_id"] = None
 
@@ -2254,7 +2449,6 @@ if current_view == 'custom_analysis':
                                 _del_ok, _del_msg = delete_snapshot_by_id(_chosen_id, _cur_username)
                                 st.session_state["pending_delete_id"] = None
                                 if _del_ok:
-                                    # Reset selection index so we don't go out of bounds
                                     st.session_state["saved_snap_select_idx"] = 0
                                     st.toast("Snapshot deleted.", icon="🗑️")
                                     st.rerun()
@@ -2264,8 +2458,6 @@ if current_view == 'custom_analysis':
                             if st.button("❌ Cancel", use_container_width=True, key="cancel_delete_btn"):
                                 st.session_state["pending_delete_id"] = None
                                 st.rerun()
-
-                    # ── load action ───────────────────────────────────────────
                     if _do_load:
                         _full_snap = get_snapshot_by_id(_chosen_id, _cur_username)
                         if _full_snap is not None:
@@ -2280,7 +2472,6 @@ if current_view == 'custom_analysis':
                         else:
                             st.error("Could not load the selected snapshot. It may have been deleted.")
 
-                    # ── preview panel ─────────────────────────────────────────
                     st.markdown("---")
                     st.markdown("##### 🔍 Snapshot Preview")
 
@@ -3175,8 +3366,12 @@ if current_view == 'custom_analysis':
         if st.session_state.lvl1_filtered_nbs_pool:
             st.markdown("---")
             st.subheader("NbS Feasibility Spider Diagram")
-            df_final = pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool).sort_values(by="total", ascending=False)
-            df_final = df_final.drop_duplicates(subset=["name"])
+            df_final = (
+                pd.DataFrame(st.session_state.lvl1_filtered_nbs_pool)
+                .sort_values(by="total", ascending=False)
+                .drop_duplicates(subset=["method_only"])
+                .reset_index(drop=True)
+            )
 
             fig = go.Figure()
             for _, r in df_final.head(5).iterrows():
@@ -3199,9 +3394,15 @@ if current_view == 'custom_analysis':
                 st.dataframe(df_final[["method_only", "ssf", "sei", "hia", "total"]], column_config=filt_config, use_container_width=True, hide_index=True)
 
             if low_perf_pool:
+                _seen_lp = {}
+                for _it in low_perf_pool:
+                    _m = _it.get("method_only", "")
+                    if _m and (_m not in _seen_lp or _it.get("total", 0) > _seen_lp[_m].get("total", 0)):
+                        _seen_lp[_m] = _it
+                low_perf_unique = list(_seen_lp.values())
                 st.markdown("##### ⚠️ Threshold Analysis")
-                with st.expander(f"View {len(low_perf_pool)} methods scoring 33.34% or below", expanded=False):
-                    for item in low_perf_pool:
+                with st.expander(f"View {len(low_perf_unique)} methods scoring 33.34% or below", expanded=False):
+                    for item in low_perf_unique:
                         st.warning(f"**{item['method_only']}** is not recommended (Score: {item['total']:.1f}%).")
         st.markdown("---")
         st.markdown("#### Final NbS Recommendation Strategy")
@@ -3348,6 +3549,18 @@ if current_view == 'custom_analysis':
                         lbl = item.get("row_label", "")
                         if lbl:
                             row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
+                    factsheet_url = get_factsheet_url(item["method_only"])
+                    factsheet_html = ""
+                    if factsheet_url:
+                        factsheet_html = (
+                            f'<a href="{factsheet_url}" target="_blank" rel="noopener" '
+                            f'style="display:inline-block;background:#2d6a4f;color:#ffffff;'
+                            f'text-decoration:none;font-size:0.78em;font-weight:600;'
+                            f'padding:4px 10px;border-radius:4px;margin-left:10px;'
+                            f'vertical-align:middle;white-space:nowrap;" '
+                            f'title="Open the NATURE-DEMO Fact Sheet PDF for this NbS method in a new tab">'
+                            f'📄 Fact Sheet</a>'
+                        )
 
                     st.markdown(
                         f"""
@@ -3372,7 +3585,7 @@ if current_view == 'custom_analysis':
                           </div>
                           <div style="flex:1;color:#212529;">
                             <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
-                              {type_tag}{item["method_only"]}{row_badge_html}
+                              {type_tag}{item["method_only"]}{row_badge_html}{factsheet_html}
                             </div>
                             <div style="font-size:0.9em;margin-bottom:2px;">
                               🔹 <b>Suitability Score:</b> {score_val:.2f} &nbsp;|&nbsp;
@@ -3429,11 +3642,39 @@ if current_view == 'custom_analysis':
 
         else:
             st.info("No active NbS solutions found. Ensure you have checked 'Include' and saved your criteria in the tables above.")
-
-        # ── Save Level 1 Analysis (expert / admin only) ─────────────────────────
         _l1_user_role = st.session_state.get("user_role", "")
         _l1_username  = st.session_state.get("username", "")
-        if _l1_user_role in ("expert", "admin") and _l1_username:
+        if not st.session_state.get('logged_in'):
+            st.markdown("---")
+            st.markdown("#### 💾 Save Level 1 Analysis")
+            st.warning(
+                "🔒 **You need an account to save your analysis.**\n\n"
+                "Please log in or sign up to persist your Level 1 · Perceived Risks "
+                "snapshot to the database. Guests can still explore and run the "
+                "analysis — but saving requires an approved account."
+            )
+            st.markdown(
+                '<style>'
+                '.save-auth-btns a {'
+                '  display:inline-block; text-decoration:none; padding:8px 18px;'
+                '  border-radius:6px; margin-right:10px; font-weight:bold;'
+                '  color:white !important;'
+                '}'
+                '.save-auth-btns a.login-btn {'
+                '  background:linear-gradient(135deg,#1b4332,#2d6a4f,#52b788);'
+                '}'
+                '.save-auth-btns a.signup-btn {'
+                '  background:linear-gradient(135deg,#2c3e50,#3498db);'
+                '}'
+                '.save-auth-btns a:hover { opacity:0.9; }'
+                '</style>'
+                '<div class="save-auth-btns">'
+                '<a class="login-btn" href="?view=login" target="_self">🔑 Login</a>'
+                '<a class="signup-btn" href="?view=signup" target="_self">✍️ Sign Up</a>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        elif _l1_user_role in ("expert", "admin") and _l1_username:
             st.markdown("---")
             st.markdown("#### 💾 Save Level 1 Analysis")
             st.info(
@@ -3447,7 +3688,6 @@ if current_view == 'custom_analysis':
             if st.session_state.get("extracted_data"):
                 _l1_center_lat = st.session_state["extracted_data"].get("center_lat")
                 _l1_center_lon = st.session_state["extracted_data"].get("center_lon")
-            # Fall back to map_center if polygon not drawn yet
             if _l1_center_lat is None:
                 _l1_center_lat = st.session_state.get("map_center", [None, None])[0]
                 _l1_center_lon = st.session_state.get("map_center", [None, None])[1]
@@ -6288,8 +6528,11 @@ if current_view == 'custom_analysis':
             if st.session_state.filtered_nbs_pool:
                 st.markdown("---")
                 st.subheader("NbS Feasibility Spider Diagram")
-                df_final = pd.DataFrame(st.session_state.filtered_nbs_pool).sort_values(
-                    by="total", ascending=False
+                df_final = (
+                    pd.DataFrame(st.session_state.filtered_nbs_pool)
+                    .sort_values(by="total", ascending=False)
+                    .drop_duplicates(subset=["method_only"])
+                    .reset_index(drop=True)
                 )
                 top_m = df_final.head(5)
                 fig = go.Figure()
@@ -6337,12 +6580,18 @@ if current_view == 'custom_analysis':
                     )
 
                 if low_perf_pool:
+                    _seen_lp2 = {}
+                    for _it in low_perf_pool:
+                        _m = _it.get("method_only", "")
+                        if _m and (_m not in _seen_lp2 or _it.get("total", 0) > _seen_lp2[_m].get("total", 0)):
+                            _seen_lp2[_m] = _it
+                    low_perf_unique2 = list(_seen_lp2.values())
                     st.markdown("##### ⚠️ Threshold Analysis")
                     with st.expander(
-                        f"View {len(low_perf_pool)} methods below 30% threshold",
+                        f"View {len(low_perf_unique2)} methods below 30% threshold",
                         expanded=False,
                     ):
-                        for item in low_perf_pool:
+                        for item in low_perf_unique2:
                             st.warning(
                                 f"**{item['method_only']}** is not recommended (Score: {item['total']:.1f}%)."
                             )
@@ -6377,17 +6626,26 @@ if current_view == 'custom_analysis':
                         else:
                             return "#d32f2f"
 
-                    def render_rpri_ranking(pool, show_row_badge=False):
+                    def render_rpri_ranking(pool, solution_filter="primary", show_row_badge=False):
                         """
                         Consolidate pool by method_only (keep highest RPRI per method),
                         then render the ranked cards.
+
+                        solution_filter: "primary", "supportive", or "all" — mirrors the
+                        Level 1 ranking renderer so the Level 2 selector can offer the
+                        same three top-level views (All Primary / All Supportive /
+                        Primary + Supportive) plus per-row breakdowns.
+
                         show_row_badge=True adds a small row label badge on each card
                         (used in the All-Rows-Combined view so the user can see which
                         row drove the displayed PRI value).
                         """
                         cons = {}
                         for item in pool:
-                            if not item.get("is_primary", False):
+                            is_p = item.get("is_primary", False)
+                            if solution_filter == "primary" and not is_p:
+                                continue
+                            if solution_filter == "supportive" and is_p:
                                 continue
                             m = item["method_only"]
                             if m not in cons or item.get("rpri", 0) > cons[m].get("rpri", 0):
@@ -6400,7 +6658,7 @@ if current_view == 'custom_analysis':
                         unscored = [i for i in cons.values() if i["status"] == "unscored"]
 
                         if not scored and not unscored:
-                            st.info("No primary solutions found for this selection.")
+                            st.info(f"No {solution_filter} solutions found for this selection.")
                             return
 
                         valid_vals = [i["rpri"] for i in scored if i["eff_percent"] > 0]
@@ -6413,11 +6671,33 @@ if current_view == 'custom_analysis':
                             pri_val = item.get("original_pri", 0.0)
                             rpri_val = item.get("rpri", 0.0)
                             delta_val = pri_val - rpri_val
+
+                            type_tag = ""
+                            if solution_filter == "all":
+                                is_p = item.get("is_primary", False)
+                                t_color = "#2d6a4f" if is_p else "#1565c0"
+                                t_label = "Primary" if is_p else "Supportive"
+                                type_tag = f'<span style="background:{t_color};color:white;border-radius:4px;padding:1px 6px;font-size:0.7em;margin-right:8px;vertical-align:middle;">{t_label}</span>'
+
                             row_badge_html = ""
                             if show_row_badge:
                                 lbl = item.get("row_label", "")
                                 if lbl:
                                     row_badge_html = f'<span style="background:#e3f2fd;color:#1565c0;border-radius:4px;padding:1px 6px;font-size:0.78em;font-weight:normal;margin-left:6px;">{lbl}</span>'
+
+                            factsheet_url = get_factsheet_url(item["method_only"])
+                            factsheet_html = ""
+                            if factsheet_url:
+                                factsheet_html = (
+                                    f'<a href="{factsheet_url}" target="_blank" rel="noopener" '
+                                    f'style="display:inline-block;background:#2d6a4f;color:#ffffff;'
+                                    f'text-decoration:none;font-size:0.78em;font-weight:600;'
+                                    f'padding:4px 10px;border-radius:4px;margin-left:10px;'
+                                    f'vertical-align:middle;white-space:nowrap;" '
+                                    f'title="Open the NATURE-DEMO Fact Sheet PDF for this NbS method in a new tab">'
+                                    f'📄 Fact Sheet</a>'
+                                )
+
                             st.markdown(
                                 f"""
                                 <div style="
@@ -6441,7 +6721,7 @@ if current_view == 'custom_analysis':
                                   </div>
                                   <div style="flex:1;color:#212529;">
                                     <div style="font-weight:600;font-size:1em;margin-bottom:3px;">
-                                      {item["method_only"]}{row_badge_html}
+                                      {type_tag}{item["method_only"]}{row_badge_html}{factsheet_html}
                                     </div>
                                     <div style="font-size:0.9em;margin-bottom:2px;">
                                       🔹 <b>PRI:</b> {pri_val:.1f} &nbsp;|&nbsp;
@@ -6465,10 +6745,21 @@ if current_view == 'custom_analysis':
                                 expanded=False,
                             ):
                                 for item in unscored:
+                                    factsheet_url_u = get_factsheet_url(item["method_only"])
+                                    factsheet_html_u = ""
+                                    if factsheet_url_u:
+                                        factsheet_html_u = (
+                                            f' <a href="{factsheet_url_u}" target="_blank" rel="noopener" '
+                                            f'style="display:inline-block;background:#2d6a4f;color:#ffffff;'
+                                            f'text-decoration:none;font-size:0.78em;font-weight:600;'
+                                            f'padding:3px 8px;border-radius:4px;margin-left:8px;'
+                                            f'vertical-align:middle;white-space:nowrap;">'
+                                            f'📄 Fact Sheet</a>'
+                                        )
                                     st.markdown(
                                         f'<div style="background-color:#f0f2f6;padding:10px;'
                                         f'border-radius:6px;margin-bottom:8px;border:1px solid #ddd;color:black;">'
-                                        f'<h6 style="margin:0;">- {item["method_only"]}</h6>'
+                                        f'<h6 style="margin:0;">- {item["method_only"]}{factsheet_html_u}</h6>'
                                         f'<p style="margin:0;font-size:0.9em;color:#555;"><i>'
                                         f"Technical efficiency values are not available for this method."
                                         f"</i></p></div>",
@@ -6479,14 +6770,17 @@ if current_view == 'custom_analysis':
                     seen_labels = []
                     for item in st.session_state.filtered_nbs_pool:
                         lbl = item.get("row_label", "")
-                        if lbl and item.get("is_primary", False) and lbl not in seen_labels:
+                        if lbl and lbl not in seen_labels:
                             seen_labels.append(lbl)
 
-                    ALL_LABEL = "🌐 All Rows Combined"
-                    view_options = [ALL_LABEL] + seen_labels
+                    OPT_PRIMARY = "✅ All Primary Solutions"
+                    OPT_SUPPORTIVE = "🔄 All Supportive Solutions"
+                    OPT_ALL = "✨ All Solutions (Primary + Supportive)"
+
+                    view_options = [OPT_PRIMARY, OPT_SUPPORTIVE, OPT_ALL] + seen_labels
 
                     st.info(
-                        "Use the selector below to view the RPRI ranking for a specific Impact Model / Asset row from the Implementation Mapping Summary, or select **All Rows Combined** to see the overall ranking (each method shown once at its highest RPRI across all rows).",
+                        "Use the selector below to view rankings. You can view Primary, Supportive, or All solutions across the entire project scope, or pick a specific Impact Model / Asset row from the Implementation Mapping Summary.",
                         icon="ℹ️",
                     )
 
@@ -6494,8 +6788,12 @@ if current_view == 'custom_analysis':
                         "📋 View ranking for:", view_options, key="rpri_view_selector"
                     )
 
-                    if selected_view == ALL_LABEL:
-                        render_rpri_ranking(st.session_state.filtered_nbs_pool, show_row_badge=True)
+                    if selected_view == OPT_PRIMARY:
+                        render_rpri_ranking(st.session_state.filtered_nbs_pool, solution_filter="primary", show_row_badge=True)
+                    elif selected_view == OPT_SUPPORTIVE:
+                        render_rpri_ranking(st.session_state.filtered_nbs_pool, solution_filter="supportive", show_row_badge=True)
+                    elif selected_view == OPT_ALL:
+                        render_rpri_ranking(st.session_state.filtered_nbs_pool, solution_filter="all", show_row_badge=True)
                     else:
                         row_pool = [
                             item
@@ -6511,7 +6809,7 @@ if current_view == 'custom_analysis':
                                 f'<div style="background:#f3e5f5;border-left:4px solid #7b1fa2;padding:8px 14px;border-radius:6px;margin-bottom:12px;color:#4a148c;"><strong>Row:</strong> {" &nbsp;›&nbsp; ".join(parts)}</div>',
                                 unsafe_allow_html=True,
                             )
-                        render_rpri_ranking(row_pool, show_row_badge=False)
+                        render_rpri_ranking(row_pool, solution_filter="all", show_row_badge=False)
                     st.divider()
                     st.markdown("##### 🗺️ Cross-Row RPRI Heatmap")
                     st.caption(
@@ -6701,10 +6999,25 @@ if current_view == 'custom_analysis':
         else:
             st.warning("Please run Step 7.1 first.")
 
-        # ── Save Level 2 Analysis (expert / admin only) ─────────────────────────
         _l2_user_role = st.session_state.get("user_role", "")
         _l2_username  = st.session_state.get("username", "")
-        if _l2_user_role in ("expert", "admin") and _l2_username:
+        if not st.session_state.get('logged_in'):
+            st.markdown("---")
+            st.markdown("#### 💾 Save Level 2 Analysis")
+            st.warning(
+                "🔒 **You need an account to save your analysis.**\n\n"
+                "Please log in or sign up to persist your Level 2 · Technical Analysis "
+                "snapshot to the database. Guests can still explore and run the "
+                "analysis — but saving requires an approved account."
+            )
+            st.markdown(
+                '<div class="save-auth-btns">'
+                '<a class="login-btn" href="?view=login" target="_self">🔑 Login</a>'
+                '<a class="signup-btn" href="?view=signup" target="_self">✍️ Sign Up</a>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        elif _l2_user_role in ("expert", "admin") and _l2_username:
             st.markdown("---")
             st.markdown("#### 💾 Save Level 2 Analysis")
             st.info(
@@ -6784,6 +7097,52 @@ if current_view == 'custom_analysis':
 
 else:
     st.session_state['current_view'] = 'specific_site'
+
+    if not st.session_state.get('logged_in'):
+        _selected_key_guard = st.session_state.get('selected_site_key', 'demo1a')
+        _items_map_guard = {it["github_key"]: it for it in items}
+        _selected_item_guard = _items_map_guard.get(_selected_key_guard, items[0])
+        st.title(f"🔒 Restricted: {_selected_item_guard['name']} — {_selected_item_guard['address']}")
+        st.warning(
+            "🔒 **The data for the demo sites are private.**\n\n"
+            "Access to the demo site analyses (Demo site 1-A, Demo site 1-B, "
+            "Demo site 2, Demo site 3, Demo site 4 and Demo site 5) must be "
+            "explicitly accepted by the administrator.\n\n"
+            "Please **sign up** for an account or **log in** if you already have one — "
+            "an administrator will then review your request and approve your access."
+        )
+        st.markdown(
+            '<style>'
+            '.demo-auth-btns a {'
+            '  display:inline-block; text-decoration:none; padding:10px 22px;'
+            '  border-radius:6px; margin-right:10px; font-weight:bold;'
+            '  color:white !important; font-size:15px;'
+            '}'
+            '.demo-auth-btns a.login-btn {'
+            '  background:linear-gradient(135deg,#1b4332,#2d6a4f,#52b788);'
+            '}'
+            '.demo-auth-btns a.signup-btn {'
+            '  background:linear-gradient(135deg,#2c3e50,#3498db);'
+            '}'
+            '.demo-auth-btns a.back-btn {'
+            '  background:linear-gradient(135deg,#6c757d,#495057);'
+            '}'
+            '.demo-auth-btns a:hover { opacity:0.9; }'
+            '</style>'
+            '<div class="demo-auth-btns" style="margin-top:14px;">'
+            '<a class="login-btn" href="?view=login" target="_self">🔑 Login</a>'
+            '<a class="signup-btn" href="?view=signup" target="_self">✍️ Sign Up</a>'
+            '<a class="back-btn" href="?view=custom_analysis" target="_self">'
+            '🔬 Continue with Custom Site Analysis</a>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        st.info(
+            "💡 **Tip:** While you wait for approval, you can use the "
+            "**Custom Site Analysis** tool from the sidebar — it works for any "
+            "location worldwide and does not require an approved account."
+        )
+        st.stop()
 
     selected_key = st.session_state['selected_site_key']
     items_map = {it["github_key"]: it for it in items}
