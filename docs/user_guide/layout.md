@@ -2,7 +2,7 @@
 
 This page describes the layout of the **High Resolution DST**. The public Decision Support Tool has its own sidebar with cross-links to the High Resolution DST and to the Climate Data Visualisation companion tool, and no authentication or admin-panel elements.
 
-After successful authentication the application presents a persistent sidebar on the left and a dynamic main content area on the right. The sidebar is visible on every page and contains all navigation controls.
+The application presents a persistent sidebar on the left and a dynamic main content area on the right. Unauthenticated users land on the Custom Site Analysis workflow directly and can complete a full assessment without logging in; an account is required only to save analyses or access demonstrator-site content.
 
 ![Main internal layout of the DST after login. The sidebar (left) contains navigation, user settings, and site selection. The main content area (right) renders the active view with its tab bar.](../assets/manual_figures/layout_main.png)
 
@@ -13,10 +13,8 @@ After successful authentication the application presents a persistent sidebar on
 The sidebar uses a dark-green nature-themed background and is structured top to bottom:
 
 - NATURE-DEMO project logo
-- Logged-in user's display name and role (e.g., *"Jane Smith — Role: expert"*)
-- 🔐 **Change Password** expander
-- **Logout** button
-- 🛡️ **Admin Panel** expander — visible to admin users only
+- **Guest notice** (when not logged in) — a brief banner indicating guest mode, with **Login** and **Sign Up** links that open the authentication screen
+- **User profile** (when logged in) — display name and role (e.g., *"Jane Smith — Role: expert"*), 🔐 **Change Password** expander, **Logout** button, and 🛡️ **Admin Panel** expander (admin users only)
 - 🔬 **Custom Site Analysis & NbS Recommendation** button — switches the main content area to the [Custom Site Analysis](custom_extraction.md) mode
 - **Select Site** section — six clickable site cards covering the five NATURE-DEMO demonstration sites (the Austrian demonstrator is split into two sub-sites). Each card displays a background photograph, the site label in bold, and the location name. The currently active card is highlighted with a green border.
 

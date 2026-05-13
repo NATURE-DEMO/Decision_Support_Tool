@@ -4,7 +4,7 @@ The application provides a public **Decision Support Tool** with the Custom Site
 
 **Production URL**: [https://nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu)
 
-Access to the High Resolution DST requires a user account — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
+Custom Site Analysis is available without an account. A user account is required to save analyses and to access demonstrator-site content — see [Authentication](authentication.md) for login, sign-up, role assignment, and password management.
 
 ---
 

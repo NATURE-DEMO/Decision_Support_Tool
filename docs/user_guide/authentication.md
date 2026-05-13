@@ -1,12 +1,12 @@
 # Authentication and User Management
 
-The High Resolution DST is access-controlled. A full-screen login wall is presented before any application content is rendered. Access is managed via a **Supabase PostgreSQL** database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.
+The Custom Site Analysis workflow is accessible without an account. An account is required to save analyses and to access demonstrator-site content. Access is managed via a **Supabase PostgreSQL** database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.
 
 ---
 
 ## Logging in
 
-Navigate to [nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu). Select **Login**, enter your username and password, and click **Login**. On successful authentication a 7-day session cookie is set and the application loads.
+Navigate to [nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloudmate.eu). Click **Login** in the sidebar to open the authentication screen. Select **Login**, enter your username and password, and click **Login**. On successful authentication a 7-day session cookie is set and the sidebar updates to show the logged-in user profile.
 
 - If your account is awaiting approval, the message *"Account waiting for Admin approval"* is shown. The account cannot be used until an administrator approves it.
 - Incorrect credentials return *"Invalid username or password."* No automatic account lockout is applied.
@@ -17,7 +17,7 @@ Navigate to [nature-demo-dst.dic-cloudmate.eu](https://nature-demo-dst.dic-cloud
 
 ## Creating a new account
 
-Select **Sign Up** on the authentication screen. Complete all required fields: Username, First Name, Last Name, Email Address, Job Title, Industry, Requested Role, Password, and Confirm Password.
+Click **Sign Up** in the sidebar to open the authentication screen, then select the **Sign Up** tab. Complete all required fields: Username, First Name, Last Name, Email Address, Job Title, Industry, Requested Role, Password, and Confirm Password.
 
 ![New user sign-up form. All fields are required. The Requested Role field allows viewer or expert; the admin role cannot be self-assigned.](../assets/manual_figures/auth_signup.png)
 

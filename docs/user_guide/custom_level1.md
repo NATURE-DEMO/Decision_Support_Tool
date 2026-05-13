@@ -83,7 +83,7 @@ The **Filtration of the Recommended NbS Solutions** section refines the NbS rank
 
 A **feasibility spider diagram** is automatically generated for each solution based on the SSF and SEI configuration, visualising the solution's performance across all assessment dimensions. This diagram is accessible in the **View Full Site-Specific Filtration Summary** expander.
 
-Once the filtration is configured, the **Final NbS Recommendation Strategy** table displays the risk score, suitability index, and suitability score for every solution. The **Ranked NbS Solutions by Suitability Score** section presents solutions in descending order of overall suitability, with a dropdown allowing the view to be filtered to primary solutions only, supportive solutions only, or all solutions combined.
+Once the filtration is configured, the **Final NbS Recommendation Strategy** table displays the risk score, suitability index, and suitability score for every solution. The **Ranked NbS Solutions by Suitability Score** section presents solutions in descending order of overall suitability, with a dropdown allowing the view to be filtered to primary solutions only, supportive solutions only, or all solutions combined. Where available, a **📄 Fact Sheet** link next to each solution name opens the corresponding NbS factsheet PDF from the NATURE-DEMO website.
 
 ![NbS recommendation ranking and save section. Solutions are ranked by suitability score. The save panel at the bottom allows expert and admin users to persist the Level 1 analysis as a named snapshot.](../assets/manual_figures/custom_l1_ranking.png)
 
