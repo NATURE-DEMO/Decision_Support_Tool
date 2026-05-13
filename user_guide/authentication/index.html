@@ -1344,10 +1344,10 @@
 
 
 <h1 id="authentication-and-user-management">Authentication and User Management<a class="headerlink" href="#authentication-and-user-management" title="Permanent link">&para;</a></h1>
-<p>The High Resolution DST is access-controlled. A full-screen login wall is presented before any application content is rendered. Access is managed via a <strong>Supabase PostgreSQL</strong> database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.</p>
+<p>The Custom Site Analysis workflow is accessible without an account. An account is required to save analyses and to access demonstrator-site content. Access is managed via a <strong>Supabase PostgreSQL</strong> database that stores bcrypt-hashed passwords, user profiles, approval status, and role assignments.</p>
 <hr />
 <h2 id="logging-in">Logging in<a class="headerlink" href="#logging-in" title="Permanent link">&para;</a></h2>
-<p>Navigate to <a href="https://nature-demo-dst.dic-cloudmate.eu">nature-demo-dst.dic-cloudmate.eu</a>. Select <strong>Login</strong>, enter your username and password, and click <strong>Login</strong>. On successful authentication a 7-day session cookie is set and the application loads.</p>
+<p>Navigate to <a href="https://nature-demo-dst.dic-cloudmate.eu">nature-demo-dst.dic-cloudmate.eu</a>. Click <strong>Login</strong> in the sidebar to open the authentication screen. Select <strong>Login</strong>, enter your username and password, and click <strong>Login</strong>. On successful authentication a 7-day session cookie is set and the sidebar updates to show the logged-in user profile.</p>
 <ul>
 <li>If your account is awaiting approval, the message <em>"Account waiting for Admin approval"</em> is shown. The account cannot be used until an administrator approves it.</li>
 <li>Incorrect credentials return <em>"Invalid username or password."</em> No automatic account lockout is applied.</li>
@@ -1355,7 +1355,7 @@
 <p><img alt="Application authentication screen — Login tab selected with username and password fields." src="../../assets/manual_figures/auth_login.png" /></p>
 <hr />
 <h2 id="creating-a-new-account">Creating a new account<a class="headerlink" href="#creating-a-new-account" title="Permanent link">&para;</a></h2>
-<p>Select <strong>Sign Up</strong> on the authentication screen. Complete all required fields: Username, First Name, Last Name, Email Address, Job Title, Industry, Requested Role, Password, and Confirm Password.</p>
+<p>Click <strong>Sign Up</strong> in the sidebar to open the authentication screen, then select the <strong>Sign Up</strong> tab. Complete all required fields: Username, First Name, Last Name, Email Address, Job Title, Industry, Requested Role, Password, and Confirm Password.</p>
 <p><img alt="New user sign-up form. All fields are required. The Requested Role field allows viewer or expert; the admin role cannot be self-assigned." src="../../assets/manual_figures/auth_signup.png" /></p>
 <p>The <strong>Requested Role</strong> dropdown offers <strong>viewer</strong> or <strong>expert</strong> (see role descriptions below). The admin role cannot be self-assigned; it must be assigned by an existing administrator after account approval.</p>
 <p>The password strength indicator must reach <strong>Strong</strong> before the <em>Create Account</em> button activates. A strong password requires at least 10 characters with at least one uppercase letter, one lowercase letter, one digit, and one special character.</p>

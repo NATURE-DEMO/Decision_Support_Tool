@@ -1323,17 +1323,15 @@
 
 <h1 id="application-layout">Application layout<a class="headerlink" href="#application-layout" title="Permanent link">&para;</a></h1>
 <p>This page describes the layout of the <strong>High Resolution DST</strong>. The public Decision Support Tool has its own sidebar with cross-links to the High Resolution DST and to the Climate Data Visualisation companion tool, and no authentication or admin-panel elements.</p>
-<p>After successful authentication the application presents a persistent sidebar on the left and a dynamic main content area on the right. The sidebar is visible on every page and contains all navigation controls.</p>
+<p>The application presents a persistent sidebar on the left and a dynamic main content area on the right. Unauthenticated users land on the Custom Site Analysis workflow directly and can complete a full assessment without logging in; an account is required only to save analyses or access demonstrator-site content.</p>
 <p><img alt="Main internal layout of the DST after login. The sidebar (left) contains navigation, user settings, and site selection. The main content area (right) renders the active view with its tab bar." src="../../assets/manual_figures/layout_main.png" /></p>
 <hr />
 <h2 id="the-sidebar">The sidebar<a class="headerlink" href="#the-sidebar" title="Permanent link">&para;</a></h2>
 <p>The sidebar uses a dark-green nature-themed background and is structured top to bottom:</p>
 <ul>
 <li>NATURE-DEMO project logo</li>
-<li>Logged-in user's display name and role (e.g., <em>"Jane Smith — Role: expert"</em>)</li>
-<li>🔐 <strong>Change Password</strong> expander</li>
-<li><strong>Logout</strong> button</li>
-<li>🛡️ <strong>Admin Panel</strong> expander — visible to admin users only</li>
+<li><strong>Guest notice</strong> (when not logged in) — a brief banner indicating guest mode, with <strong>Login</strong> and <strong>Sign Up</strong> links that open the authentication screen</li>
+<li><strong>User profile</strong> (when logged in) — display name and role (e.g., <em>"Jane Smith — Role: expert"</em>), 🔐 <strong>Change Password</strong> expander, <strong>Logout</strong> button, and 🛡️ <strong>Admin Panel</strong> expander (admin users only)</li>
 <li>🔬 <strong>Custom Site Analysis &amp; NbS Recommendation</strong> button — switches the main content area to the <a href="../custom_extraction/">Custom Site Analysis</a> mode</li>
 <li><strong>Select Site</strong> section — six clickable site cards covering the five NATURE-DEMO demonstration sites (the Austrian demonstrator is split into two sub-sites). Each card displays a background photograph, the site label in bold, and the location name. The currently active card is highlighted with a green border.</li>
 </ul>
